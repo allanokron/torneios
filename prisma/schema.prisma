@@ -1,0 +1,494 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== USUÁRIOS ====================
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  phone        String?
+  city         String?
+  state        String?
+  birthDate    DateTime?
+  bio          String?
+  avatarUrl    String?
+  gameLevel    String?
+  dominantHand String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  profile                    Profile?
+  memberships                TournamentMember[]
+  ownedTournaments           Tournament[]        @relation("TournamentOwner")
+  courts                     Court[]             @relation("CourtOwner")
+  sentInvites                Invite[]            @relation("InviteSender")
+  matchesHome                Match[]             @relation("HomeTeamPlayer")
+  matchesAway                Match[]             @relation("AwayTeamPlayer")
+  matchPhotos                MatchPhoto[]
+  messages                   Message[]
+  scheduleProposalsSent      ScheduleProposal[]  @relation("ProposalSender")
+  scheduleProposalsReceived  ScheduleProposal[]  @relation("ProposalReceiver")
+  rescheduleRequestsSent     RescheduleRequest[] @relation("RescheduleSender")
+  rescheduleRequestsReceived RescheduleRequest[] @relation("RescheduleReceiver")
+  penalties                  Penalty[]           @relation("PenaltyTarget")
+  penaltiesApplied           Penalty[]           @relation("PenaltyAppliedBy")
+  woGiven                    Match[]             @relation("WOGivenBy")
+  woReceived                 Match[]             @relation("WOReceivedBy")
+  contestationsSent          Contestation[]      @relation("ContestationSender")
+  contestationsResolved      Contestation[]      @relation("ContestationResolver")
+  rankings                   PlayerRanking[]
+  notifications              Notification[]
+  auditLogs                  AuditLog[]
+  announcements              Announcement[]
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ==================== TORNEIOS ====================
+
+model Tournament {
+  id                   String    @id @default(cuid())
+  name                 String
+  description          String?
+  coverImage           String?
+  sport                String    @default("tennis")
+  format               String    @default("round_robin")
+  location             String?
+  address              String?
+  city                 String?
+  state                String?
+  startDate            DateTime
+  endDate              DateTime?
+  registrationDeadline DateTime?
+  maxParticipants      Int?
+  isPublic             Boolean   @default(true)
+  inviteCode           String?   @unique
+  status               String    @default("draft") // draft, registration_open, registration_closed, in_progress, finished
+  ownerId              String
+  owner                User      @relation("TournamentOwner", fields: [ownerId], references: [id])
+
+  // Regras da competição
+  setsPerMatch       Int     @default(3)
+  setsToWin          Int     @default(2)
+  setType            String  @default("standard") // standard, tiebreak_only
+  hasTiebreak        Boolean @default(true)
+  tiebreakScore      Int     @default(6)
+  hasSuperTiebreak   Boolean @default(true)
+  superTiebreakScore Int     @default(10)
+
+  // Regras gerais
+  defaultMatchDuration  Int     @default(120) // minutos
+  woCriteria            String?
+  delayTolerance        Int     @default(15) // minutos
+  generalRules          String?
+  termsOfResponsibility String?
+  cancellationRules     String?
+
+  // Finalização
+  autoFinishOnFirstSubmission Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members          TournamentMember[]
+  invites          Invite[]
+  courts           Court[]
+  matches          Match[]
+  scoringConfig    ScoringConfig?
+  tiebreakerConfig TiebreakerConfig?
+  rankings         PlayerRanking[]
+  announcements    Announcement[]
+  auditLogs        AuditLog[]
+}
+
+model TournamentMember {
+  id           String     @id @default(cuid())
+  role         String     @default("player") // player, organizer, admin
+  status       String     @default("pending") // pending, accepted, rejected
+  joinedAt     DateTime?
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+}
+
+// ==================== CONVITES ====================
+
+model Invite {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  senderId     String
+  sender       User       @relation("InviteSender", fields: [senderId], references: [id])
+  email        String
+  status       String     @default("pending") // pending, accepted, rejected
+  message      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([tournamentId, email])
+}
+
+// ==================== QUADRAS ====================
+
+model Court {
+  id           String     @id @default(cuid())
+  name         String
+  number       Int?
+  surfaceType  String?
+  isCovered    Boolean    @default(false)
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  ownerId      String
+  owner        User       @relation("CourtOwner", fields: [ownerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  availabilities CourtAvailability[]
+  blockedSlots   CourtBlock[]
+  reservations   Reservation[]
+  matches        Match[]
+}
+
+model CourtAvailability {
+  id        String @id @default(cuid())
+  courtId   String
+  court     Court  @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  dayOfWeek Int // 0=Domingo, 1=Segunda, etc.
+  startTime String // "07:00"
+  endTime   String // "22:00"
+
+  @@unique([courtId, dayOfWeek])
+}
+
+model CourtBlock {
+  id        String    @id @default(cuid())
+  courtId   String
+  court     Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  startDate DateTime
+  endDate   DateTime?
+  startTime String?
+  endTime   String?
+  reason    String?
+  createdAt DateTime  @default(now())
+}
+
+// ==================== PARTIDAS ====================
+
+model Match {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  homePlayerId String
+  homePlayer   User   @relation("HomeTeamPlayer", fields: [homePlayerId], references: [id])
+  awayPlayerId String
+  awayPlayer   User   @relation("AwayTeamPlayer", fields: [awayPlayerId], references: [id])
+
+  courtId String?
+  court   Court?  @relation(fields: [courtId], references: [id])
+
+  scheduledAt DateTime?
+  duration    Int       @default(120) // minutos
+
+  status String @default("pending_scheduling") // pending_scheduling, proposal_sent, awaiting_response, scheduled, reschedule_requested, in_progress, awaiting_result, finished, cancelled, wo, under_review
+
+  homeScore Int?
+  awayScore Int?
+  winnerId  String?
+
+  woGivenBy    User? @relation("WOGivenBy", fields: [woGivenById], references: [id])
+  woReceivedBy User? @relation("WOReceivedBy", fields: [woReceivedById], references: [id])
+
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  // Fotos
+  startPhotoUrl String?
+  endPhotoUrl   String?
+
+  // W.O.
+  woGivenById    String?
+  woReceivedById String?
+  woReason       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sets               Set[]
+  scheduleProposals  ScheduleProposal[]
+  rescheduleRequests RescheduleRequest[]
+  reservations       Reservation[]
+  photos             MatchPhoto[]
+  messages           Message[]
+  penalties          Penalty[]
+  contestations      Contestation[]
+
+  @@unique([tournamentId, homePlayerId, awayPlayerId])
+}
+
+model Set {
+  id              String  @id @default(cuid())
+  matchId         String
+  match           Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  setNumber       Int
+  homeGames       Int
+  awayGames       Int
+  isTiebreak      Boolean @default(false)
+  isSuperTiebreak Boolean @default(false)
+
+  @@unique([matchId, setNumber])
+}
+
+// ==================== AGENDAMENTO ====================
+
+model ScheduleProposal {
+  id         String @id @default(cuid())
+  matchId    String
+  match      Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User   @relation("ProposalSender", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User   @relation("ProposalReceiver", fields: [receiverId], references: [id])
+
+  proposedDate DateTime
+  proposedTime String
+  courtId      String
+  message      String?
+
+  status          String  @default("pending") // pending, accepted, rejected, counter_proposal
+  responseMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RescheduleRequest {
+  id         String @id @default(cuid())
+  matchId    String
+  match      Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User   @relation("RescheduleSender", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User   @relation("RescheduleReceiver", fields: [receiverId], references: [id])
+
+  newDate    DateTime
+  newTime    String
+  newCourtId String
+  reason     String
+
+  status String @default("pending") // pending, accepted, rejected
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reservation {
+  id      String @id @default(cuid())
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  courtId String
+  court   Court  @relation(fields: [courtId], references: [id])
+
+  startTime DateTime
+  endTime   DateTime
+
+  isConfirmed Boolean @default(false)
+  isCancelled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== COMUNICAÇÃO ====================
+
+model MatchPhoto {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  url       String
+  type      String // start, end
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  content   String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+}
+
+// ==================== PONTUAÇÃO E RANKING ====================
+
+model ScoringConfig {
+  id           String     @id @default(cuid())
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  winWithoutLosingSet   Int @default(3)
+  winLosingOneSet       Int @default(2)
+  lossWinningOneSet     Int @default(1)
+  lossWithoutWinningSet Int @default(0)
+  winByWO               Int @default(3)
+  lossByWO              Int @default(0)
+  withdrawalPenalty     Int @default(-1)
+  delayPenalty          Int @default(-1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TiebreakerConfig {
+  id           String     @id @default(cuid())
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  criteriaOrder Json // Array ordenado dos critérios
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlayerRanking {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+
+  position      Int
+  points        Int @default(0)
+  matchesPlayed Int @default(0)
+  wins          Int @default(0)
+  losses        Int @default(0)
+  winsByWO      Int @default(0)
+  lossesByWO    Int @default(0)
+  setsWon       Int @default(0)
+  setsLost      Int @default(0)
+  gamesWon      Int @default(0)
+  gamesLost     Int @default(0)
+
+  // Critérios de desempate
+  directConfrontation Int?
+  setBalance          Int?
+  gamesBalance        Int?
+
+  lastResults Json? // Array dos últimos resultados
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tournamentId, userId])
+}
+
+// ==================== PENALIDADES E W.O. ====================
+
+model Penalty {
+  id           String  @id @default(cuid())
+  tournamentId String
+  userId       String
+  user         User    @relation("PenaltyTarget", fields: [userId], references: [id])
+  matchId      String?
+  match        Match?  @relation(fields: [matchId], references: [id])
+
+  type        String // withdrawal, delay, manual
+  points      Int
+  reason      String
+  appliedById String
+  appliedBy   User   @relation("PenaltyAppliedBy", fields: [appliedById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Contestation {
+  id       String @id @default(cuid())
+  matchId  String
+  match    Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  senderId String
+  sender   User   @relation("ContestationSender", fields: [senderId], references: [id])
+
+  reason      String
+  description String
+  imageUrl    String?
+
+  status     String  @default("pending") // pending, resolved
+  resolution String?
+  resolverId String?
+  resolver   User?   @relation("ContestationResolver", fields: [resolverId], references: [id])
+
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+}
+
+// ==================== NOTIFICAÇÕES ====================
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title   String
+  message String
+  type    String // invite, match, scheduling, result, ranking, announcement
+  link    String?
+
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ==================== COMUNICADOS ====================
+
+model Announcement {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User       @relation(fields: [authorId], references: [id])
+
+  title   String
+  content String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== HISTÓRICO DE AUDITORIA ====================
+
+model AuditLog {
+  id           String      @id @default(cuid())
+  tournamentId String?
+  tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+
+  action     String
+  entityType String
+  entityId   String?
+
+  oldValue Json?
+  newValue Json?
+  reason   String?
+
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
