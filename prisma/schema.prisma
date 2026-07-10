@@ -159,10 +159,11 @@ model Court {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  availabilities CourtAvailability[]
-  blockedSlots   CourtBlock[]
-  reservations   Reservation[]
-  matches        Match[]
+  availabilities    CourtAvailability[]
+  blockedSlots      CourtBlock[]
+  reservations      Reservation[]
+  matches           Match[]
+  scheduleProposals ScheduleProposal[]
 }
 
 model CourtAvailability {
@@ -269,6 +270,7 @@ model ScheduleProposal {
   proposedDate DateTime
   proposedTime String
   courtId      String
+  court        Court  @relation(fields: [courtId], references: [id])
   message      String?
 
   status          String  @default("pending") // pending, accepted, rejected, counter_proposal

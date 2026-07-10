@@ -11,7 +11,7 @@ export function toBrasiliaTime(date: Date | string): Date {
 export function formatBrasiliaTime(date: Date | string, formatStr: string = 'dd/MM/yyyy HH:mm'): string {
   const dateObj = typeof date === 'string' ? parseISO(date) : date
   const zonedDate = toZonedTime(dateObj, TIMEZONE)
-  return format(zonedDate, formatStr, { timeZone: TIMEZONE })
+  return format(zonedDate, formatStr)
 }
 
 export function isWithinCourtHours(startTime: Date, endTime: Date, courtOpen: string, courtClose: string): boolean {

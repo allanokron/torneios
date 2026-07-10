@@ -116,7 +116,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--tennis-green)]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     )
   }
@@ -129,7 +129,7 @@ export default function ProfilePage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-[var(--tennis-green)] rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xl">🎾</span>
                 </div>
                 <h1 className="text-xl font-bold text-gray-900">Torneios</h1>
@@ -160,7 +160,7 @@ export default function ProfilePage() {
         <form onSubmit={handleSubmit} className="card space-y-6">
           {/* Avatar */}
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-[var(--tennis-green)] rounded-full flex items-center justify-center text-white text-2xl font-bold">
+            <div className="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
             <div>

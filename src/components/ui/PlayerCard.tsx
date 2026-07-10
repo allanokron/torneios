@@ -20,31 +20,15 @@ interface PlayerCardProps {
 }
 
 export default function PlayerCard({ player, stats, showStats = true, compact = false }: PlayerCardProps) {
-  const getLevelBadge = (level?: string) => {
-    const badges: Record<string, { color: string; label: string }> = {
-      beginner: { color: "bg-blue-100 text-blue-700", label: "Iniciante" },
-      intermediate: { color: "bg-amber-100 text-amber-700", label: "Intermediário" },
-      advanced: { color: "bg-purple-100 text-purple-700", label: "Avançado" },
-      professional: { color: "bg-red-100 text-red-700", label: "Profissional" }
-    }
-    return badges[level || ""] || null
-  }
-
-  const levelBadge = getLevelBadge(player.gameLevel)
-
   if (compact) {
     return (
       <Link
         href={`/profile/${player.id}`}
         className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
       >
-        <div className="w-8 h-8 bg-[var(--court-green)] rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-sm font-medium flex-shrink-0">
           {player.avatarUrl ? (
-            <img
-              src={player.avatarUrl}
-              alt={player.name}
-              className="w-full h-full rounded-full object-cover"
-            />
+            <img src={player.avatarUrl} alt={player.name} className="w-full h-full rounded-full object-cover" />
           ) : (
             player.name.charAt(0).toUpperCase()
           )}
@@ -56,7 +40,7 @@ export default function PlayerCard({ player, stats, showStats = true, compact = 
           )}
         </div>
         {stats?.position && (
-          <span className="text-xs font-bold text-[var(--court-green)]">
+          <span className="text-xs font-medium text-gray-500">
             #{stats.position}
           </span>
         )}
@@ -67,17 +51,13 @@ export default function PlayerCard({ player, stats, showStats = true, compact = 
   return (
     <Link
       href={`/profile/${player.id}`}
-      className="card hover:shadow-md transition-all duration-200 group"
+      className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow block"
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div className="w-14 h-14 bg-[var(--court-green)] rounded-xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0 group-hover:scale-105 transition-transform">
+        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-medium flex-shrink-0">
           {player.avatarUrl ? (
-            <img
-              src={player.avatarUrl}
-              alt={player.name}
-              className="w-full h-full rounded-xl object-cover"
-            />
+            <img src={player.avatarUrl} alt={player.name} className="w-full h-full rounded-full object-cover" />
           ) : (
             player.name.charAt(0).toUpperCase()
           )}
@@ -85,20 +65,10 @@ export default function PlayerCard({ player, stats, showStats = true, compact = 
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-semibold text-gray-900 truncate group-hover:text-[var(--court-green)] transition-colors">
-              {player.name}
-            </h4>
-            {levelBadge && (
-              <span className={`status-badge text-[10px] ${levelBadge.color}`}>
-                {levelBadge.label}
-              </span>
-            )}
-          </div>
+          <h4 className="font-medium text-gray-900 truncate">{player.name}</h4>
           
           {player.city && (
-            <p className="text-sm text-gray-500 flex items-center gap-1">
-              <span>📍</span>
+            <p className="text-sm text-gray-500 mt-0.5">
               {player.city}{player.state && ` - ${player.state}`}
             </p>
           )}
@@ -107,27 +77,27 @@ export default function PlayerCard({ player, stats, showStats = true, compact = 
           {showStats && stats && (
             <div className="flex gap-4 mt-3 pt-3 border-t border-gray-100">
               {stats.position !== undefined && (
-                <div className="text-center">
-                  <p className="text-lg font-bold text-[var(--court-green)]">#{stats.position}</p>
-                  <p className="text-[10px] text-gray-500 uppercase">Posição</p>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">#{stats.position}</p>
+                  <p className="text-xs text-gray-500">Posição</p>
                 </div>
               )}
               {stats.points !== undefined && (
-                <div className="text-center">
-                  <p className="text-lg font-bold text-[var(--ball-yellow-dark)]">{stats.points}</p>
-                  <p className="text-[10px] text-gray-500 uppercase">Pontos</p>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{stats.points}</p>
+                  <p className="text-xs text-gray-500">Pontos</p>
                 </div>
               )}
               {stats.wins !== undefined && (
-                <div className="text-center">
-                  <p className="text-lg font-bold text-green-600">{stats.wins}</p>
-                  <p className="text-[10px] text-gray-500 uppercase">Vitórias</p>
+                <div>
+                  <p className="text-sm font-medium text-green-600">{stats.wins}</p>
+                  <p className="text-xs text-gray-500">Vitórias</p>
                 </div>
               )}
               {stats.losses !== undefined && (
-                <div className="text-center">
-                  <p className="text-lg font-bold text-red-500">{stats.losses}</p>
-                  <p className="text-[10px] text-gray-500 uppercase">Derrotas</p>
+                <div>
+                  <p className="text-sm font-medium text-red-500">{stats.losses}</p>
+                  <p className="text-xs text-gray-500">Derrotas</p>
                 </div>
               )}
             </div>

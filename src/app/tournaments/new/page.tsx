@@ -221,7 +221,7 @@ export default function NewTournamentPage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-[var(--tennis-green)] rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xl">🎾</span>
                 </div>
                 <h1 className="text-xl font-bold text-gray-900">Torneios</h1>
@@ -242,7 +242,7 @@ export default function NewTournamentPage() {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                     step >= s
-                      ? "bg-[var(--tennis-green)] text-white"
+                      ? "bg-green-600 text-white"
                       : "bg-gray-200 text-gray-600"
                   }`}
                 >
@@ -251,7 +251,7 @@ export default function NewTournamentPage() {
                 {s < 5 && (
                   <div
                     className={`h-1 w-12 sm:w-20 ${
-                      step > s ? "bg-[var(--tennis-green)]" : "bg-gray-200"
+                      step > s ? "bg-green-600" : "bg-gray-200"
                     }`}
                   />
                 )}
@@ -416,7 +416,7 @@ export default function NewTournamentPage() {
                   name="isPublic"
                   checked={formData.isPublic}
                   onChange={handleChange}
-                  className="w-4 h-4 text-[var(--tennis-green)] rounded"
+                  className="w-4 h-4 text-green-600 rounded"
                 />
                 <span className="text-sm text-gray-700">Torneio Público</span>
               </label>
@@ -499,7 +499,7 @@ export default function NewTournamentPage() {
                           type="checkbox"
                           checked={court.isCovered}
                           onChange={(e) => updateCourt(index, "isCovered", e.target.checked)}
-                          className="w-4 h-4 text-[var(--tennis-green)] rounded"
+                          className="w-4 h-4 text-green-600 rounded"
                         />
                         <span className="text-sm text-gray-700">Coberta</span>
                       </div>
@@ -564,7 +564,7 @@ export default function NewTournamentPage() {
                   name="hasTiebreak"
                   checked={formData.hasTiebreak}
                   onChange={handleChange}
-                  className="w-4 h-4 text-[var(--tennis-green)] rounded"
+                  className="w-4 h-4 text-green-600 rounded"
                 />
                 <span className="text-sm text-gray-700">Tiebreak</span>
               </div>
@@ -592,7 +592,7 @@ export default function NewTournamentPage() {
                   name="hasSuperTiebreak"
                   checked={formData.hasSuperTiebreak}
                   onChange={handleChange}
-                  className="w-4 h-4 text-[var(--tennis-green)] rounded"
+                  className="w-4 h-4 text-green-600 rounded"
                 />
                 <span className="text-sm text-gray-700">Super Tiebreak</span>
               </div>

@@ -1,234 +1,115 @@
 @import "tailwindcss";
 
 :root {
-  /* Tennis Court Green */
-  --court-green: #2d6a4f;
-  --court-green-light: #40916c;
-  --court-green-dark: #1b4332;
-  --court-green-pale: #d8f3dc;
+  /* Primary - Modern Green */
+  --primary: #16a34a;
+  --primary-hover: #15803d;
+  --primary-light: #dcfce7;
   
-  /* Tennis Ball Yellow */
-  --ball-yellow: #d4e157;
-  --ball-yellow-light: #e6ee9c;
-  --ball-yellow-dark: #c0ca33;
-  
-  /* Court Blue (hard court) */
-  --court-blue: #1565c0;
-  --court-blue-light: #1e88e5;
-  --court-blue-dark: #0d47a1;
-  
-  /* Graphite/Charcoal */
-  --graphite: #37474f;
-  --graphite-light: #546e7a;
-  --graphite-dark: #263238;
-  
-  /* Score/Result Colors */
-  --win-green: #4caf50;
-  --loss-red: #f44336;
-  --draw-amber: #ff9800;
-  
-  /* Status Colors */
-  --status-live: #e53935;
-  --status-scheduled: #1e88e5;
-  --status-finished: #757575;
+  /* Neutrals */
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Custom scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--court-green-light);
-  border-radius: 4px;
+  background: #d1d5db;
+  border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--court-green);
+  background: #9ca3af;
 }
 
-/* Card styles */
+/* Card */
 .card {
-  @apply bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 transition-shadow hover:shadow-md;
+  @apply bg-white rounded-xl border border-gray-200 p-5 transition-shadow;
+}
+.card:hover {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-.card-compact {
-  @apply bg-white rounded-lg shadow-sm border border-gray-100 p-3 sm:p-4;
-}
-
-/* Button styles */
+/* Buttons */
 .btn-primary {
-  @apply bg-[var(--court-green)] hover:bg-[var(--court-green-dark)] text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-200 hover:shadow-md active:scale-[0.98];
+  @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-5 rounded-lg transition-colors text-sm;
 }
-
 .btn-secondary {
-  @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-5 rounded-lg transition-all duration-200;
+  @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-5 rounded-lg transition-colors text-sm;
 }
-
 .btn-danger {
-  @apply bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-200;
+  @apply bg-red-500 hover:bg-red-600 text-white font-medium py-2.5 px-5 rounded-lg transition-colors text-sm;
+}
+.btn-ghost {
+  @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-medium py-2.5 px-5 rounded-lg transition-colors text-sm;
 }
 
-.btn-yellow {
-  @apply bg-[var(--ball-yellow)] hover:bg-[var(--ball-yellow-dark)] text-[var(--graphite-dark)] font-semibold py-2.5 px-5 rounded-lg transition-all duration-200 hover:shadow-md;
-}
-
-.btn-outline {
-  @apply border-2 border-[var(--court-green)] text-[var(--court-green)] hover:bg-[var(--court-green)] hover:text-white font-medium py-2 px-4 rounded-lg transition-all duration-200;
-}
-
-/* Input styles */
+/* Inputs */
 .input {
-  @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--court-green)] focus:border-transparent transition-all duration-200 bg-white;
+  @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors bg-white text-gray-900 placeholder-gray-400;
 }
-
-.input-error {
-  @apply border-red-500 focus:ring-red-500;
+.input:focus {
+  @apply outline-none border-green-500 ring-1 ring-green-500;
 }
 
 .label {
-  @apply block text-sm font-semibold text-gray-700 mb-1.5;
+  @apply block text-sm font-medium text-gray-700 mb-1.5;
 }
 
-/* Status badges */
+/* Status badges - minimal */
 .status-badge {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase;
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
 }
+.status-draft { @apply bg-gray-100 text-gray-600; }
+.status-registration_open { @apply bg-green-50 text-green-700; }
+.status-registration_closed { @apply bg-gray-100 text-gray-600; }
+.status-in_progress { @apply bg-blue-50 text-blue-700; }
+.status-finished { @apply bg-gray-100 text-gray-500; }
 
-.status-draft { @apply bg-gray-100 text-gray-700; }
-.status-registration_open { @apply bg-green-100 text-green-700; }
-.status-registration_closed { @apply bg-amber-100 text-amber-700; }
-.status-in_progress { @apply bg-blue-100 text-blue-700; }
-.status-finished { @apply bg-gray-200 text-gray-600; }
-
-/* Match status badges */
+/* Match status */
 .match-pending_scheduling { @apply bg-gray-100 text-gray-600; }
-.match-proposal_sent { @apply bg-amber-100 text-amber-700; }
-.match-awaiting_response { @apply bg-orange-100 text-orange-700; }
-.match-scheduled { @apply bg-blue-100 text-blue-700; }
-.match-in_progress { @apply bg-red-100 text-red-700 animate-pulse; }
-.match-awaiting_result { @apply bg-purple-100 text-purple-700; }
-.match-finished { @apply bg-green-100 text-green-700; }
-.match-cancelled { @apply bg-gray-200 text-gray-500; }
-.match-wo { @apply bg-red-100 text-red-700; }
+.match-proposal_sent { @apply bg-amber-50 text-amber-700; }
+.match-awaiting_response { @apply bg-amber-50 text-amber-700; }
+.match-scheduled { @apply bg-blue-50 text-blue-700; }
+.match-in_progress { @apply bg-green-50 text-green-700; }
+.match-awaiting_result { @apply bg-purple-50 text-purple-700; }
+.match-finished { @apply bg-gray-100 text-gray-600; }
+.match-cancelled { @apply bg-gray-100 text-gray-500; }
+.match-wo { @apply bg-red-50 text-red-700; }
 
-/* Score display */
-.score-set {
-  @apply inline-flex items-center justify-center w-8 h-8 rounded font-bold text-sm;
-}
-
-.score-won {
-  @apply bg-[var(--court-green)] text-white;
-}
-
-.score-lost {
-  @apply bg-gray-200 text-gray-600;
-}
-
-/* Navigation tabs */
+/* Nav tabs */
 .nav-tab {
-  @apply px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap;
+  @apply px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap;
 }
-
 .nav-tab-active {
-  @apply border-[var(--court-green)] text-[var(--court-green)];
+  @apply border-green-600 text-green-600;
 }
-
 .nav-tab-inactive {
   @apply border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300;
 }
 
-/* Sports-themed gradient backgrounds */
-.bg-court-gradient {
-  background: linear-gradient(135deg, var(--court-green) 0%, var(--court-green-dark) 100%);
-}
-
-.bg-ball-gradient {
-  background: linear-gradient(135deg, var(--ball-yellow) 0%, var(--ball-yellow-dark) 100%);
-}
-
-.bg-mixed-gradient {
-  background: linear-gradient(135deg, var(--court-green) 0%, var(--court-blue) 100%);
-}
-
-/* Tennis ball animation */
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-.animate-bounce-slow {
-  animation: bounce 2s infinite;
-}
-
-/* Court lines decoration */
-.court-lines {
-  position: relative;
-}
-
-.court-lines::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  pointer-events: none;
-}
-
-/* Mobile responsive adjustments */
+/* Mobile responsive */
 @media (max-width: 768px) {
-  .card {
-    @apply rounded-lg p-3 sm:p-4;
-  }
-  
-  .btn-primary, .btn-secondary, .btn-danger, .btn-yellow {
-    @apply w-full justify-center text-sm py-2.5;
-  }
-  
-  .nav-tab {
-    @apply px-3 py-2.5 text-xs;
-  }
-  
-  .status-badge {
-    @apply text-[10px] px-2 py-0.5;
-  }
-}
-
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  .card {
-    @apply bg-gray-800 border-gray-700;
-  }
-  
-  .input {
-    @apply bg-gray-700 border-gray-600 text-white;
-  }
-}
-
-/* Print styles */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  .card {
-    @apply shadow-none border border-gray-300;
+  .btn-primary, .btn-secondary, .btn-danger, .btn-ghost {
+    @apply w-full justify-center text-sm;
   }
 }

@@ -80,26 +80,21 @@ export default function RegisterPage() {
       <Header />
       
       <main className="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 bg-[var(--court-green)] rounded-2xl flex items-center justify-center court-lines">
-              <span className="text-white font-bold text-3xl">🎾</span>
-            </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-            Crie sua conta
+        <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+          <h2 className="text-center text-2xl font-semibold text-gray-900">
+            Criar conta
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Já tem uma conta?{" "}
-            <Link href="/login" className="font-medium text-[var(--court-green)] hover:text-[var(--court-green-dark)]">
-              Entre aqui
+          <p className="mt-2 text-center text-sm text-gray-500">
+            já tem uma conta?{" "}
+            <Link href="/login" className="text-green-600 hover:text-green-700 font-medium">
+              entrar
             </Link>
           </p>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="card">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
+          <div className="bg-white py-8 px-6 shadow-sm rounded-xl border border-gray-200">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                   {error}
@@ -108,7 +103,7 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="name" className="label">
-                  Nome completo *
+                  Nome completo
                 </label>
                 <input
                   id="name"
@@ -118,13 +113,13 @@ export default function RegisterPage() {
                   value={formData.name}
                   onChange={handleChange}
                   className="input"
-                  placeholder="Seu nome completo"
+                  placeholder="Seu nome"
                 />
               </div>
 
               <div>
                 <label htmlFor="email" className="label">
-                  E-mail *
+                  E-mail
                 </label>
                 <input
                   id="email"
@@ -141,7 +136,7 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="password" className="label">
-                  Senha *
+                  Senha
                 </label>
                 <input
                   id="password"
@@ -157,7 +152,7 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="confirmPassword" className="label">
-                  Confirmar senha *
+                  Confirmar senha
                 </label>
                 <input
                   id="confirmPassword"
@@ -171,22 +166,7 @@ export default function RegisterPage() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="phone" className="label">
-                  Telefone
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="city" className="label">
                     Cidade
@@ -223,15 +203,13 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Criando conta..." : "Criar conta"}
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              >
+                {loading ? "Criando..." : "Criar conta"}
+              </button>
             </form>
           </div>
         </div>

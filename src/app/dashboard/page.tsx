@@ -6,7 +6,6 @@ import Link from "next/link"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import TournamentCard from "@/components/ui/TournamentCard"
-import PlayerCard from "@/components/ui/PlayerCard"
 
 interface User {
   id: string
@@ -17,6 +16,9 @@ interface User {
 interface Tournament {
   id: string
   name: string
+  description?: string
+  sport: string
+  format: string
   status: string
   startDate: string
   _count?: {
@@ -29,26 +31,16 @@ interface Match {
   id: string
   scheduledAt?: string
   status: string
-  homePlayer: { name: string; avatarUrl?: string }
-  awayPlayer: { name: string; avatarUrl?: string }
+  homePlayer: { name: string }
+  awayPlayer: { name: string }
   tournament: { name: string; id: string }
-}
-
-interface Notification {
-  id: string
-  title: string
-  message: string
-  type: string
-  isRead: boolean
-  createdAt: string
 }
 
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
-  const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([])
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [upcomingMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -85,7 +77,7 @@ export default function DashboardPage() {
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--court-green)]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-600 border-t-transparent"></div>
       </div>
     )
   }
@@ -94,59 +86,48 @@ export default function DashboardPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header user={user} />
       
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {/* Welcome Section */}
-        <div className="bg-court-gradient rounded-2xl p-6 sm:p-8 text-white mb-8 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-4 left-4 right-4 bottom-4 border-2 border-white rounded-xl"></div>
-          </div>
-          <div className="relative">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-              Olá, {user.name.split(" ")[0]}! 👋
-            </h1>
-            <p className="text-white/80 mb-6">
-              Bem-vindo ao seu painel de torneios
-            </p>
-            <Link href="/tournaments/new" className="btn-yellow">
-              + Criar Novo Torneio
-            </Link>
-          </div>
+      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        {/* Welcome */}
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-gray-900">
+            Olá, {user.name.split(" ")[0]}
+          </h1>
+          <p className="text-sm text-gray-500">Bem-vindo ao seu painel</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* My Tournaments */}
-            <div className="card">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Tournaments */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Meus Torneios</h2>
-                <Link href="/tournaments" className="text-sm text-[var(--court-green)] hover:underline font-medium">
+                <h2 className="font-medium text-gray-900">Meus Torneios</h2>
+                <Link href="/tournaments" className="text-sm text-green-600 hover:text-green-700">
                   Ver todos
                 </Link>
               </div>
 
               {loading ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="animate-pulse flex gap-4">
-                      <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
+                    <div key={i} className="animate-pulse flex gap-3">
+                      <div className="h-10 w-10 bg-gray-100 rounded-lg"></div>
                       <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                        <div className="h-3 bg-gray-100 rounded w-1/3 mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded w-1/4"></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : tournaments.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-4xl mb-4">🎾</div>
-                  <p className="text-gray-500 mb-4">Você ainda não participa de nenhum torneio</p>
-                  <Link href="/tournaments/new" className="btn-primary">
+                  <p className="text-sm text-gray-500 mb-3">Você ainda não participa de nenhum torneio</p>
+                  <Link href="/tournaments/new" className="btn-primary text-sm">
                     Criar Primeiro Torneio
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {tournaments.map(tournament => (
                     <TournamentCard
                       key={tournament.id}
@@ -158,39 +139,31 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Upcoming Matches */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Próximas Partidas</h2>
-              </div>
-
+            {/* Matches */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h2 className="font-medium text-gray-900 mb-4">Próximas Partidas</h2>
               {upcomingMatches.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-4">📅</div>
-                  <p className="text-gray-500">Nenhuma partida agendada</p>
-                </div>
+                <p className="text-sm text-gray-500 text-center py-6">Nenhuma partida agendada</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {upcomingMatches.map(match => (
                     <div
                       key={match.id}
-                      className="flex items-center gap-4 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      <div className="text-center min-w-[60px]">
-                        <div className="text-sm font-bold text-gray-900">
+                      <div className="text-center min-w-[50px]">
+                        <div className="text-xs font-medium text-gray-900">
                           {new Date(match.scheduledAt!).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                         </div>
-                        <div className="text-xs text-[var(--court-green)] font-medium">
+                        <div className="text-xs text-gray-500">
                           {new Date(match.scheduledAt!).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{match.homePlayer.name}</span>
-                          <span className="text-gray-400 text-sm">vs</span>
-                          <span className="font-medium">{match.awayPlayer.name}</span>
-                        </div>
-                        <p className="text-sm text-gray-500">{match.tournament.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {match.homePlayer.name} vs {match.awayPlayer.name}
+                        </p>
+                        <p className="text-xs text-gray-500">{match.tournament.name}</p>
                       </div>
                       <span className={`status-badge match-${match.status}`}>
                         {match.status.replace(/_/g, " ")}
@@ -203,82 +176,31 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Quick Actions */}
-            <div className="card">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Ações Rápidas</h3>
-              <div className="space-y-3">
-                <Link href="/tournaments/new" className="btn-primary w-full justify-center">
-                  + Criar Torneio
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="font-medium text-gray-900 mb-3">Ações Rápidas</h3>
+              <div className="space-y-2">
+                <Link href="/tournaments/new" className="btn-primary w-full justify-center text-sm">
+                  Criar Torneio
                 </Link>
-                <Link href="/tournaments" className="btn-secondary w-full justify-center">
+                <Link href="/tournaments" className="btn-secondary w-full justify-center text-sm">
                   Buscar Torneios
                 </Link>
               </div>
             </div>
 
-            {/* Notifications */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Notificações</h3>
-                <button className="text-sm text-[var(--court-green)] hover:underline">
-                  Marcar como lidas
-                </button>
-              </div>
-
-              {notifications.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-3xl mb-2">🔔</div>
-                  <p className="text-gray-500 text-sm">Nenhuma notificação</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {notifications.slice(0, 5).map(notification => (
-                    <div
-                      key={notification.id}
-                      className={`p-3 rounded-lg ${notification.isRead ? "bg-gray-50" : "bg-blue-50"}`}
-                    >
-                      <h4 className="font-medium text-sm text-gray-900">{notification.title}</h4>
-                      <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(notification.createdAt).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Recent Activity */}
-            <div className="card">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Atividade Recente</h3>
+            {/* Stats */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="font-medium text-gray-900 mb-3">Resumo</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-green-600">✓</span>
-                  </div>
-                  <div>
-                    <p className="text-gray-700">Partida finalizada</p>
-                    <p className="text-gray-400 text-xs">Há 2 horas</p>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Torneios</span>
+                  <span className="text-sm font-medium text-gray-900">{tournaments.length}</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600">📅</span>
-                  </div>
-                  <div>
-                    <p className="text-gray-700">Partida agendada</p>
-                    <p className="text-gray-400 text-xs">Há 5 horas</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-                    <span className="text-amber-600">🏆</span>
-                  </div>
-                  <div>
-                    <p className="text-gray-700">Inscrição em torneio</p>
-                    <p className="text-gray-400 text-xs">Ontem</p>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Partidas</span>
+                  <span className="text-sm font-medium text-gray-900">{upcomingMatches.length}</span>
                 </div>
               </div>
             </div>

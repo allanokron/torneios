@@ -104,7 +104,7 @@ export async function POST(
     }
 
     // Check player availability
-    const playerMatches = await prisma.match.findMany({
+    const playerMatchesRaw = await prisma.match.findMany({
       where: {
         OR: [
           { homePlayerId: match.homePlayerId },
@@ -120,6 +120,7 @@ export async function POST(
         }
       }
     })
+    const playerMatches = playerMatchesRaw.filter((m): m is typeof m & { scheduledAt: Date } => m.scheduledAt !== null)
 
     if (!isPlayerAvailable(match.homePlayerId, startTime, endTime, playerMatches)) {
       return NextResponse.json(
@@ -369,6 +370,128 @@ export async function PATCH(
       })
 
       return NextResponse.json({ success: true })
+    } else if (action === "counter_proposal") {
+      const { proposedDate, proposedTime, courtId } = body
+
+      if (!proposedDate || !proposedTime || !courtId) {
+        return NextResponse.json(
+          { error: "Data, horário e quadra são obrigatórios para contraproposta" },
+          { status: 400 }
+        )
+      }
+
+      // Validate court belongs to tournament
+      const court = await prisma.court.findFirst({
+        where: { id: courtId, tournamentId: proposal.match.tournamentId }
+      })
+      if (!court) {
+        return NextResponse.json(
+          { error: "Quadra não encontrada" },
+          { status: 404 }
+        )
+      }
+
+      // Parse proposed date and time
+      const [hours, minutes] = proposedTime.split(":").map(Number)
+      const startTime = new Date(proposedDate)
+      startTime.setHours(hours, minutes, 0, 0)
+      const endTime = new Date(startTime.getTime() + proposal.match.duration * 60 * 1000)
+
+      // Check court availability
+      const courtReservations = await prisma.reservation.findMany({
+        where: { courtId, isCancelled: false }
+      })
+      if (!isCourtAvailable(courtId, startTime, endTime, courtReservations)) {
+        return NextResponse.json(
+          { error: "Quadra não disponível neste horário" },
+          { status: 400 }
+        )
+      }
+
+      // Check player availability
+      const playerMatchesRaw = await prisma.match.findMany({
+        where: {
+          OR: [
+            { homePlayerId: proposal.match.homePlayerId },
+            { awayPlayerId: proposal.match.homePlayerId },
+            { homePlayerId: proposal.match.awayPlayerId },
+            { awayPlayerId: proposal.match.awayPlayerId }
+          ],
+          status: { notIn: ["cancelled", "finished", "wo"] },
+          scheduledAt: { not: null }
+        }
+      })
+      const playerMatches = playerMatchesRaw.filter(
+        (m): m is typeof m & { scheduledAt: Date } => m.scheduledAt !== null
+      )
+
+      if (!isPlayerAvailable(proposal.match.homePlayerId, startTime, endTime, playerMatches)) {
+        return NextResponse.json(
+          { error: "Um dos jogadores não está disponível neste horário" },
+          { status: 400 }
+        )
+      }
+      if (!isPlayerAvailable(proposal.match.awayPlayerId, startTime, endTime, playerMatches)) {
+        return NextResponse.json(
+          { error: "Um dos jogadores não está disponível neste horário" },
+          { status: 400 }
+        )
+      }
+
+      // Update original proposal status
+      await prisma.scheduleProposal.update({
+        where: { id: proposalId },
+        data: { status: "rejected", responseMessage: responseMessage || "Contraproposta enviada" }
+      })
+
+      // Create counter-proposal (new proposal from receiver to sender)
+      const counterProposal = await prisma.scheduleProposal.create({
+        data: {
+          matchId: proposal.matchId,
+          senderId: decoded.userId,
+          receiverId: proposal.senderId,
+          proposedDate: startTime,
+          proposedTime,
+          courtId,
+          message: responseMessage || null,
+          status: "pending"
+        },
+        include: {
+          sender: { select: { id: true, name: true, avatarUrl: true } },
+          court: { select: { id: true, name: true } }
+        }
+      })
+
+      // Update match status
+      await prisma.match.update({
+        where: { id: proposal.matchId },
+        data: { status: "proposal_sent" }
+      })
+
+      // Notify original sender
+      await prisma.notification.create({
+        data: {
+          userId: proposal.senderId,
+          title: "Contraproposta recebida",
+          message: `Você recebeu uma contraproposta de agendamento`,
+          type: "scheduling",
+          link: `/tournaments/${proposal.match.tournamentId}/matches/${proposal.matchId}`
+        }
+      })
+
+      // Audit log
+      await prisma.auditLog.create({
+        data: {
+          tournamentId: proposal.match.tournamentId,
+          userId: decoded.userId,
+          action: "schedule_counter_proposal",
+          entityType: "proposal",
+          entityId: counterProposal.id,
+          newValue: { proposedDate: startTime, proposedTime, courtId }
+        }
+      })
+
+      return NextResponse.json({ proposal: counterProposal }, { status: 201 })
     }
 
     return NextResponse.json(

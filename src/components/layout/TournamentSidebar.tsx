@@ -1,116 +1,52 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 
 interface TournamentSidebarProps {
   tournamentId: string
   activeTab: string
+  isOwner?: boolean
 }
 
-export default function TournamentSidebar({ tournamentId, activeTab }: TournamentSidebarProps) {
-  const pathname = usePathname()
-  
+export default function TournamentSidebar({ tournamentId, activeTab, isOwner = false }: TournamentSidebarProps) {
   const tabs = [
-    { id: "overview", label: "Visão Geral", icon: "📊" },
-    { id: "matches", label: "Confrontos", icon: "⚔️" },
-    { id: "ranking", label: "Ranking", icon: "🏆" },
-    { id: "participants", label: "Participantes", icon: "👥" },
-    { id: "courts", label: "Quadras", icon: "🎾" },
-    { id: "rules", label: "Regras", icon: "📋" },
-    { id: "chat", label: "Conversas", icon: "💬" },
-    { id: "settings", label: "Configurações", icon: "⚙️" },
+    { id: "overview", label: "Visão Geral", icon: "M4 6h16M4 10h16M4 14h16M4 18h16" },
+    { id: "matches", label: "Confrontos", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
+    { id: "my-matches", label: "Meus Jogos", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
+    { id: "ranking", label: "Ranking", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
+    { id: "participants", label: "Participantes", icon: "M12 4.354a4 4 0 110 7.292 4 4 0 010-7.292zM15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
+    { id: "courts", label: "Quadras", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
+    { id: "rules", label: "Regras", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+    ...(isOwner ? [{ id: "settings", label: "Configurações", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" }] : []),
   ]
 
   return (
-    <aside className="w-full lg:w-64 flex-shrink-0">
-      {/* Tournament Info Card */}
-      <div className="card mb-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-[var(--court-green)] rounded-xl flex items-center justify-center court-lines">
-            <span className="text-white text-2xl">🎾</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-gray-900 truncate">Liga de Tênis 2026</h3>
-            <p className="text-xs text-gray-500">Todos contra todos</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="status-badge status-in_progress">
-            Em Andamento
-          </span>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <nav className="card p-2">
-        <ul className="space-y-1">
+    <aside className="w-full lg:w-56 flex-shrink-0">
+      {/* Navigation */}
+      <nav className="bg-white rounded-xl border border-gray-200 p-2">
+        <ul className="space-y-0.5">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id
             return (
               <li key={tab.id}>
                 <Link
                   href={`/tournaments/${tournamentId}?tab=${tab.id}`}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                     isActive
-                      ? "bg-[var(--court-green)] text-white shadow-sm"
+                      ? "bg-green-50 text-green-700 font-medium"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  <span className="text-lg">{tab.icon}</span>
+                  <svg className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-green-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={tab.icon} />
+                  </svg>
                   <span>{tab.label}</span>
-                  {isActive && (
-                    <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full"></div>
-                  )}
                 </Link>
               </li>
             )
           })}
         </ul>
       </nav>
-
-      {/* Quick Stats */}
-      <div className="card mt-4">
-        <h4 className="font-semibold text-gray-900 mb-3 text-sm">Estatísticas Rápidas</h4>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500 text-sm">Partidas</span>
-            <span className="font-bold text-[var(--court-green)]">28</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500 text-sm">Finalizadas</span>
-            <span className="font-bold text-green-600">12</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500 text-sm">Agendadas</span>
-            <span className="font-bold text-blue-600">8</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500 text-sm">Pendentes</span>
-            <span className="font-bold text-amber-600">8</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Court Status */}
-      <div className="card mt-4">
-        <h4 className="font-semibold text-gray-900 mb-3 text-sm">Status das Quadras</h4>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Quadra 1 - Livre</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-600">Quadra 2 - Ocupada</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Quadra 3 - Livre</span>
-          </div>
-        </div>
-      </div>
     </aside>
   )
 }

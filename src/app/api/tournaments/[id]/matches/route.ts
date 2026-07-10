@@ -11,6 +11,9 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const playerId = searchParams.get("playerId")
+    const courtId = searchParams.get("courtId")
+    const dateFrom = searchParams.get("dateFrom")
+    const dateTo = searchParams.get("dateTo")
 
     const where: Record<string, unknown> = {
       tournamentId: id
@@ -25,6 +28,17 @@ export async function GET(
         { homePlayerId: playerId },
         { awayPlayerId: playerId }
       ]
+    }
+
+    if (courtId) {
+      where.courtId = courtId
+    }
+
+    if (dateFrom || dateTo) {
+      const scheduledAt: Record<string, Date> = {}
+      if (dateFrom) scheduledAt.gte = new Date(dateFrom + "T00:00:00.000Z")
+      if (dateTo) scheduledAt.lte = new Date(dateTo + "T23:59:59.999Z")
+      where.scheduledAt = scheduledAt
     }
 
     const matches = await prisma.match.findMany({
@@ -54,15 +68,12 @@ export async function GET(
           orderBy: { setNumber: "asc" }
         },
         scheduleProposals: {
-          where: { status: "pending" },
           include: {
-            sender: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          }
+            sender: { select: { id: true, name: true } },
+            receiver: { select: { id: true, name: true } },
+            court: { select: { id: true, name: true } }
+          },
+          orderBy: { createdAt: "desc" }
         }
       },
       orderBy: {

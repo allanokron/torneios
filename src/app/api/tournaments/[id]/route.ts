@@ -172,8 +172,29 @@ export async function PATCH(
             avatarUrl: true
           }
         },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatarUrl: true,
+                city: true,
+                state: true,
+                gameLevel: true
+              }
+            }
+          }
+        },
+        courts: true,
         scoringConfig: true,
-        tiebreakerConfig: true
+        tiebreakerConfig: true,
+        _count: {
+          select: {
+            matches: true,
+            announcements: true
+          }
+        }
       }
     })
 
