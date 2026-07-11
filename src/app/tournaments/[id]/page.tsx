@@ -571,9 +571,7 @@ export default function TournamentPage() {
               const completed = matches.filter(m => completedStatuses.includes(m.status))
               const upcoming = matches.filter(m => {
                 if (completedStatuses.includes(m.status) || m.status === "cancelled") return false
-                // No date = upcoming
-                if (!m.scheduledAt) return true
-                // Scheduled today or future = upcoming
+                if (!m.scheduledAt) return false
                 return new Date(m.scheduledAt) >= todayStart
               })
 
@@ -714,22 +712,6 @@ export default function TournamentPage() {
                                     )}
                                   </div>
                                 </div>
-
-                                {match.scheduleProposals.length > 0 && (
-                                  <div className="px-3 pb-3 space-y-2">
-                                    {match.scheduleProposals.map(proposal => (
-                                      <ProposalCard
-                                        key={proposal.id}
-                                        proposal={proposal}
-                                        currentUserId={user?.id || ""}
-                                        matchId={match.id}
-                                        matchStatus={match.status}
-                                        courts={tournament.courts}
-                                        onAction={fetchMatches}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
                               </div>
                             )
                           })}
