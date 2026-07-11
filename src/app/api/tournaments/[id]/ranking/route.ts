@@ -18,6 +18,12 @@ export async function GET(
       }
     })
 
+    // Get existing rankings (preserves basePoints)
+    const existingRankings = await prisma.playerRanking.findMany({
+      where: { tournamentId: id }
+    })
+    const existingMap = new Map(existingRankings.map(r => [r.userId, r]))
+
     // Get all finished matches with sets
     const finishedMatches = await prisma.match.findMany({
       where: { tournamentId: id, status: { in: ["finished", "wo"] } },
@@ -39,10 +45,8 @@ export async function GET(
       lossByWO: 0,
     }
 
-    // Build ranking from scratch
-    const rankingMap: Record<string, {
-      userId: string
-      points: number
+    // Build match results from scratch
+    const matchStats: Record<string, {
       matchesPlayed: number
       wins: number
       losses: number
@@ -52,15 +56,12 @@ export async function GET(
       setsLost: number
       gamesWon: number
       gamesLost: number
-      setBalance: number
-      gamesBalance: number
+      matchPoints: number
     }> = {}
 
     // Initialize all members
     for (const m of members) {
-      rankingMap[m.userId] = {
-        userId: m.userId,
-        points: 0,
+      matchStats[m.userId] = {
         matchesPlayed: 0,
         wins: 0,
         losses: 0,
@@ -70,8 +71,7 @@ export async function GET(
         setsLost: 0,
         gamesWon: 0,
         gamesLost: 0,
-        setBalance: 0,
-        gamesBalance: 0,
+        matchPoints: 0,
       }
     }
 
@@ -80,25 +80,24 @@ export async function GET(
       const homeId = match.homePlayerId
       const awayId = match.awayPlayerId
 
-      if (!rankingMap[homeId]) rankingMap[homeId] = { userId: homeId, points: 0, matchesPlayed: 0, wins: 0, losses: 0, winsByWO: 0, lossesByWO: 0, setsWon: 0, setsLost: 0, gamesWon: 0, gamesLost: 0, setBalance: 0, gamesBalance: 0 }
-      if (!rankingMap[awayId]) rankingMap[awayId] = { userId: awayId, points: 0, matchesPlayed: 0, wins: 0, losses: 0, winsByWO: 0, lossesByWO: 0, setsWon: 0, setsLost: 0, gamesWon: 0, gamesLost: 0, setBalance: 0, gamesBalance: 0 }
+      if (!matchStats[homeId]) matchStats[homeId] = { matchesPlayed: 0, wins: 0, losses: 0, winsByWO: 0, lossesByWO: 0, setsWon: 0, setsLost: 0, gamesWon: 0, gamesLost: 0, matchPoints: 0 }
+      if (!matchStats[awayId]) matchStats[awayId] = { matchesPlayed: 0, wins: 0, losses: 0, winsByWO: 0, lossesByWO: 0, setsWon: 0, setsLost: 0, gamesWon: 0, gamesLost: 0, matchPoints: 0 }
 
-      const home = rankingMap[homeId]
-      const away = rankingMap[awayId]
+      const home = matchStats[homeId]
+      const away = matchStats[awayId]
 
       home.matchesPlayed++
       away.matchesPlayed++
 
       if (match.status === "wo") {
-        // W.O. - the winner gets WO points
         const woWinner = match.winnerId === homeId ? home : away
         const woLoser = match.winnerId === homeId ? away : home
         woWinner.wins++
         woWinner.winsByWO++
-        woWinner.points += scoring.winByWO
+        woWinner.matchPoints += scoring.winByWO
         woLoser.losses++
         woLoser.lossesByWO++
-        woLoser.points += scoring.lossByWO
+        woLoser.matchPoints += scoring.lossByWO
         continue
       }
 
@@ -112,13 +111,13 @@ export async function GET(
       if (homeIsWinner) {
         home.wins++
         away.losses++
-        home.points += awaySetsWon === 0 ? scoring.winWithoutLosingSet : scoring.winLosingOneSet
-        away.points += homeSetsWon > 0 ? scoring.lossWinningOneSet : scoring.lossWithoutWinningSet
+        home.matchPoints += awaySetsWon === 0 ? scoring.winWithoutLosingSet : scoring.winLosingOneSet
+        away.matchPoints += homeSetsWon > 0 ? scoring.lossWinningOneSet : scoring.lossWithoutWinningSet
       } else {
         away.wins++
         home.losses++
-        away.points += homeSetsWon === 0 ? scoring.winWithoutLosingSet : scoring.winLosingOneSet
-        home.points += awaySetsWon > 0 ? scoring.lossWinningOneSet : scoring.lossWithoutWinningSet
+        away.matchPoints += homeSetsWon === 0 ? scoring.winWithoutLosingSet : scoring.winLosingOneSet
+        home.matchPoints += awaySetsWon > 0 ? scoring.lossWinningOneSet : scoring.lossWithoutWinningSet
       }
 
       home.setsWon += homeSetsWon
@@ -132,67 +131,107 @@ export async function GET(
       away.gamesLost += homeGamesTotal
     }
 
-    // Calculate balances and sort
-    const rankingArray = Object.values(rankingMap).map(r => ({
-      ...r,
-      setBalance: r.setsWon - r.setsLost,
-      gamesBalance: r.gamesWon - r.gamesLost,
-    }))
+    // Build final ranking: basePoints + matchPoints
+    const rankingArray = Object.values(matchStats).map(r => {
+      const existing = existingMap.get(r._userId || "")
+      return {
+        ...r,
+        _userId: r._userId || "",
+      }
+    })
 
-    rankingArray.sort((a, b) =>
+    // Properly build ranking with basePoints from existing or default from seed
+    const enrichedRanking = await Promise.all(
+      members.map(async (m, _index) => {
+        const stats = matchStats[m.userId] || { matchesPlayed: 0, wins: 0, losses: 0, winsByWO: 0, lossesByWO: 0, setsWon: 0, setsLost: 0, gamesWon: 0, gamesLost: 0, matchPoints: 0 }
+        const existing = existingMap.get(m.userId)
+
+        // Preserve basePoints from existing record
+        const basePoints = existing?.basePoints ?? 0
+        const totalPoints = basePoints + stats.matchPoints
+
+        const setBalance = stats.setsWon - stats.setsLost
+        const gamesBalance = stats.gamesWon - stats.gamesLost
+
+        // Upsert into PlayerRanking table
+        await prisma.playerRanking.upsert({
+          where: { tournamentId_userId: { tournamentId: id, userId: m.userId } },
+          update: {
+            points: totalPoints,
+            basePoints,
+            matchesPlayed: stats.matchesPlayed,
+            wins: stats.wins,
+            losses: stats.losses,
+            winsByWO: stats.winsByWO,
+            lossesByWO: stats.lossesByWO,
+            setsWon: stats.setsWon,
+            setsLost: stats.setsLost,
+            gamesWon: stats.gamesWon,
+            gamesLost: stats.gamesLost,
+            setBalance,
+            gamesBalance,
+          },
+          create: {
+            tournamentId: id,
+            userId: m.userId,
+            position: 0,
+            points: totalPoints,
+            basePoints,
+            matchesPlayed: stats.matchesPlayed,
+            wins: stats.wins,
+            losses: stats.losses,
+            winsByWO: stats.winsByWO,
+            lossesByWO: stats.lossesByWO,
+            setsWon: stats.setsWon,
+            setsLost: stats.setsLost,
+            gamesWon: stats.gamesWon,
+            gamesLost: stats.gamesLost,
+            setBalance,
+            gamesBalance,
+          }
+        })
+
+        return {
+          userId: m.userId,
+          user: m.user,
+          position: 0,
+          points: totalPoints,
+          basePoints,
+          matchesPlayed: stats.matchesPlayed,
+          wins: stats.wins,
+          losses: stats.losses,
+          winsByWO: stats.winsByWO,
+          lossesByWO: stats.lossesByWO,
+          setsWon: stats.setsWon,
+          setsLost: stats.setsLost,
+          gamesWon: stats.gamesWon,
+          gamesLost: stats.gamesLost,
+          setBalance,
+          gamesBalance,
+        }
+      })
+    )
+
+    // Sort by points
+    enrichedRanking.sort((a, b) =>
       b.points - a.points ||
       b.wins - a.wins ||
       b.setBalance - a.setBalance ||
       b.gamesBalance - a.gamesBalance
     )
 
-    // Upsert rankings into DB and build response
-    const enrichedRanking = await Promise.all(
-      rankingArray.map(async (r, index) => {
-        const user = members.find(m => m.userId === r.userId)?.user
-
-        // Upsert into PlayerRanking table
-        await prisma.playerRanking.upsert({
+    // Update positions
+    const finalRanking = await Promise.all(
+      enrichedRanking.map(async (r, index) => {
+        await prisma.playerRanking.update({
           where: { tournamentId_userId: { tournamentId: id, userId: r.userId } },
-          update: {
-            position: index + 1,
-            points: r.points,
-            matchesPlayed: r.matchesPlayed,
-            wins: r.wins,
-            losses: r.losses,
-            winsByWO: r.winsByWO,
-            lossesByWO: r.lossesByWO,
-            setsWon: r.setsWon,
-            setsLost: r.setsLost,
-            gamesWon: r.gamesWon,
-            gamesLost: r.gamesLost,
-            setBalance: r.setBalance,
-            gamesBalance: r.gamesBalance,
-          },
-          create: {
-            tournamentId: id,
-            userId: r.userId,
-            position: index + 1,
-            points: r.points,
-            matchesPlayed: r.matchesPlayed,
-            wins: r.wins,
-            losses: r.losses,
-            winsByWO: r.winsByWO,
-            lossesByWO: r.lossesByWO,
-            setsWon: r.setsWon,
-            setsLost: r.setsLost,
-            gamesWon: r.gamesWon,
-            gamesLost: r.gamesLost,
-            setBalance: r.setBalance,
-            gamesBalance: r.gamesBalance,
-          }
+          data: { position: index + 1 }
         })
-
-        return { ...r, position: index + 1, user: user || { id: r.userId, name: "?" } }
+        return { ...r, position: index + 1 }
       })
     )
 
-    return NextResponse.json({ ranking: enrichedRanking })
+    return NextResponse.json({ ranking: finalRanking })
   } catch (error) {
     console.error("Erro ao buscar ranking:", error)
     return NextResponse.json(

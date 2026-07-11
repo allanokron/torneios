@@ -381,6 +381,7 @@ model PlayerRanking {
 
   position      Int
   points        Int @default(0)
+  basePoints    Int @default(0)
   matchesPlayed Int @default(0)
   wins          Int @default(0)
   losses        Int @default(0)
