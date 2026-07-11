@@ -132,6 +132,75 @@ export async function POST(
       )
     }
 
+    const body = await request.json().catch(() => ({}))
+
+    // Action: create a single match between two players
+    if (body.action === "create_match") {
+      const { opponentId } = body
+      if (!opponentId) {
+        return NextResponse.json({ error: "Selecione um adversário" }, { status: 400 })
+      }
+
+      const isMember = tournament.members.some(m => m.userId === decoded.userId)
+      const isOpponentMember = tournament.members.some(m => m.userId === opponentId)
+      if (!isMember || !isOpponentMember) {
+        return NextResponse.json({ error: "Ambos os jogadores devem ser participantes" }, { status: 400 })
+      }
+
+      if (opponentId === decoded.userId) {
+        return NextResponse.json({ error: "Não é possível jogar contra si mesmo" }, { status: 400 })
+      }
+
+      // Check if match already exists between these players
+      const existingMatch = await prisma.match.findFirst({
+        where: {
+          tournamentId: id,
+          OR: [
+            { homePlayerId: decoded.userId, awayPlayerId: opponentId },
+            { homePlayerId: opponentId, awayPlayerId: decoded.userId }
+          ],
+          status: { notIn: ["cancelled"] }
+        }
+      })
+
+      if (existingMatch) {
+        return NextResponse.json({ error: "Já existe uma partida entre esses jogadores" }, { status: 400 })
+      }
+
+      // Randomly decide home/away
+      const [home, away] = Math.random() > 0.5
+        ? [decoded.userId, opponentId]
+        : [opponentId, decoded.userId]
+
+      const match = await prisma.match.create({
+        data: {
+          tournamentId: id,
+          homePlayerId: home,
+          awayPlayerId: away,
+          duration: tournament.defaultMatchDuration,
+          status: "pending_scheduling"
+        },
+        include: {
+          homePlayer: { select: { id: true, name: true, avatarUrl: true } },
+          awayPlayer: { select: { id: true, name: true, avatarUrl: true } }
+        }
+      })
+
+      // Notify opponent
+      await prisma.notification.create({
+        data: {
+          userId: opponentId,
+          title: "Nova partida criada",
+          message: `${decoded.userId === home ? "Você" : "Um adversário"} criou uma partida`,
+          type: "match",
+          link: `/tournaments/${id}`
+        }
+      })
+
+      return NextResponse.json({ match }, { status: 201 })
+    }
+
+    // Action: generate round-robin (owner only)
     if (tournament.ownerId !== decoded.userId) {
       return NextResponse.json(
         { error: "Apenas o organizador pode gerar confrontos" },

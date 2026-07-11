@@ -135,6 +135,10 @@ export default function TournamentPage() {
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [matchSubTab, setMatchSubTab] = useState<"upcoming" | "completed">("upcoming")
   const [resultMatch, setResultMatch] = useState<Match | null>(null)
+  const [showNewMatch, setShowNewMatch] = useState(false)
+  const [newMatchOpponent, setNewMatchOpponent] = useState("")
+  const [creatingMatch, setCreatingMatch] = useState(false)
+  const [newMatchError, setNewMatchError] = useState("")
 
   // My Matches filters
   const [myFilterDateFrom, setMyFilterDateFrom] = useState("")
@@ -813,8 +817,21 @@ export default function TournamentPage() {
             {activeTab === "my-matches" && user && (() => {
               const myMatches = matches.filter(m => m.homePlayer.id === user.id || m.awayPlayer.id === user.id)
               const now = new Date()
+              const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
               const completed = myMatches.filter(m => m.status === "finished" || m.status === "wo")
-              const upcoming = myMatches.filter(m => m.status !== "finished" && m.status !== "wo" && m.status !== "cancelled")
+              const upcoming = myMatches.filter(m => {
+                if (m.status === "finished" || m.status === "wo" || m.status === "cancelled") return false
+                if (!m.scheduledAt) return true
+                return new Date(m.scheduledAt) >= todayStart
+              })
+
+              // Proposals I received that are pending
+              const pendingProposals = matches
+                .filter(m => m.scheduleProposals.some(p => p.receiver.id === user.id && p.status === "pending"))
+                .map(m => ({
+                  match: m,
+                  proposal: m.scheduleProposals.find(p => p.receiver.id === user.id && p.status === "pending")!
+                }))
 
               const isWin = (m: Match) => {
                 if (m.status === "wo") return m.winnerId === user.id
@@ -838,6 +855,25 @@ export default function TournamentPage() {
               const winCount = completed.filter(isWin).length
               const lossCount = completed.length - winCount
 
+              const allMembers = tournament.members.filter(m => m.status === "accepted" && m.user.id !== user.id)
+
+              const handleCreateMatch = async () => {
+                if (!newMatchOpponent) { setNewMatchError("Selecione um adversário"); return }
+                setCreatingMatch(true); setNewMatchError("")
+                try {
+                  const token = localStorage.getItem("token")
+                  const res = await fetch(`/api/tournaments/${tournament.id}/matches`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ action: "create_match", opponentId: newMatchOpponent })
+                  })
+                  const data = await res.json()
+                  if (!res.ok) { setNewMatchError(data.error || "Erro ao criar partida"); return }
+                  setShowNewMatch(false); setNewMatchOpponent(""); fetchMatches()
+                } catch { setNewMatchError("Erro de conexão") }
+                finally { setCreatingMatch(false) }
+              }
+
               return (
                 <div className="space-y-4">
                   {/* Stats */}
@@ -858,6 +894,62 @@ export default function TournamentPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Marcar Partida button */}
+                  <button onClick={() => setShowNewMatch(true)} className="w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Marcar Partida
+                  </button>
+
+                  {/* New match modal */}
+                  {showNewMatch && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowNewMatch(false)}>
+                      <div className="bg-white rounded-xl shadow-lg w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Marcar Partida</h3>
+                        <p className="text-sm text-gray-600 mb-4">Selecione o adversário para criar a partida:</p>
+                        <select value={newMatchOpponent} onChange={e => setNewMatchOpponent(e.target.value)} className="input w-full mb-3">
+                          <option value="">Selecione um jogador</option>
+                          {allMembers.map(m => (
+                            <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
+                          ))}
+                        </select>
+                        {newMatchError && <p className="text-sm text-red-600 mb-3">{newMatchError}</p>}
+                        <div className="flex gap-2">
+                          <button onClick={() => setShowNewMatch(false)} className="flex-1 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancelar</button>
+                          <button onClick={handleCreateMatch} disabled={creatingMatch || !newMatchOpponent} className="flex-1 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
+                            {creatingMatch ? "Criando..." : "Criar Partida"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pending Invitations */}
+                  {pendingProposals.length > 0 && (
+                    <div className="bg-amber-50 rounded-xl border border-amber-200 p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <h3 className="font-medium text-amber-800">Convites Pendentes ({pendingProposals.length})</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {pendingProposals.map(({ match: m, proposal }) => (
+                          <ProposalCard
+                            key={proposal.id}
+                            proposal={proposal}
+                            currentUserId={user.id}
+                            matchId={m.id}
+                            matchStatus={m.status}
+                            courts={tournament.courts}
+                            onAction={fetchMatches}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Filters */}
                   <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -881,6 +973,85 @@ export default function TournamentPage() {
                       <button onClick={() => { setMyFilterDateFrom(""); setMyFilterDateTo("") }} className="text-xs text-gray-500 hover:text-gray-700 mt-2">
                         Limpar filtros
                       </button>
+                    )}
+                  </div>
+
+                  {/* Upcoming Games */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-5">
+                    <h3 className="font-medium text-gray-900 mb-3">Próximos Jogos ({filteredUpcoming.length})</h3>
+                    {filteredUpcoming.length === 0 ? (
+                      <p className="text-sm text-gray-500">Nenhum jogo agendado</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredUpcoming.map(match => {
+                          const opponent = match.homePlayer.id === user.id ? match.awayPlayer : match.homePlayer
+                          const canSchedule = match.status === "pending_scheduling" || match.status === "proposal_sent" || match.status === "awaiting_response"
+                          const canStart = match.status === "scheduled"
+                          const canResult = match.status === "in_progress"
+                          const hasPendingProposal = match.scheduleProposals.some(p => p.status === "pending")
+
+                          return (
+                            <div key={match.id} className="border border-gray-100 rounded-lg overflow-hidden">
+                              <div className="flex items-center gap-3 p-3">
+                                <div className="text-center min-w-[60px]">
+                                  {match.scheduledAt ? (
+                                    <>
+                                      <div className="text-xs font-medium text-gray-900">
+                                        {new Date(match.scheduledAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {new Date(match.scheduledAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="text-xs text-gray-400">Sem data</div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">vs {opponent.name}</p>
+                                  {match.court && <p className="text-xs text-gray-500">{match.court.name}</p>}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`status-badge match-${match.status}`}>
+                                    {getMatchStatusLabel(match.status)}
+                                  </span>
+                                  {canSchedule && !hasPendingProposal && (
+                                    <button onClick={() => setSchedulingMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
+                                      Agendar
+                                    </button>
+                                  )}
+                                  {canStart && (
+                                    <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
+                                      Iniciar
+                                    </button>
+                                  )}
+                                  {canResult && (
+                                    <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors whitespace-nowrap">
+                                      Placar
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {match.scheduleProposals.length > 0 && (
+                                <div className="px-3 pb-3 space-y-2">
+                                  {match.scheduleProposals.map(proposal => (
+                                    <ProposalCard
+                                      key={proposal.id}
+                                      proposal={proposal}
+                                      currentUserId={user.id}
+                                      matchId={match.id}
+                                      matchStatus={match.status}
+                                      courts={tournament.courts}
+                                      onAction={fetchMatches}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
                     )}
                   </div>
 
@@ -913,29 +1084,21 @@ export default function TournamentPage() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900">
-                                  vs {opponent.name}
-                                </p>
+                                <p className="text-sm font-medium text-gray-900">vs {opponent.name}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   {match.scheduledAt && (
                                     <span className="text-xs text-gray-500">
                                       {new Date(match.scheduledAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                                     </span>
                                   )}
-                                  {match.court && (
-                                    <span className="text-xs text-gray-400">{match.court.name}</span>
-                                  )}
+                                  {match.court && <span className="text-xs text-gray-400">{match.court.name}</span>}
                                 </div>
                               </div>
                               <div className="text-right">
                                 <div className="flex items-center gap-1">
-                                  <span className={`text-lg font-bold ${won ? "text-green-700" : "text-red-600"}`}>
-                                    {myScore}
-                                  </span>
+                                  <span className={`text-lg font-bold ${won ? "text-green-700" : "text-red-600"}`}>{myScore}</span>
                                   <span className="text-xs text-gray-400">x</span>
-                                  <span className={`text-lg font-bold ${!won ? "text-green-700" : "text-red-600"}`}>
-                                    {theirScore}
-                                  </span>
+                                  <span className={`text-lg font-bold ${!won ? "text-green-700" : "text-red-600"}`}>{theirScore}</span>
                                 </div>
                                 <p className={`text-xs font-medium ${won ? "text-green-600" : "text-red-500"}`}>
                                   {won ? "Vitória" : "Derrota"}
@@ -948,89 +1111,31 @@ export default function TournamentPage() {
                     )}
                   </div>
 
-                  {/* Upcoming Games */}
-                  <div className="bg-white rounded-xl border border-gray-200 p-5">
-                    <h3 className="font-medium text-gray-900 mb-3">Próximos Jogos ({filteredUpcoming.length})</h3>
-                    {filteredUpcoming.length === 0 ? (
-                      <p className="text-sm text-gray-500">Nenhum jogo agendado</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {filteredUpcoming.map(match => {
-                          const opponent = match.homePlayer.id === user.id ? match.awayPlayer : match.homePlayer
-                          const canSchedule = match.status === "pending_scheduling" || match.status === "proposal_sent" || match.status === "awaiting_response"
-                          const hasPendingProposal = match.scheduleProposals.some(p => p.status === "pending")
-
-                          return (
-                            <div key={match.id} className="border border-gray-100 rounded-lg overflow-hidden">
-                              <div className="flex items-center gap-3 p-3">
-                                <div className="text-center min-w-[60px]">
-                                  {match.scheduledAt ? (
-                                    <>
-                                      <div className="text-xs font-medium text-gray-900">
-                                        {new Date(match.scheduledAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        {new Date(match.scheduledAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="text-xs text-gray-400">Sem data</div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-900">vs {opponent.name}</p>
-                                  {match.court && (
-                                    <p className="text-xs text-gray-500">{match.court.name}</p>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className={`status-badge match-${match.status}`}>
-                                    {getMatchStatusLabel(match.status)}
-                                  </span>
-                                  {canSchedule && !hasPendingProposal && (
-                                    <button
-                                      onClick={() => setSchedulingMatch(match)}
-                                      className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
-                                    >
-                                      Agendar
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Proposals */}
-                              {match.scheduleProposals.length > 0 && (
-                                <div className="px-3 pb-3 space-y-2">
-                                  {match.scheduleProposals.map(proposal => (
-                                    <ProposalCard
-                                      key={proposal.id}
-                                      proposal={proposal}
-                                      currentUserId={user.id}
-                                      matchId={match.id}
-                                      matchStatus={match.status}
-                                      courts={tournament.courts}
-                                      onAction={fetchMatches}
-                                    />
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-
                   {/* Schedule modal */}
                   {schedulingMatch && (
                     <ScheduleProposalForm
                       matchId={schedulingMatch.id}
-                      opponentName={schedulingMatch.homePlayer.id === user.id
-                        ? schedulingMatch.awayPlayer.name
-                        : schedulingMatch.homePlayer.name}
+                      opponentName={schedulingMatch.homePlayer.id === user.id ? schedulingMatch.awayPlayer.name : schedulingMatch.homePlayer.name}
                       courts={tournament.courts}
                       onSuccess={() => { setSchedulingMatch(null); fetchMatches() }}
                       onClose={() => setSchedulingMatch(null)}
+                    />
+                  )}
+
+                  {/* Result modal */}
+                  {resultMatch && (
+                    <MatchResultForm
+                      matchId={resultMatch.id}
+                      matchStatus={resultMatch.status}
+                      homePlayer={resultMatch.homePlayer}
+                      awayPlayer={resultMatch.awayPlayer}
+                      setsPerMatch={tournament.setsPerMatch}
+                      isOwner={user.id === tournament.owner.id}
+                      existingSets={resultMatch.sets.map(s => ({ homeGames: s.homeGames, awayGames: s.awayGames }))}
+                      existingStartPhoto={resultMatch.startPhotoUrl}
+                      existingEndPhoto={resultMatch.endPhotoUrl}
+                      onSuccess={() => { setResultMatch(null); fetchMatches() }}
+                      onClose={() => setResultMatch(null)}
                     />
                   )}
                 </div>
