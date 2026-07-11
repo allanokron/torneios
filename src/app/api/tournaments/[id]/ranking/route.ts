@@ -131,15 +131,6 @@ export async function GET(
       away.gamesLost += homeGamesTotal
     }
 
-    // Build final ranking: basePoints + matchPoints
-    const rankingArray = Object.values(matchStats).map(r => {
-      const existing = existingMap.get(r._userId || "")
-      return {
-        ...r,
-        _userId: r._userId || "",
-      }
-    })
-
     // Properly build ranking with basePoints from existing or default from seed
     const enrichedRanking = await Promise.all(
       members.map(async (m, _index) => {
