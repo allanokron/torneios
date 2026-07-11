@@ -81,10 +81,10 @@ export async function POST(
       )
     }
 
-    // Parse proposed date and time
+    // Parse proposed date and time in Brasilia timezone (UTC-3)
     const [hours, minutes] = proposedTime.split(":").map(Number)
-    const startTime = new Date(proposedDate)
-    startTime.setHours(hours, minutes, 0, 0)
+    // Create date string in Brasilia time by subtracting 3 hours from UTC
+    const startTime = new Date(`${proposedDate}T${proposedTime}:00.000-03:00`)
     
     const endTime = new Date(startTime.getTime() + match.duration * 60 * 1000)
 
@@ -391,10 +391,8 @@ export async function PATCH(
         )
       }
 
-      // Parse proposed date and time
-      const [hours, minutes] = proposedTime.split(":").map(Number)
-      const startTime = new Date(proposedDate)
-      startTime.setHours(hours, minutes, 0, 0)
+      // Parse proposed date and time in Brasilia timezone (UTC-3)
+      const startTime = new Date(`${proposedDate}T${proposedTime}:00.000-03:00`)
       const endTime = new Date(startTime.getTime() + proposal.match.duration * 60 * 1000)
 
       // Check court availability

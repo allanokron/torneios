@@ -361,6 +361,14 @@ export default function TournamentPage() {
     return d >= tomorrow && d < dayAfterTomorrow && m.status !== "finished" && m.status !== "cancelled"
   })
 
+  // Pending proposals I received
+  const pendingProposals = user ? matches
+    .filter(m => m.scheduleProposals.some(p => p.receiver.id === user.id && p.status === "pending"))
+    .map(m => ({
+      match: m,
+      proposal: m.scheduleProposals.find(p => p.receiver.id === user.id && p.status === "pending")!
+    })) : []
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header user={user} />
@@ -424,6 +432,27 @@ export default function TournamentPage() {
                     <p className="text-xs text-gray-500 mt-1">Finalizadas</p>
                   </div>
                 </div>
+
+                {/* Pending Invitations */}
+                {pendingProposals.length > 0 && (
+                  <div className="bg-amber-50 rounded-xl border border-amber-200 p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <h3 className="font-medium text-amber-800">Convites de Jogo Pendentes ({pendingProposals.length})</h3>
+                    </div>
+                    <p className="text-sm text-amber-700 mb-3">
+                      Você tem {pendingProposals.length} {pendingProposals.length === 1 ? "convite" : "convites"} de agendamento aguardando sua resposta.
+                    </p>
+                    <button
+                      onClick={() => setActiveTab("my-matches")}
+                      className="text-sm font-medium text-amber-800 hover:text-amber-900 underline"
+                    >
+                      Responder convites
+                    </button>
+                  </div>
+                )}
 
                 {/* Owner Actions */}
                 {isOwner && tournament.status === "registration_closed" && (
@@ -824,14 +853,6 @@ export default function TournamentPage() {
                 if (!m.scheduledAt) return true
                 return new Date(m.scheduledAt) >= todayStart
               })
-
-              // Proposals I received that are pending
-              const pendingProposals = matches
-                .filter(m => m.scheduleProposals.some(p => p.receiver.id === user.id && p.status === "pending"))
-                .map(m => ({
-                  match: m,
-                  proposal: m.scheduleProposals.find(p => p.receiver.id === user.id && p.status === "pending")!
-                }))
 
               const isWin = (m: Match) => {
                 if (m.status === "wo") return m.winnerId === user.id

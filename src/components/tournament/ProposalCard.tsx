@@ -40,6 +40,7 @@ export default function ProposalCard({
   const [counterMessage, setCounterMessage] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showMessage, setShowMessage] = useState(false)
 
   const isReceiver = proposal.receiver.id === currentUserId
   const isPending = proposal.status === "pending"
@@ -117,7 +118,17 @@ export default function ProposalCard({
           {dateStr} às {proposal.proposedTime} — {proposal.court.name}
         </p>
         {proposal.message && (
-          <p className="text-xs text-green-600 mt-1 italic">&ldquo;{proposal.message}&rdquo;</p>
+          <div className="mt-1">
+            <button
+              onClick={() => setShowMessage(!showMessage)}
+              className="text-xs text-green-600 hover:text-green-800 underline"
+            >
+              {showMessage ? "Ocultar mensagem" : "Exibir mensagem"}
+            </button>
+            {showMessage && (
+              <p className="text-xs text-green-600 mt-1 italic">&ldquo;{proposal.message}&rdquo;</p>
+            )}
+          </div>
         )}
       </div>
     )
@@ -136,7 +147,17 @@ export default function ProposalCard({
           {proposal.sender.name} propôs {dateStr} às {proposal.proposedTime}
         </p>
         {proposal.responseMessage && (
-          <p className="text-xs text-gray-500 mt-1 italic">&ldquo;{proposal.responseMessage}&rdquo;</p>
+          <div className="mt-1">
+            <button
+              onClick={() => setShowMessage(!showMessage)}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              {showMessage ? "Ocultar mensagem" : "Exibir mensagem"}
+            </button>
+            {showMessage && (
+              <p className="text-xs text-gray-500 mt-1 italic">&ldquo;{proposal.responseMessage}&rdquo;</p>
+            )}
+          </div>
         )}
       </div>
     )
@@ -157,7 +178,17 @@ export default function ProposalCard({
         {dateStr} às {proposal.proposedTime} — {proposal.court.name}
       </p>
       {proposal.message && (
-        <p className="text-xs text-amber-600 mb-2 italic">&ldquo;{proposal.message}&rdquo;</p>
+        <div className="mb-2">
+          <button
+            onClick={() => setShowMessage(!showMessage)}
+            className="text-xs text-amber-600 hover:text-amber-800 underline"
+          >
+            {showMessage ? "Ocultar mensagem" : "Exibir mensagem"}
+          </button>
+          {showMessage && (
+            <p className="text-xs text-amber-600 mt-1 italic">&ldquo;{proposal.message}&rdquo;</p>
+          )}
+        </div>
       )}
 
       {isReceiver && isPending && !showRejectForm && !showCounterForm && (
