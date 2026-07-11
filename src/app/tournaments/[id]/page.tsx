@@ -9,6 +9,7 @@ import TournamentSidebar from "@/components/layout/TournamentSidebar"
 import SettingsTab from "@/components/tournament/SettingsTab"
 import ScheduleProposalForm from "@/components/tournament/ScheduleProposalForm"
 import ProposalCard from "@/components/tournament/ProposalCard"
+import MatchResultForm from "@/components/tournament/MatchResultForm"
 
 interface Tournament {
   id: string
@@ -83,6 +84,9 @@ interface Match {
   homePlayer: { id: string; name: string; avatarUrl?: string }
   awayPlayer: { id: string; name: string; avatarUrl?: string }
   court: { id: string; name: string } | null
+  sets: Array<{ setNumber: number; homeGames: number; awayGames: number }>
+  startPhotoUrl?: string | null
+  endPhotoUrl?: string | null
   scheduleProposals: Array<{
     id: string
     proposedDate: string
@@ -130,6 +134,7 @@ export default function TournamentPage() {
   const [filterPlayerId, setFilterPlayerId] = useState("")
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [matchSubTab, setMatchSubTab] = useState<"upcoming" | "completed">("upcoming")
+  const [resultMatch, setResultMatch] = useState<Match | null>(null)
 
   // My Matches filters
   const [myFilterDateFrom, setMyFilterDateFrom] = useState("")
@@ -526,9 +531,18 @@ export default function TournamentPage() {
 
             {/* ===== MATCHES ===== */}
             {activeTab === "matches" && (() => {
+              const now = new Date()
+              const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
               const completedStatuses = ["finished", "wo"]
               const completed = matches.filter(m => completedStatuses.includes(m.status))
-              const upcoming = matches.filter(m => !completedStatuses.includes(m.status) && m.status !== "cancelled")
+              const upcoming = matches.filter(m => {
+                if (completedStatuses.includes(m.status) || m.status === "cancelled") return false
+                // No date = upcoming
+                if (!m.scheduledAt) return true
+                // Scheduled today or future = upcoming
+                return new Date(m.scheduledAt) >= todayStart
+              })
 
               const allMembers = tournament.members.filter(m => m.status === "accepted")
 
@@ -553,24 +567,10 @@ export default function TournamentPage() {
                 <div className="space-y-4">
                   {/* Sub-tabs */}
                   <div className="bg-white rounded-xl border border-gray-200 p-1 flex gap-1">
-                    <button
-                      onClick={() => setMatchSubTab("upcoming")}
-                      className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
-                        matchSubTab === "upcoming"
-                          ? "bg-green-50 text-green-700"
-                          : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
+                    <button onClick={() => setMatchSubTab("upcoming")} className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${matchSubTab === "upcoming" ? "bg-green-50 text-green-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
                       Próximos Jogos ({upcoming.length})
                     </button>
-                    <button
-                      onClick={() => setMatchSubTab("completed")}
-                      className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
-                        matchSubTab === "completed"
-                          ? "bg-green-50 text-green-700"
-                          : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
+                    <button onClick={() => setMatchSubTab("completed")} className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${matchSubTab === "completed" ? "bg-green-50 text-green-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
                       Jogos Realizados ({completed.length})
                     </button>
                   </div>
@@ -612,10 +612,7 @@ export default function TournamentPage() {
                       </div>
                     </div>
                     {(filterDateFrom || filterDateTo || filterCourtId || filterPlayerId) && (
-                      <button
-                        onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); setFilterCourtId(""); setFilterPlayerId("") }}
-                        className="text-xs text-gray-500 hover:text-gray-700 mt-2"
-                      >
+                      <button onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); setFilterCourtId(""); setFilterPlayerId("") }} className="text-xs text-gray-500 hover:text-gray-700 mt-2">
                         Limpar filtros
                       </button>
                     )}
@@ -632,6 +629,8 @@ export default function TournamentPage() {
                           {filteredUpcoming.map(match => {
                             const isPlayer = user && (match.homePlayer.id === user.id || match.awayPlayer.id === user.id)
                             const canSchedule = isPlayer && (match.status === "pending_scheduling" || match.status === "proposal_sent" || match.status === "awaiting_response")
+                            const canStart = isPlayer && match.status === "scheduled"
+                            const canResult = isPlayer && match.status === "in_progress"
                             const hasPendingProposal = match.scheduleProposals.some(p => p.status === "pending")
 
                             return (
@@ -666,11 +665,18 @@ export default function TournamentPage() {
                                       {getMatchStatusLabel(match.status)}
                                     </span>
                                     {canSchedule && !hasPendingProposal && (
-                                      <button
-                                        onClick={() => setSchedulingMatch(match)}
-                                        className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
-                                      >
+                                      <button onClick={() => setSchedulingMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
                                         Agendar
+                                      </button>
+                                    )}
+                                    {canStart && (
+                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
+                                        Iniciar
+                                      </button>
+                                    )}
+                                    {canResult && (
+                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors whitespace-nowrap">
+                                        Placar
                                       </button>
                                     )}
                                   </div>
@@ -706,55 +712,67 @@ export default function TournamentPage() {
                       {filteredCompleted.length === 0 ? (
                         <p className="text-sm text-gray-500">Nenhum jogo realizado encontrado</p>
                       ) : (
-                        <div className="space-y-2">
-                          {filteredCompleted.map(match => (
-                            <div key={match.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-                              <div className="text-center min-w-[50px]">
-                                {match.scheduledAt ? (
-                                  <>
-                                    <div className="text-xs font-medium text-gray-900">
-                                      {new Date(match.scheduledAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                        <div className="space-y-3">
+                          {filteredCompleted.map(match => {
+                            const canEdit = user?.id === tournament.owner.id
+                            return (
+                              <div key={match.id} className="border border-gray-100 rounded-lg overflow-hidden">
+                                <div className="flex items-center gap-3 p-3">
+                                  <div className="text-center min-w-[50px]">
+                                    {match.scheduledAt ? (
+                                      <>
+                                        <div className="text-xs font-medium text-gray-900">
+                                          {new Date(match.scheduledAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {new Date(match.scheduledAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="text-xs text-gray-400">Sem data</div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-gray-900">{match.homePlayer.name}</span>
+                                      {match.homeScore !== null && (
+                                        <span className={`text-sm font-bold ${match.winnerId === match.homePlayer.id ? "text-green-600" : "text-red-500"}`}>
+                                          {match.homeScore}
+                                        </span>
+                                      )}
+                                      <span className="text-xs text-gray-400">vs</span>
+                                      {match.awayScore !== null && (
+                                        <span className={`text-sm font-bold ${match.winnerId === match.awayPlayer.id ? "text-green-600" : "text-red-500"}`}>
+                                          {match.awayScore}
+                                        </span>
+                                      )}
+                                      <span className="text-sm font-medium text-gray-900">{match.awayPlayer.name}</span>
                                     </div>
-                                    <div className="text-xs text-gray-500">
-                                      {new Date(match.scheduledAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      {match.court && <p className="text-xs text-gray-500">{match.court.name}</p>}
+                                      {match.sets.length > 0 && (
+                                        <span className="text-xs text-gray-400">
+                                          ({match.sets.map(s => `${s.homeGames}-${s.awayGames}`).join(", ")})
+                                        </span>
+                                      )}
                                     </div>
-                                  </>
-                                ) : (
-                                  <div className="text-xs text-gray-400">Sem data</div>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-900">{match.homePlayer.name}</span>
-                                  {match.homeScore !== null && (
-                                    <span className={`text-sm font-bold ${match.winnerId === match.homePlayer.id ? "text-green-600" : "text-red-500"}`}>
-                                      {match.homeScore}
-                                    </span>
-                                  )}
-                                  <span className="text-xs text-gray-400">vs</span>
-                                  {match.awayScore !== null && (
-                                    <span className={`text-sm font-bold ${match.winnerId === match.awayPlayer.id ? "text-green-600" : "text-red-500"}`}>
-                                      {match.awayScore}
-                                    </span>
-                                  )}
-                                  <span className="text-sm font-medium text-gray-900">{match.awayPlayer.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {match.winnerId && (
+                                      <svg className="w-5 h-5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                      </svg>
+                                    )}
+                                    {canEdit && (
+                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap">
+                                        Editar
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                {match.court && (
-                                  <p className="text-xs text-gray-500 mt-0.5">{match.court.name}</p>
-                                )}
                               </div>
-                              <div className="flex items-center gap-2">
-                                {match.winnerId && (
-                                  <svg className="w-5 h-5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                  </svg>
-                                )}
-                                <span className={`status-badge match-${match.status}`}>
-                                  {getMatchStatusLabel(match.status)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </div>
@@ -764,12 +782,27 @@ export default function TournamentPage() {
                   {schedulingMatch && user && (
                     <ScheduleProposalForm
                       matchId={schedulingMatch.id}
-                      opponentName={schedulingMatch.homePlayer.id === user.id
-                        ? schedulingMatch.awayPlayer.name
-                        : schedulingMatch.homePlayer.name}
+                      opponentName={schedulingMatch.homePlayer.id === user.id ? schedulingMatch.awayPlayer.name : schedulingMatch.homePlayer.name}
                       courts={tournament.courts}
                       onSuccess={() => { setSchedulingMatch(null); fetchMatches() }}
                       onClose={() => setSchedulingMatch(null)}
+                    />
+                  )}
+
+                  {/* Result modal */}
+                  {resultMatch && user && (
+                    <MatchResultForm
+                      matchId={resultMatch.id}
+                      matchStatus={resultMatch.status}
+                      homePlayer={resultMatch.homePlayer}
+                      awayPlayer={resultMatch.awayPlayer}
+                      setsPerMatch={tournament.setsPerMatch}
+                      isOwner={user.id === tournament.owner.id}
+                      existingSets={resultMatch.sets.map(s => ({ homeGames: s.homeGames, awayGames: s.awayGames }))}
+                      existingStartPhoto={resultMatch.startPhotoUrl}
+                      existingEndPhoto={resultMatch.endPhotoUrl}
+                      onSuccess={() => { setResultMatch(null); fetchMatches() }}
+                      onClose={() => setResultMatch(null)}
                     />
                   )}
                 </div>
