@@ -211,7 +211,7 @@ export default function TournamentPage() {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
-      .then(data => setRankings(data.rankings || []))
+      .then(data => setRankings(data.ranking || []))
       .catch(() => {})
   }, [tournament])
 
