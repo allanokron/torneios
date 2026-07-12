@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { recalculateTournamentRanking } from "@/lib/ranking"
 
 export async function DELETE(
   request: Request,
@@ -43,95 +44,6 @@ export async function DELETE(
       )
     }
 
-    const wasFinished = match.status === "finished" || match.status === "wo"
-
-    // If match was finished/WO, recalculate rankings (subtract points)
-    if (wasFinished && match.winnerId && match.tournament.scoringConfig) {
-      const { scoringConfig } = match.tournament
-
-      for (const playerId of [match.homePlayerId, match.awayPlayerId]) {
-        const isWinner = playerId === match.winnerId
-        const isHome = playerId === match.homePlayerId
-
-        let pointsToSubtract = 0
-        let winsToSubtract = 0
-        let lossesToSubtract = 0
-        let setsWonToSubtract = 0
-        let setsLostToSubtract = 0
-        let gamesWonToSubtract = 0
-        let gamesLostToSubtract = 0
-
-        if (match.status === "wo") {
-          pointsToSubtract = isWinner ? scoringConfig.winByWO : scoringConfig.lossByWO
-          // Use configured W.O. sets and games
-          const woWinSets = scoringConfig.woWinSets ?? 2
-          const woLossSets = scoringConfig.woLossSets ?? 0
-          const woWinGames = scoringConfig.woWinGames ?? 12
-          const woLossGames = scoringConfig.woLossGames ?? 0
-          setsWonToSubtract = isWinner ? woWinSets : woLossSets
-          setsLostToSubtract = isWinner ? woLossSets : woWinSets
-          gamesWonToSubtract = isWinner ? woWinGames : woLossGames
-          gamesLostToSubtract = isWinner ? woLossGames : woWinGames
-        } else if (match.endReason === "forfeit") {
-          pointsToSubtract = isWinner ? scoringConfig.winByForfeit : scoringConfig.lossByForfeit
-          const homeSetsWon = match.sets.filter(s => s.homeGames > s.awayGames).length
-          const awaySetsWon = match.sets.filter(s => s.awayGames > s.homeGames).length
-          setsWonToSubtract = isHome ? homeSetsWon : awaySetsWon
-          setsLostToSubtract = isHome ? awaySetsWon : homeSetsWon
-          gamesWonToSubtract = isHome
-            ? match.sets.reduce((sum, s) => sum + s.homeGames, 0)
-            : match.sets.reduce((sum, s) => sum + s.awayGames, 0)
-          gamesLostToSubtract = isHome
-            ? match.sets.reduce((sum, s) => sum + s.awayGames, 0)
-            : match.sets.reduce((sum, s) => sum + s.homeGames, 0)
-        } else {
-          const homeSetsWon = match.sets.filter(s => s.homeGames > s.awayGames).length
-          const awaySetsWon = match.sets.filter(s => s.awayGames > s.homeGames).length
-          const setsWon = isHome ? homeSetsWon : awaySetsWon
-          const setsLost = isHome ? awaySetsWon : homeSetsWon
-          const gamesWon = isHome
-            ? match.sets.reduce((sum, s) => sum + s.homeGames, 0)
-            : match.sets.reduce((sum, s) => sum + s.awayGames, 0)
-          const gamesLost = isHome
-            ? match.sets.reduce((sum, s) => sum + s.awayGames, 0)
-            : match.sets.reduce((sum, s) => sum + s.homeGames, 0)
-
-          setsWonToSubtract = setsWon
-          setsLostToSubtract = setsLost
-          gamesWonToSubtract = gamesWon
-          gamesLostToSubtract = gamesLost
-
-          if (isWinner) {
-            pointsToSubtract = awaySetsWon === 0 ? scoringConfig.winWithoutLosingSet : scoringConfig.winLosingOneSet
-          } else {
-            pointsToSubtract = homeSetsWon > 0 ? scoringConfig.lossWinningOneSet : scoringConfig.lossWithoutWinningSet
-          }
-        }
-
-        winsToSubtract = isWinner ? 1 : 0
-        lossesToSubtract = isWinner ? 0 : 1
-
-        await prisma.playerRanking.updateMany({
-          where: {
-            tournamentId: match.tournamentId,
-            userId: playerId
-          },
-          data: {
-            points: { decrement: pointsToSubtract },
-            matchesPlayed: { decrement: 1 },
-            wins: { decrement: winsToSubtract },
-            losses: { decrement: lossesToSubtract },
-            setsWon: { decrement: setsWonToSubtract },
-            setsLost: { decrement: setsLostToSubtract },
-            gamesWon: { decrement: gamesWonToSubtract },
-            gamesLost: { decrement: gamesLostToSubtract },
-            setBalance: { decrement: setsWonToSubtract - setsLostToSubtract },
-            gamesBalance: { decrement: gamesWonToSubtract - gamesLostToSubtract }
-          }
-        })
-      }
-    }
-
     // Delete related records
     await prisma.$transaction([
       prisma.set.deleteMany({ where: { matchId: id } }),
@@ -144,6 +56,8 @@ export async function DELETE(
       prisma.contestation.deleteMany({ where: { matchId: id } }),
       prisma.match.delete({ where: { id } })
     ])
+
+    await recalculateTournamentRanking(match.tournamentId)
 
     // Audit log
     await prisma.auditLog.create({

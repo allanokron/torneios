@@ -178,7 +178,8 @@ export async function POST(
           homePlayerId: home,
           awayPlayerId: away,
           duration: tournament.defaultMatchDuration,
-          status: "pending_scheduling"
+          status: "pending_scheduling",
+          phase: "ranking"
         },
         include: {
           homePlayer: { select: { id: true, name: true, avatarUrl: true } },
@@ -242,6 +243,7 @@ export async function POST(
       awayPlayerId: string
       duration: number
       status: string
+      phase: string
     }> = []
 
     for (let i = 0; i < players.length; i++) {
@@ -256,7 +258,8 @@ export async function POST(
           homePlayerId: home,
           awayPlayerId: away,
           duration: tournament.defaultMatchDuration,
-          status: "pending_scheduling"
+          status: "pending_scheduling",
+          phase: "ranking"
         })
       }
     }

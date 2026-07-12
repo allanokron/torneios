@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { normalizeTournamentFormat, RANKING_ELIMINATION_FORMAT } from "@/lib/knockout"
 
 export async function GET(
   request: Request,
@@ -96,6 +97,10 @@ export async function PATCH(
         },
         matches: {
           where: { status: "in_progress" }
+        },
+        bracketMatches: {
+          select: { id: true },
+          take: 1
         }
       }
     })
@@ -132,6 +137,38 @@ export async function PATCH(
       )
     }
 
+    const hasKnockoutConfigChange = body.format !== undefined || body.knockoutQualifiers !== undefined
+    const knockoutLocked = Boolean(tournament.knockoutLockedAt) || tournament.bracketMatches.length > 0
+
+    if (knockoutLocked && hasKnockoutConfigChange) {
+      return NextResponse.json(
+        { error: "Não é possível alterar o tipo do torneio ou classificados após travar o mata-mata" },
+        { status: 400 }
+      )
+    }
+
+    const normalizedFormat = body.format !== undefined
+      ? normalizeTournamentFormat(body.format)
+      : undefined
+    const parsedKnockoutQualifiers =
+      body.knockoutQualifiers !== undefined && body.knockoutQualifiers !== null && body.knockoutQualifiers !== ""
+        ? Number(body.knockoutQualifiers)
+        : body.knockoutQualifiers === null || body.knockoutQualifiers === ""
+          ? null
+          : undefined
+
+    if (
+      normalizedFormat === RANKING_ELIMINATION_FORMAT &&
+      parsedKnockoutQualifiers !== undefined &&
+      parsedKnockoutQualifiers !== null &&
+      (!Number.isInteger(parsedKnockoutQualifiers) || parsedKnockoutQualifiers < 2)
+    ) {
+      return NextResponse.json(
+        { error: "Informe pelo menos 2 classificados para o mata-mata" },
+        { status: 400 }
+      )
+    }
+
     const updatedTournament = await prisma.tournament.update({
       where: { id },
       data: {
@@ -149,6 +186,12 @@ export async function PATCH(
         isPublic: body.isPublic,
         inviteCode: body.inviteCode,
         status: body.status,
+        format: normalizedFormat,
+        knockoutQualifiers: normalizedFormat === RANKING_ELIMINATION_FORMAT
+          ? parsedKnockoutQualifiers
+          : normalizedFormat === undefined
+            ? parsedKnockoutQualifiers
+            : null,
         setsPerMatch: body.setsPerMatch,
         setsToWin: body.setsToWin,
         setType: body.setType,

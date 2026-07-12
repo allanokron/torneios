@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { normalizeTournamentFormat, RANKING_ELIMINATION_FORMAT } from "@/lib/knockout"
 
 export async function GET(request: Request) {
   try {
@@ -103,6 +104,7 @@ export async function POST(request: Request) {
       coverImage,
       sport,
       format,
+      knockoutQualifiers,
       location,
       address,
       city,
@@ -138,13 +140,30 @@ export async function POST(request: Request) {
       )
     }
 
+    const normalizedFormat = normalizeTournamentFormat(format)
+    const parsedKnockoutQualifiers = knockoutQualifiers !== undefined && knockoutQualifiers !== null && knockoutQualifiers !== ""
+      ? Number(knockoutQualifiers)
+      : null
+
+    if (
+      normalizedFormat === RANKING_ELIMINATION_FORMAT &&
+      parsedKnockoutQualifiers !== null &&
+      (!Number.isInteger(parsedKnockoutQualifiers) || parsedKnockoutQualifiers < 2)
+    ) {
+      return NextResponse.json(
+        { error: "Informe pelo menos 2 classificados para o mata-mata" },
+        { status: 400 }
+      )
+    }
+
     const tournament = await prisma.tournament.create({
       data: {
         name,
         description: description || null,
         coverImage: coverImage || null,
         sport: sport || "tennis",
-        format: format || "round_robin",
+        format: normalizedFormat,
+        knockoutQualifiers: normalizedFormat === RANKING_ELIMINATION_FORMAT ? parsedKnockoutQualifiers : null,
         location: location || null,
         address: address || null,
         city: city || null,

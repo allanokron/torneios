@@ -33,6 +33,8 @@ export default function NewTournamentPage() {
     endDate: "",
     registrationDeadline: "",
     maxParticipants: "",
+    format: "points_ranking",
+    knockoutQualifiers: "",
     isPublic: true,
     inviteCode: "",
     setsPerMatch: 3,
@@ -151,6 +153,7 @@ export default function NewTournamentPage() {
           ...formData,
           coverImage: coverPreview || undefined,
           maxParticipants: formData.maxParticipants ? parseInt(formData.maxParticipants) : undefined,
+          knockoutQualifiers: formData.format === "ranking_elimination" && formData.knockoutQualifiers ? parseInt(formData.knockoutQualifiers) : undefined,
           setsPerMatch: parseInt(formData.setsPerMatch.toString()),
           setsToWin: parseInt(formData.setsToWin.toString()),
           tiebreakScore: parseInt(formData.tiebreakScore.toString()),
@@ -306,6 +309,35 @@ export default function NewTournamentPage() {
                 rows={3}
                 placeholder="Descreva o torneio..."
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Tipo de Torneio</label>
+                <select
+                  name="format"
+                  value={formData.format}
+                  onChange={handleChange}
+                  className="input"
+                >
+                  <option value="points_ranking">Ranking Pontos Diretos</option>
+                  <option value="ranking_elimination">Ranking com Mata-Mata</option>
+                </select>
+              </div>
+              {formData.format === "ranking_elimination" && (
+                <div>
+                  <label className="label">Classificados para o mata-mata</label>
+                  <input
+                    type="number"
+                    name="knockoutQualifiers"
+                    min={2}
+                    value={formData.knockoutQualifiers}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="Ex: 8"
+                  />
+                </div>
+              )}
             </div>
 
             <div>

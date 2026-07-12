@@ -110,8 +110,9 @@ export default function TournamentCard({ tournament, showStatus = true, compact 
       <div className="p-4">
         <h3 className="font-medium text-gray-900 mb-1 truncate">{tournament.name}</h3>
         <p className="text-sm text-gray-500 mb-3">
-          {tournament.format === "round_robin" ? "Todos contra todos" : 
-           tournament.format === "elimination" ? "Eliminatório" : "Grupos + Mata-mata"}
+          {tournament.format === "ranking_elimination" || tournament.format === "elimination"
+            ? "Ranking + Mata-mata"
+            : "Ranking Pontos Diretos"}
         </p>
         
         <div className="flex items-center gap-4 text-xs text-gray-500">

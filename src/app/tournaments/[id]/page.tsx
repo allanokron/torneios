@@ -22,6 +22,10 @@ interface Tournament {
   startDate: string
   endDate?: string
   status: string
+  format: string
+  knockoutQualifiers?: number | null
+  rankingPhaseStatus?: string
+  knockoutLockedAt?: string | null
   setsPerMatch: number
   setsToWin: number
   hasTiebreak: boolean
@@ -87,6 +91,7 @@ interface Match {
   homeScore: number | null
   awayScore: number | null
   duration: number
+  phase?: string
   winnerId?: string | null
   round?: string | null
   month?: string | null
@@ -117,8 +122,43 @@ interface Ranking {
   losses: number
   setsWon: number
   setsLost: number
+  gamesWon: number
+  gamesLost: number
+  setBalance: number
+  gamesBalance: number
   user: { id: string; name: string; avatarUrl?: string }
 }
+
+interface KnockoutEntry {
+  round: number
+  position: number
+  roundName: string
+  status: string
+  homeSeed: number | null
+  awaySeed: number | null
+  homePlayerId: string | null
+  awayPlayerId: string | null
+  homeName: string | null
+  awayName: string | null
+  homeSourceLabel: string | null
+  awaySourceLabel: string | null
+  winnerId: string | null
+  matchId?: string | null
+  matchStatus?: string | null
+}
+
+interface KnockoutState {
+  format: string
+  locked: boolean
+  isRankingComplete: boolean
+  qualifiers: number
+  validationError: string | null
+  players: Ranking[]
+  bracket: KnockoutEntry[]
+}
+
+const formatSupportsKnockout = (format?: string) =>
+  format === "ranking_elimination" || format === "elimination"
 
 export default function TournamentPage() {
   const router = useRouter()
@@ -130,6 +170,8 @@ export default function TournamentPage() {
   const [user, setUser] = useState<{ id: string; name: string } | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [rankings, setRankings] = useState<Ranking[]>([])
+  const [knockout, setKnockout] = useState<KnockoutState | null>(null)
+  const [lockingKnockout, setLockingKnockout] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState("")
@@ -159,6 +201,7 @@ export default function TournamentPage() {
 
   useEffect(() => {
     const tab = searchParams.get("tab")
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (tab) setActiveTab(tab)
   }, [searchParams])
 
@@ -259,6 +302,25 @@ export default function TournamentPage() {
       .catch(() => {})
   }, [tournament])
 
+  const fetchKnockout = useCallback(async () => {
+    if (!tournament || !formatSupportsKnockout(tournament.format)) {
+      setKnockout(null)
+      return
+    }
+    const token = localStorage.getItem("token")
+    fetch(`/api/tournaments/${tournament.id}/knockout`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setKnockout(data.error ? null : data))
+      .catch(() => {})
+  }, [tournament])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchKnockout()
+  }, [fetchKnockout])
+
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       draft: "Rascunho",
@@ -351,6 +413,30 @@ export default function TournamentPage() {
       alert("Erro ao gerar chaveamento")
     } finally {
       setDrawing(false)
+    }
+  }
+
+  const handleLockKnockout = async () => {
+    if (!tournament) return
+    setLockingKnockout(true)
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/tournaments/${tournament.id}/knockout/lock`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || "Erro ao travar mata-mata")
+        return
+      }
+      setKnockout(data)
+      fetchMatches()
+      fetchTournament()
+    } catch {
+      alert("Erro de conexão")
+    } finally {
+      setLockingKnockout(false)
     }
   }
 
@@ -501,7 +587,12 @@ export default function TournamentPage() {
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
-          <TournamentSidebar tournamentId={tournament.id} activeTab={activeTab} isOwner={isOwner} />
+          <TournamentSidebar
+            tournamentId={tournament.id}
+            activeTab={activeTab}
+            isOwner={isOwner}
+            showKnockout={formatSupportsKnockout(tournament.format)}
+          />
 
           {/* Main Content */}
           <div className="flex-1 min-w-0">
@@ -1478,6 +1569,9 @@ export default function TournamentPage() {
                           <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">V</th>
                           <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">D</th>
                           <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Sets</th>
+                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Saldo Sets</th>
+                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Games</th>
+                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Saldo Games</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1500,12 +1594,105 @@ export default function TournamentPage() {
                             <td className="py-2 px-2 text-center text-green-600">{r.wins}</td>
                             <td className="py-2 px-2 text-center text-red-500">{r.losses}</td>
                             <td className="py-2 px-2 text-center text-gray-600">{r.setsWon}-{r.setsLost}</td>
+                            <td className="py-2 px-2 text-center text-gray-600">{r.setBalance}</td>
+                            <td className="py-2 px-2 text-center text-gray-600">{r.gamesWon}-{r.gamesLost}</td>
+                            <td className="py-2 px-2 text-center text-gray-600">{r.gamesBalance}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ===== KNOCKOUT ===== */}
+            {activeTab === "knockout" && (
+              <div className="space-y-4">
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="font-medium text-gray-900">Mata-Mata</h3>
+                      <p className="text-sm text-gray-500">
+                        {knockout?.locked ? "Chaveamento travado" : "Projeção baseada no ranking atual"}
+                      </p>
+                    </div>
+                    {isOwner && knockout && !knockout.locked && (
+                      <button
+                        onClick={handleLockKnockout}
+                        disabled={lockingKnockout || !knockout.isRankingComplete || Boolean(knockout.validationError)}
+                        className="btn-primary disabled:opacity-50"
+                      >
+                        {lockingKnockout ? "Travando..." : "Travar Mata-Mata"}
+                      </button>
+                    )}
+                  </div>
+
+                  {!knockout ? (
+                    <p className="text-sm text-gray-500">Mata-mata disponível apenas para torneios Ranking com Mata-Mata.</p>
+                  ) : knockout.validationError ? (
+                    <p className="text-sm text-red-600">{knockout.validationError}</p>
+                  ) : (
+                    <>
+                      {!knockout.isRankingComplete && !knockout.locked && (
+                        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                          O chaveamento ainda é uma projeção. O agendamento será liberado depois que todos os jogos do ranking forem finalizados e o organizador travar o mata-mata.
+                        </div>
+                      )}
+                      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="rounded-lg border border-gray-100 p-3">
+                          <p className="text-xs text-gray-500">Classificados</p>
+                          <p className="text-lg font-semibold text-gray-900">{knockout.qualifiers}</p>
+                        </div>
+                        <div className="rounded-lg border border-gray-100 p-3">
+                          <p className="text-xs text-gray-500">Status ranking</p>
+                          <p className="text-sm font-medium text-gray-900">{knockout.isRankingComplete ? "Encerrado" : "Em andamento"}</p>
+                        </div>
+                        <div className="rounded-lg border border-gray-100 p-3">
+                          <p className="text-xs text-gray-500">Chave</p>
+                          <p className="text-sm font-medium text-gray-900">{knockout.locked ? "Travada" : "Projetada"}</p>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <div className="flex gap-4 min-w-max pb-2">
+                          {Array.from(new Set(knockout.bracket.map(entry => entry.round))).map(round => (
+                            <div key={round} className="w-72 flex-shrink-0">
+                              <h4 className="text-sm font-medium text-gray-900 mb-2">
+                                {knockout.bracket.find(entry => entry.round === round)?.roundName}
+                              </h4>
+                              <div className="space-y-3">
+                                {knockout.bracket.filter(entry => entry.round === round).map(entry => {
+                                  const homeLabel = entry.homeName || entry.homeSourceLabel || "A definir"
+                                  const awayLabel = entry.awayName || entry.awaySourceLabel || "A definir"
+                                  return (
+                                    <div key={`${entry.round}-${entry.position}`} className="rounded-lg border border-gray-200 bg-white p-3">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs text-gray-500">Jogo {entry.position}</span>
+                                        <span className="text-xs text-gray-500">
+                                          {entry.status === "bye" ? "Chapéu" : entry.matchStatus ? getMatchStatusLabel(entry.matchStatus) : "Aguardando"}
+                                        </span>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className={`rounded border px-2 py-2 text-sm ${entry.winnerId && entry.winnerId === entry.homePlayerId ? "border-green-200 bg-green-50 text-green-800" : "border-gray-100 text-gray-800"}`}>
+                                          {entry.homeSeed && <span className="text-xs text-gray-400 mr-1">#{entry.homeSeed}</span>}
+                                          {homeLabel}
+                                        </div>
+                                        <div className={`rounded border px-2 py-2 text-sm ${entry.winnerId && entry.winnerId === entry.awayPlayerId ? "border-green-200 bg-green-50 text-green-800" : "border-gray-100 text-gray-800"}`}>
+                                          {entry.awaySeed && <span className="text-xs text-gray-400 mr-1">#{entry.awaySeed}</span>}
+                                          {awayLabel}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 

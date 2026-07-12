@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { advanceKnockoutMatch } from "@/lib/knockout"
+import { recalculateTournamentRanking } from "@/lib/ranking"
 
 export async function POST(
   request: Request,
@@ -196,10 +198,6 @@ export async function POST(
       const lossPoints = scoringConfig?.lossByForfeit ?? 0
       const penaltyPoints = scoringConfig?.withdrawalPenalty ?? 0
 
-      // Update ranking for winner
-      const winnerRanking = await prisma.playerRanking.findUnique({
-        where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: winnerId } }
-      })
       await prisma.playerRanking.upsert({
         where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: winnerId } },
         create: {
@@ -299,6 +297,12 @@ export async function POST(
           newValue: { winnerId, forfeitById, finalSets, endReason: "forfeit" }
         }
       })
+
+      if (match.phase === "knockout") {
+        await advanceKnockoutMatch(match.id, winnerId)
+      } else {
+        await recalculateTournamentRanking(match.tournamentId)
+      }
 
       return NextResponse.json({ match: updatedMatch })
     }
@@ -433,6 +437,12 @@ export async function POST(
         }
       })
 
+      if (match.phase === "knockout") {
+        await advanceKnockoutMatch(match.id, winnerId)
+      } else {
+        await recalculateTournamentRanking(match.tournamentId)
+      }
+
       return NextResponse.json({ match: updatedMatch })
     }
 
@@ -466,8 +476,6 @@ export async function POST(
 
       let homeSetsWon = 0
       let awaySetsWon = 0
-      let homeGamesTotal = 0
-      let awayGamesTotal = 0
 
       for (const set of sets) {
         const { homeGames, awayGames } = set
@@ -477,9 +485,6 @@ export async function POST(
         } else if (awayGames > homeGames) {
           awaySetsWon++
         }
-
-        homeGamesTotal += homeGames
-        awayGamesTotal += awayGames
       }
 
       const requiredSets = Math.ceil(setsPerMatch / 2)
@@ -533,8 +538,11 @@ export async function POST(
         }
       })
 
-      // Update ranking
-      await updateRanking(match.tournamentId, match.id)
+      if (match.phase === "knockout") {
+        await advanceKnockoutMatch(match.id, winnerId)
+      } else {
+        await recalculateTournamentRanking(match.tournamentId)
+      }
 
       // Notify the other player
       const otherPlayerId = match.homePlayerId === decoded.userId 
@@ -675,8 +683,11 @@ export async function PATCH(
       include: { sets: { orderBy: { setNumber: "asc" } } }
     })
 
-    // Re-update ranking
-    await updateRanking(match.tournamentId, match.id)
+    if (match.phase === "knockout") {
+      await advanceKnockoutMatch(match.id, winnerId)
+    } else {
+      await recalculateTournamentRanking(match.tournamentId)
+    }
 
     await prisma.auditLog.create({
       data: {
@@ -693,174 +704,5 @@ export async function PATCH(
   } catch (error) {
     console.error("Erro ao editar resultado:", error)
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
-  }
-}
-
-async function updateRanking(tournamentId: string, matchId: string) {
-  const match = await prisma.match.findUnique({
-    where: { id: matchId },
-    include: {
-      sets: true,
-      tournament: { include: { scoringConfig: true } }
-    }
-  })
-
-  if (!match || !match.winnerId || !match.tournament.scoringConfig) return
-
-  const { scoringConfig } = match.tournament
-  const isHomeWinner = match.winnerId === match.homePlayerId
-
-  // W.O. match: use W.O. points and configured sets/games
-  if (match.status === "wo") {
-    const woWinSets = scoringConfig.woWinSets ?? 2
-    const woLossSets = scoringConfig.woLossSets ?? 0
-    const woWinGames = scoringConfig.woWinGames ?? 12
-    const woLossGames = scoringConfig.woLossGames ?? 0
-
-    for (const playerId of [match.homePlayerId, match.awayPlayerId]) {
-      const isWinner = playerId === match.winnerId
-      const points = isWinner ? scoringConfig.winByWO : scoringConfig.lossByWO
-      const setsWon = isWinner ? woWinSets : woLossSets
-      const setsLost = isWinner ? woLossSets : woWinSets
-      const gamesWon = isWinner ? woWinGames : woLossGames
-      const gamesLost = isWinner ? woLossGames : woWinGames
-
-      await prisma.playerRanking.upsert({
-        where: { tournamentId_userId: { tournamentId, userId: playerId } },
-        update: {
-          points: { increment: points },
-          matchesPlayed: { increment: 1 },
-          wins: isWinner ? { increment: 1 } : undefined,
-          losses: !isWinner ? { increment: 1 } : undefined,
-          setsWon: { increment: setsWon },
-          setsLost: { increment: setsLost },
-          gamesWon: { increment: gamesWon },
-          gamesLost: { increment: gamesLost },
-          setBalance: { increment: setsWon - setsLost },
-          gamesBalance: { increment: gamesWon - gamesLost }
-        },
-        create: {
-          tournamentId,
-          userId: playerId,
-          position: 0,
-          points,
-          matchesPlayed: 1,
-          wins: isWinner ? 1 : 0,
-          losses: isWinner ? 0 : 1,
-          setsWon,
-          setsLost,
-          gamesWon,
-          gamesLost,
-          setBalance: setsWon - setsLost,
-          gamesBalance: gamesWon - gamesLost
-        }
-      })
-    }
-    return
-  }
-
-  // Forfeit match: use forfeit points and track sets/games
-  if (match.endReason === "forfeit") {
-    for (const playerId of [match.homePlayerId, match.awayPlayerId]) {
-      const isWinner = playerId === match.winnerId
-      const points = isWinner ? scoringConfig.winByForfeit : scoringConfig.lossByForfeit
-      const isHome = playerId === match.homePlayerId
-
-      const setsWon = match.sets.filter(s => isHome ? s.homeGames > s.awayGames : s.awayGames > s.homeGames).length
-      const setsLost = match.sets.filter(s => isHome ? s.awayGames > s.homeGames : s.homeGames > s.awayGames).length
-      const gamesWon = match.sets.reduce((sum, s) => sum + (isHome ? s.homeGames : s.awayGames), 0)
-      const gamesLost = match.sets.reduce((sum, s) => sum + (isHome ? s.awayGames : s.homeGames), 0)
-
-      await prisma.playerRanking.upsert({
-        where: { tournamentId_userId: { tournamentId, userId: playerId } },
-        update: {
-          points: { increment: points },
-          matchesPlayed: { increment: 1 },
-          wins: isWinner ? { increment: 1 } : undefined,
-          losses: !isWinner ? { increment: 1 } : undefined,
-          setsWon: { increment: setsWon },
-          setsLost: { increment: setsLost },
-          gamesWon: { increment: gamesWon },
-          gamesLost: { increment: gamesLost },
-          setBalance: { increment: setsWon - setsLost },
-          gamesBalance: { increment: gamesWon - gamesLost }
-        },
-        create: {
-          tournamentId,
-          userId: playerId,
-          position: 0,
-          points,
-          matchesPlayed: 1,
-          wins: isWinner ? 1 : 0,
-          losses: isWinner ? 0 : 1,
-          setsWon,
-          setsLost,
-          gamesWon,
-          gamesLost,
-          setBalance: setsWon - setsLost,
-          gamesBalance: gamesWon - gamesLost
-        }
-      })
-    }
-    return
-  }
-
-  const homeSetsWon = match.sets.filter(s => s.homeGames > s.awayGames).length
-  const awaySetsWon = match.sets.filter(s => s.awayGames > s.homeGames).length
-
-  let homePoints = 0
-  let awayPoints = 0
-
-  if (isHomeWinner) {
-    homePoints = awaySetsWon === 0 ? scoringConfig.winWithoutLosingSet : scoringConfig.winLosingOneSet
-    awayPoints = homeSetsWon > 0 ? scoringConfig.lossWinningOneSet : scoringConfig.lossWithoutWinningSet
-  } else {
-    awayPoints = homeSetsWon === 0 ? scoringConfig.winWithoutLosingSet : scoringConfig.winLosingOneSet
-    homePoints = awaySetsWon > 0 ? scoringConfig.lossWinningOneSet : scoringConfig.lossWithoutWinningSet
-  }
-
-  for (const playerId of [match.homePlayerId, match.awayPlayerId]) {
-    const isHome = playerId === match.homePlayerId
-    const points = isHome ? homePoints : awayPoints
-    const setsWon = isHome ? homeSetsWon : awaySetsWon
-    const setsLost = isHome ? awaySetsWon : homeSetsWon
-    const gamesWon = isHome
-      ? match.sets.reduce((sum, s) => sum + s.homeGames, 0)
-      : match.sets.reduce((sum, s) => sum + s.awayGames, 0)
-    const gamesLost = isHome
-      ? match.sets.reduce((sum, s) => sum + s.awayGames, 0)
-      : match.sets.reduce((sum, s) => sum + s.homeGames, 0)
-    const isWinner = playerId === match.winnerId
-
-    await prisma.playerRanking.upsert({
-      where: { tournamentId_userId: { tournamentId, userId: playerId } },
-      update: {
-        points: { increment: points },
-        matchesPlayed: { increment: 1 },
-        wins: isWinner ? { increment: 1 } : undefined,
-        losses: !isWinner ? { increment: 1 } : undefined,
-        setsWon: { increment: setsWon },
-        setsLost: { increment: setsLost },
-        gamesWon: { increment: gamesWon },
-        gamesLost: { increment: gamesLost },
-        setBalance: { increment: setsWon - setsLost },
-        gamesBalance: { increment: gamesWon - gamesLost }
-      },
-      create: {
-        tournamentId,
-        userId: playerId,
-        position: 0,
-        points,
-        matchesPlayed: 1,
-        wins: isWinner ? 1 : 0,
-        losses: isWinner ? 0 : 1,
-        setsWon,
-        setsLost,
-        gamesWon,
-        gamesLost,
-        setBalance: setsWon - setsLost,
-        gamesBalance: gamesWon - gamesLost
-      }
-    })
   }
 }

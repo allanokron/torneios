@@ -13,6 +13,9 @@ interface Tournament {
   startDate: string
   endDate?: string
   status: string
+  format: string
+  knockoutQualifiers?: number | null
+  knockoutLockedAt?: string | null
   setsPerMatch: number
   setsToWin: number
   hasTiebreak: boolean
@@ -60,6 +63,11 @@ interface SettingsTabProps {
   onTournamentUpdated: (tournament: Tournament) => void
 }
 
+const normalizeTournamentFormat = (format?: string) =>
+  format === "ranking_elimination" || format === "elimination"
+    ? "ranking_elimination"
+    : "points_ranking"
+
 export default function SettingsTab({ tournament, onTournamentUpdated }: SettingsTabProps) {
   const [activeSection, setActiveSection] = useState<"general" | "rules" | "scoring" | "tiebreaker" | "courts">("general")
   const [saving, setSaving] = useState(false)
@@ -72,6 +80,8 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
   const [coverImage, setCoverImage] = useState(tournament.coverImage || "")
   const [coverPreview, setCoverPreview] = useState(tournament.coverImage || "")
   const [status, setStatus] = useState(tournament.status)
+  const [format, setFormat] = useState(normalizeTournamentFormat(tournament.format))
+  const [knockoutQualifiers, setKnockoutQualifiers] = useState(tournament.knockoutQualifiers?.toString() || "")
   const [location, setLocation] = useState(tournament.location || "")
   const [city, setCity] = useState(tournament.city || "")
   const [state, setState] = useState(tournament.state || "")
@@ -177,6 +187,8 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
           description,
           coverImage: coverImage || null,
           status,
+          format,
+          knockoutQualifiers: format === "ranking_elimination" && knockoutQualifiers ? parseInt(knockoutQualifiers) : null,
           location,
           city,
           state,
@@ -487,6 +499,37 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                 <option value="in_progress">Em Andamento</option>
                 <option value="finished">Finalizado</option>
               </select>
+            </div>
+            <div className="border-t border-gray-100 pt-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Tipo de Torneio</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Formato</label>
+                  <select
+                    value={format}
+                    onChange={e => setFormat(e.target.value)}
+                    disabled={Boolean(tournament.knockoutLockedAt)}
+                    className="input disabled:opacity-50"
+                  >
+                    <option value="points_ranking">Ranking Pontos Diretos</option>
+                    <option value="ranking_elimination">Ranking com Mata-Mata</option>
+                  </select>
+                </div>
+                {format === "ranking_elimination" && (
+                  <div>
+                    <label className="label">Classificados</label>
+                    <input
+                      type="number"
+                      min={2}
+                      value={knockoutQualifiers}
+                      onChange={e => setKnockoutQualifiers(e.target.value)}
+                      disabled={Boolean(tournament.knockoutLockedAt)}
+                      className="input disabled:opacity-50"
+                      placeholder="Ex: 8"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
