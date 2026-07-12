@@ -143,6 +143,9 @@ interface KnockoutEntry {
   homeSourceLabel: string | null
   awaySourceLabel: string | null
   winnerId: string | null
+  nextRound: number | null
+  nextPosition: number | null
+  nextSlot: "home" | "away" | null
   matchId?: string | null
   matchStatus?: string | null
 }
@@ -1653,43 +1656,7 @@ export default function TournamentPage() {
                           <p className="text-sm font-medium text-gray-900">{knockout.locked ? "Travada" : "Projetada"}</p>
                         </div>
                       </div>
-                      <div className="overflow-x-auto">
-                        <div className="flex gap-4 min-w-max pb-2">
-                          {Array.from(new Set(knockout.bracket.map(entry => entry.round))).map(round => (
-                            <div key={round} className="w-72 flex-shrink-0">
-                              <h4 className="text-sm font-medium text-gray-900 mb-2">
-                                {knockout.bracket.find(entry => entry.round === round)?.roundName}
-                              </h4>
-                              <div className="space-y-3">
-                                {knockout.bracket.filter(entry => entry.round === round).map(entry => {
-                                  const homeLabel = entry.homeName || entry.homeSourceLabel || "A definir"
-                                  const awayLabel = entry.awayName || entry.awaySourceLabel || "A definir"
-                                  return (
-                                    <div key={`${entry.round}-${entry.position}`} className="rounded-lg border border-gray-200 bg-white p-3">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs text-gray-500">Jogo {entry.position}</span>
-                                        <span className="text-xs text-gray-500">
-                                          {entry.status === "bye" ? "Chapéu" : entry.matchStatus ? getMatchStatusLabel(entry.matchStatus) : "Aguardando"}
-                                        </span>
-                                      </div>
-                                      <div className="space-y-2">
-                                        <div className={`rounded border px-2 py-2 text-sm ${entry.winnerId && entry.winnerId === entry.homePlayerId ? "border-green-200 bg-green-50 text-green-800" : "border-gray-100 text-gray-800"}`}>
-                                          {entry.homeSeed && <span className="text-xs text-gray-400 mr-1">#{entry.homeSeed}</span>}
-                                          {homeLabel}
-                                        </div>
-                                        <div className={`rounded border px-2 py-2 text-sm ${entry.winnerId && entry.winnerId === entry.awayPlayerId ? "border-green-200 bg-green-50 text-green-800" : "border-gray-100 text-gray-800"}`}>
-                                          {entry.awaySeed && <span className="text-xs text-gray-400 mr-1">#{entry.awaySeed}</span>}
-                                          {awayLabel}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      <KnockoutBracketView knockout={knockout} getMatchStatusLabel={getMatchStatusLabel} />
                     </>
                   )}
                 </div>
@@ -1934,4 +1901,312 @@ export default function TournamentPage() {
       <Footer />
     </div>
   )
+}
+
+const BRACKET_CARD_WIDTH = 280
+const BRACKET_CARD_HEIGHT = 126
+const BRACKET_COLUMN_GAP = 88
+const BRACKET_BASE_GAP = 26
+const BRACKET_HEADER_HEIGHT = 42
+const BRACKET_PADDING = 18
+
+type BracketLayoutItem = {
+  entry: KnockoutEntry
+  x: number
+  y: number
+}
+
+type BracketLayoutLine = {
+  id: string
+  path: string
+}
+
+type BracketLayout = {
+  rounds: number[]
+  items: BracketLayoutItem[]
+  lines: BracketLayoutLine[]
+  width: number
+  height: number
+}
+
+function KnockoutBracketView({
+  knockout,
+  getMatchStatusLabel,
+}: {
+  knockout: KnockoutState
+  getMatchStatusLabel: (status: string) => string
+}) {
+  const layout = buildBracketLayout(knockout.bracket)
+
+  if (layout.items.length === 0) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
+        <p className="text-sm text-gray-500">Nenhum jogo de mata-mata disponível.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50/70">
+      <div className="flex flex-col gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-900">Chaveamento</p>
+          <p className="text-xs text-gray-500">Acompanhe o caminho de cada vencedor até a final.</p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-green-700">Vencedor</span>
+          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">Chapéu</span>
+          <span className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-gray-500">A definir</span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto p-4">
+        <div
+          className="relative min-w-max"
+          style={{
+            width: layout.width,
+            height: layout.height,
+          }}
+        >
+          <svg
+            className="pointer-events-none absolute inset-0 z-0"
+            width={layout.width}
+            height={layout.height}
+            aria-hidden="true"
+          >
+            {layout.lines.map(line => (
+              <path
+                key={line.id}
+                d={line.path}
+                fill="none"
+                stroke="#d1d5db"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+            {layout.lines.map(line => {
+              const match = line.path.match(/H ([\d.]+)$/)
+              if (!match) return null
+              const endX = Number(match[1])
+              const endY = Number(line.path.match(/V ([\d.]+)/)?.[1] ?? 0)
+              return <circle key={`${line.id}-dot`} cx={endX} cy={endY} r="3.5" fill="#10b981" />
+            })}
+          </svg>
+
+          {layout.rounds.map((round, index) => {
+            const x = BRACKET_PADDING + index * (BRACKET_CARD_WIDTH + BRACKET_COLUMN_GAP)
+            const roundName = knockout.bracket.find(entry => entry.round === round)?.roundName ?? `Rodada ${round}`
+
+            return (
+              <div
+                key={round}
+                className="absolute top-0 z-10"
+                style={{ left: x, width: BRACKET_CARD_WIDTH }}
+              >
+                <div className="flex h-8 items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-900">{roundName}</h4>
+                  <span className="text-xs text-gray-400">
+                    {knockout.bracket.filter(entry => entry.round === round).length} jogos
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+
+          {layout.items.map(item => (
+            <KnockoutMatchCard
+              key={`${item.entry.round}-${item.entry.position}`}
+              entry={item.entry}
+              getMatchStatusLabel={getMatchStatusLabel}
+              style={{
+                left: item.x,
+                top: item.y,
+                width: BRACKET_CARD_WIDTH,
+                height: BRACKET_CARD_HEIGHT,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function KnockoutMatchCard({
+  entry,
+  getMatchStatusLabel,
+  style,
+}: {
+  entry: KnockoutEntry
+  getMatchStatusLabel: (status: string) => string
+  style: React.CSSProperties
+}) {
+  const statusLabel =
+    entry.status === "bye"
+      ? "Chapéu"
+      : entry.matchStatus
+        ? getMatchStatusLabel(entry.matchStatus)
+        : entry.status === "ready"
+          ? "Pronto"
+          : "Aguardando"
+
+  return (
+    <div
+      className="absolute z-10 rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md"
+      style={style}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-gray-500">Jogo {entry.position}</span>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${getBracketStatusClass(entry.status)}`}>
+          {statusLabel}
+        </span>
+      </div>
+
+      <div className="space-y-2">
+        <KnockoutPlayerSlot
+          seed={entry.homeSeed}
+          name={entry.homeName}
+          sourceLabel={entry.homeSourceLabel}
+          playerId={entry.homePlayerId}
+          winnerId={entry.winnerId}
+        />
+        <KnockoutPlayerSlot
+          seed={entry.awaySeed}
+          name={entry.awayName}
+          sourceLabel={entry.awaySourceLabel}
+          playerId={entry.awayPlayerId}
+          winnerId={entry.winnerId}
+        />
+      </div>
+    </div>
+  )
+}
+
+function KnockoutPlayerSlot({
+  seed,
+  name,
+  sourceLabel,
+  playerId,
+  winnerId,
+}: {
+  seed: number | null
+  name: string | null
+  sourceLabel: string | null
+  playerId: string | null
+  winnerId: string | null
+}) {
+  const label = name || sourceLabel || "A definir"
+  const isWinner = Boolean(playerId && winnerId === playerId)
+  const isSource = Boolean(!name && sourceLabel)
+
+  return (
+    <div
+      className={`flex h-9 items-center gap-2 rounded-md border px-2 text-sm ${
+        isWinner
+          ? "border-green-200 bg-green-50 text-green-800"
+          : isSource
+            ? "border-gray-200 bg-gray-50 text-gray-500"
+            : "border-gray-200 bg-white text-gray-800"
+      }`}
+    >
+      {seed ? (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded bg-gray-100 px-1.5 text-[11px] font-semibold text-gray-500">
+          {seed}
+        </span>
+      ) : (
+        <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gray-300" />
+      )}
+      <span className={`min-w-0 flex-1 truncate ${isSource ? "italic" : "font-medium"}`}>{label}</span>
+      {isWinner && <span className="text-xs font-semibold text-green-600">Venceu</span>}
+    </div>
+  )
+}
+
+function buildBracketLayout(bracket: KnockoutEntry[]): BracketLayout {
+  const rounds = Array.from(new Set(bracket.map(entry => entry.round))).sort((a, b) => a - b)
+  const byKey = new Map(bracket.map(entry => [getBracketKey(entry.round, entry.position), entry]))
+  const positionByKey = new Map<string, { x: number; y: number }>()
+  const pitch = BRACKET_CARD_HEIGHT + BRACKET_BASE_GAP
+
+  rounds.forEach((round, roundIndex) => {
+    const entries = bracket
+      .filter(entry => entry.round === round)
+      .sort((a, b) => a.position - b.position)
+
+    entries.forEach(entry => {
+      const x = BRACKET_PADDING + roundIndex * (BRACKET_CARD_WIDTH + BRACKET_COLUMN_GAP)
+      const sources = bracket.filter(source => source.nextRound === entry.round && source.nextPosition === entry.position)
+      const sourcePositions = sources
+        .map(source => positionByKey.get(getBracketKey(source.round, source.position)))
+        .filter((position): position is { x: number; y: number } => Boolean(position))
+
+      const computedY = sourcePositions.length > 0
+        ? sourcePositions.reduce((sum, position) => sum + position.y + BRACKET_CARD_HEIGHT / 2, 0) / sourcePositions.length - BRACKET_CARD_HEIGHT / 2
+        : (entry.position - 1) * pitch * Math.max(1, Math.pow(2, round - 1))
+
+      positionByKey.set(getBracketKey(entry.round, entry.position), {
+        x,
+        y: BRACKET_HEADER_HEIGHT + BRACKET_PADDING + computedY,
+      })
+    })
+  })
+
+  const items = bracket
+    .map(entry => {
+      const position = positionByKey.get(getBracketKey(entry.round, entry.position))
+      if (!position) return null
+
+      return {
+        entry,
+        x: position.x,
+        y: position.y,
+      }
+    })
+    .filter((item): item is BracketLayoutItem => Boolean(item))
+
+  const lines = bracket
+    .map(entry => {
+      if (!entry.nextRound || !entry.nextPosition) return null
+
+      const from = positionByKey.get(getBracketKey(entry.round, entry.position))
+      const targetEntry = byKey.get(getBracketKey(entry.nextRound, entry.nextPosition))
+      const to = positionByKey.get(getBracketKey(entry.nextRound, entry.nextPosition))
+      if (!from || !to || !targetEntry) return null
+
+      const x1 = from.x + BRACKET_CARD_WIDTH
+      const y1 = from.y + BRACKET_CARD_HEIGHT / 2
+      const x2 = to.x
+      const targetSlotOffset = entry.nextSlot === "away" ? 88 : 48
+      const y2 = to.y + targetSlotOffset
+      const midX = x1 + (x2 - x1) / 2
+
+      return {
+        id: `${entry.round}-${entry.position}-${entry.nextRound}-${entry.nextPosition}`,
+        path: `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`,
+      }
+    })
+    .filter((line): line is BracketLayoutLine => Boolean(line))
+
+  const maxRight = Math.max(...items.map(item => item.x + BRACKET_CARD_WIDTH), BRACKET_CARD_WIDTH)
+  const maxBottom = Math.max(...items.map(item => item.y + BRACKET_CARD_HEIGHT), BRACKET_CARD_HEIGHT)
+
+  return {
+    rounds,
+    items,
+    lines,
+    width: maxRight + BRACKET_PADDING,
+    height: maxBottom + BRACKET_PADDING,
+  }
+}
+
+function getBracketKey(round: number, position: number) {
+  return `${round}-${position}`
+}
+
+function getBracketStatusClass(status: string) {
+  if (status === "completed") return "bg-green-50 text-green-700"
+  if (status === "ready") return "bg-blue-50 text-blue-700"
+  if (status === "bye") return "bg-amber-50 text-amber-700"
+  return "bg-gray-100 text-gray-500"
 }
