@@ -21,6 +21,26 @@ export async function GET(request: Request) {
       ]
     }
 
+    // Check if user is authenticated to show private tournaments
+    const authHeader = request.headers.get("authorization")
+    let currentUserId: string | null = null
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1]
+      const decoded = verifyToken(token)
+      if (decoded) currentUserId = decoded.userId
+    }
+
+    // Public tournaments visible to all, private only to members/owner
+    if (currentUserId) {
+      where.OR = [
+        { isPublic: true },
+        { ownerId: currentUserId },
+        { members: { some: { userId: currentUserId } } }
+      ]
+    } else {
+      where.isPublic = true
+    }
+
     const tournaments = await prisma.tournament.findMany({
       where,
       include: {

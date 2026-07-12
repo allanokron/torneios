@@ -64,7 +64,7 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { email, userId, role } = body
+    const { email, userId, role, action } = body
 
     const tournament = await prisma.tournament.findUnique({
       where: { id },
@@ -82,6 +82,67 @@ export async function POST(
       )
     }
 
+    // Self-join: user requests to join a public tournament
+    if (action === "join") {
+      if (!tournament.isPublic) {
+        return NextResponse.json(
+          { error: "Este torneio é privado. Peça um convite ao organizador." },
+          { status: 403 }
+        )
+      }
+
+      if (tournament.status !== "registration_open" && tournament.status !== "draft") {
+        return NextResponse.json(
+          { error: "Inscrições não estão abertas neste torneio" },
+          { status: 400 }
+        )
+      }
+
+      const existingMember = await prisma.tournamentMember.findFirst({
+        where: { tournamentId: id, userId: decoded.userId }
+      })
+
+      if (existingMember) {
+        if (existingMember.status === "accepted") {
+          return NextResponse.json({ error: "Você já é participante deste torneio" }, { status: 400 })
+        }
+        if (existingMember.status === "pending") {
+          return NextResponse.json({ error: "Sua solicitação já está pendente" }, { status: 400 })
+        }
+      }
+
+      if (tournament.maxParticipants) {
+        const currentCount = await prisma.tournamentMember.count({
+          where: { tournamentId: id, status: "accepted" }
+        })
+        if (currentCount >= tournament.maxParticipants) {
+          return NextResponse.json({ error: "Torneio atingiu o limite de participantes" }, { status: 400 })
+        }
+      }
+
+      await prisma.tournamentMember.create({
+        data: {
+          tournamentId: id,
+          userId: decoded.userId,
+          role: "player",
+          status: "pending"
+        }
+      })
+
+      await prisma.notification.create({
+        data: {
+          userId: tournament.ownerId,
+          title: "Nova solicitação de participação",
+          message: `Um jogador solicitou participar do torneio ${tournament.name}`,
+          type: "member",
+          link: `/tournaments/${id}`
+        }
+      })
+
+      return NextResponse.json({ success: true, message: "Solicitação enviada. Aguarde aprovação do organizador." })
+    }
+
+    // Organizer adding members
     const isOrganizer = tournament.ownerId === decoded.userId || 
       tournament.members.some(m => m.role === "organizer")
 

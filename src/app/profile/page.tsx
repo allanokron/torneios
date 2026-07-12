@@ -221,7 +221,7 @@ export default function ProfilePage() {
               >
                 {uploading ? "Enviando..." : "Alterar foto"}
               </button>
-              <p className="text-xs text-gray-400 mt-1">JPG ou PNG, máx. 2MB</p>
+              <p className="text-xs text-gray-400 mt-1">JPG ou PNG, máx. 2MB. Recomendado: 400x400px.</p>
               <input
                 ref={fileInputRef}
                 type="file"

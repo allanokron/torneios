@@ -52,25 +52,23 @@ export default function DashboardPage() {
       return
     }
 
-    fetch("/api/auth/me", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        } else {
+    async function loadData() {
+      try {
+        const authRes = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const authData = await authRes.json()
+        if (!authData.user) {
           router.push("/login")
+          return
         }
-      })
-      .catch(() => router.push("/login"))
+        setUser(authData.user)
 
-    fetch("/api/tournaments", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(async (data) => {
-        const myTournaments = data.tournaments || []
+        const tournamentsRes = await fetch("/api/tournaments", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const tournamentsData = await tournamentsRes.json()
+        const myTournaments = tournamentsData.tournaments || []
         setTournaments(myTournaments.slice(0, 5))
 
         const now = new Date()
@@ -84,7 +82,9 @@ export default function DashboardPage() {
             const mData = await res.json()
             const matches = mData.matches || []
             for (const m of matches) {
+              const isMyMatch = m.homePlayer.id === authData.user.id || m.awayPlayer.id === authData.user.id
               if (
+                isMyMatch &&
                 m.status !== "finished" &&
                 m.status !== "wo" &&
                 m.status !== "cancelled" &&
@@ -102,9 +102,14 @@ export default function DashboardPage() {
 
         allMatches.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
         setUpcomingMatches(allMatches.slice(0, 10))
+      } catch {
+        router.push("/login")
+      } finally {
         setLoading(false)
-      })
-      .catch(() => setLoading(false))
+      }
+    }
+
+    loadData()
   }, [router])
 
   if (!user) {

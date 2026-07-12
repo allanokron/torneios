@@ -6,6 +6,7 @@ interface Tournament {
   id: string
   name: string
   description?: string
+  coverImage?: string
   location?: string
   city?: string
   state?: string
@@ -24,6 +25,8 @@ interface Tournament {
   woCriteria?: string
   isPublic: boolean
   maxParticipants?: number
+  maxPostponements?: number
+  postponementScope?: string
   courts: Array<{
     id: string
     name: string
@@ -57,6 +60,8 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
   // General form
   const [name, setName] = useState(tournament.name)
   const [description, setDescription] = useState(tournament.description || "")
+  const [coverImage, setCoverImage] = useState(tournament.coverImage || "")
+  const [coverPreview, setCoverPreview] = useState(tournament.coverImage || "")
   const [status, setStatus] = useState(tournament.status)
   const [location, setLocation] = useState(tournament.location || "")
   const [city, setCity] = useState(tournament.city || "")
@@ -65,6 +70,8 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
   const [endDate, setEndDate] = useState(tournament.endDate?.split("T")[0] || "")
   const [maxParticipants, setMaxParticipants] = useState(tournament.maxParticipants?.toString() || "")
   const [isPublic, setIsPublic] = useState(tournament.isPublic)
+  const [maxPostponements, setMaxPostponements] = useState(tournament.maxPostponements ?? 3)
+  const [postponementScope, setPostponementScope] = useState(tournament.postponementScope || "month")
 
   // Rules form
   const [setsPerMatch, setSetsPerMatch] = useState(tournament.setsPerMatch)
@@ -107,6 +114,27 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
     setError("")
   }
 
+  const handleCoverImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Imagem deve ter no máximo 5MB")
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64 = reader.result as string
+      setCoverImage(base64)
+      setCoverPreview(base64)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeCoverImage = () => {
+    setCoverImage("")
+    setCoverPreview("")
+  }
+
   // Save general settings
   const saveGeneral = async () => {
     clearMessages()
@@ -121,6 +149,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
         body: JSON.stringify({
           name,
           description,
+          coverImage: coverImage || null,
           status,
           location,
           city,
@@ -128,7 +157,9 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
           startDate: startDate || undefined,
           endDate: endDate || undefined,
           maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
-          isPublic
+          isPublic,
+          maxPostponements,
+          postponementScope
         })
       })
       const data = await res.json()
@@ -349,6 +380,32 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
               <textarea value={description} onChange={e => setDescription(e.target.value)} className="input min-h-[80px]" />
             </div>
             <div>
+              <label className="label">Foto de Capa</label>
+              {coverPreview ? (
+                <div className="relative">
+                  <img src={coverPreview} alt="Capa" className="w-full h-40 object-cover rounded-lg border border-gray-200" />
+                  <button
+                    type="button"
+                    onClick={removeCoverImage}
+                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-sm border border-gray-200 hover:bg-red-50"
+                  >
+                    <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-400 transition-colors">
+                  <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-sm text-gray-500">Clique para enviar uma foto</span>
+                  <span className="text-xs text-gray-400 mt-1">JPG, PNG. Máximo 5MB. Recomendado: 1200x400px.</span>
+                  <input type="file" accept="image/*" onChange={handleCoverImage} className="hidden" />
+                </label>
+              )}
+            </div>
+            <div>
               <label className="label">Status do Torneio</label>
               <select value={status} onChange={e => setStatus(e.target.value)} className="input">
                 <option value="draft">Rascunho</option>
@@ -393,6 +450,27 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                   <span className="text-sm text-gray-700">Torneio público</span>
                 </label>
               </div>
+            </div>
+            <div className="border-t border-gray-100 pt-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Regras de Adiamento</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Máx. adiamentos por jogador</label>
+                  <input type="number" min={0} max={10} value={maxPostponements} onChange={e => setMaxPostponements(parseInt(e.target.value) || 0)} className="input" />
+                </div>
+                <div>
+                  <label className="label">Período de contagem</label>
+                  <select value={postponementScope} onChange={e => setPostponementScope(e.target.value)} className="input">
+                    <option value="month">Por mês</option>
+                    <option value="tournament">Por torneio (total)</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                {postponementScope === "month" 
+                  ? "O jogador pode adiar até " + maxPostponements + " vezes por mês. Agendamentos de meses futuros ficam bloqueados até o dia 1º."
+                  : "O jogador pode adiar até " + maxPostponements + " vezes no total durante o torneio."}
+              </p>
             </div>
             <div className="pt-2">
               <button onClick={saveGeneral} disabled={saving} className="btn-primary disabled:opacity-50">

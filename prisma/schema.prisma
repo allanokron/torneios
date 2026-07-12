@@ -96,6 +96,10 @@ model Tournament {
   termsOfResponsibility String?
   cancellationRules     String?
 
+  // Regras de adiamento
+  maxPostponements      Int     @default(3) // máximo de adiamentos por jogador
+  postponementScope     String  @default("month") // "month" ou "tournament" - período de contagem
+
   // Finalização
   autoFinishOnFirstSubmission Boolean @default(false)
 
@@ -228,6 +232,10 @@ model Match {
   woReceivedById String?
   woReason       String?
 
+  // Round & Month (for spreadsheet import)
+  round String?
+  month String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -240,7 +248,7 @@ model Match {
   penalties          Penalty[]
   contestations      Contestation[]
 
-  @@unique([tournamentId, homePlayerId, awayPlayerId])
+  @@unique([tournamentId, homePlayerId, awayPlayerId, round])
 }
 
 model Set {

@@ -15,6 +15,7 @@ interface Tournament {
   id: string
   name: string
   description?: string
+  coverImage?: string
   location?: string
   city?: string
   state?: string
@@ -81,6 +82,8 @@ interface Match {
   awayScore: number | null
   duration: number
   winnerId?: string | null
+  round?: string | null
+  month?: string | null
   homePlayer: { id: string; name: string; avatarUrl?: string }
   awayPlayer: { id: string; name: string; avatarUrl?: string }
   court: { id: string; name: string } | null
@@ -135,10 +138,13 @@ export default function TournamentPage() {
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [matchSubTab, setMatchSubTab] = useState<"upcoming" | "completed">("upcoming")
   const [resultMatch, setResultMatch] = useState<Match | null>(null)
+  const [deletingMatchId, setDeletingMatchId] = useState<string | null>(null)
   const [showNewMatch, setShowNewMatch] = useState(false)
   const [newMatchOpponent, setNewMatchOpponent] = useState("")
   const [creatingMatch, setCreatingMatch] = useState(false)
   const [newMatchError, setNewMatchError] = useState("")
+  const [requestingJoin, setRequestingJoin] = useState(false)
+  const [joinMessage, setJoinMessage] = useState("")
 
   // My Matches filters
   const [myFilterDateFrom, setMyFilterDateFrom] = useState("")
@@ -198,6 +204,37 @@ export default function TournamentPage() {
       .then(data => setMatches(data.matches || []))
       .catch(() => {})
   }, [tournament, filterDateFrom, filterDateTo, filterCourtId])
+
+  const handleDeleteMatch = useCallback(async (matchId: string) => {
+    if (!confirm("Tem certeza que deseja apagar esta partida? Esta ação não pode ser desfeita.")) return
+
+    setDeletingMatchId(matchId)
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/matches/${matchId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || "Erro ao apagar partida")
+        return
+      }
+      fetchMatches()
+      // Refresh rankings
+      if (tournament) {
+        fetch(`/api/tournaments/${tournament.id}/ranking`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then(res => res.json())
+          .then(data => setRankings(data.ranking || []))
+      }
+    } catch {
+      alert("Erro de conexão")
+    } finally {
+      setDeletingMatchId(null)
+    }
+  }, [fetchMatches, tournament])
 
   useEffect(() => {
     fetchMatches()
@@ -340,6 +377,33 @@ export default function TournamentPage() {
   const confirmedMembers = tournament.members.filter(m => m.status === "accepted")
   const pendingMembers = tournament.members.filter(m => m.status === "pending")
   const isOwner = user?.id === tournament.owner.id
+  const isMember = user ? tournament.members.some(m => m.user.id === user.id) : false
+  const canRequestJoin = user && !isMember && !isOwner && tournament.isPublic && 
+    (tournament.status === "registration_open" || tournament.status === "draft")
+
+  const handleRequestJoin = async () => {
+    if (!user) return
+    setRequestingJoin(true)
+    setJoinMessage("")
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/tournaments/${tournament.id}/members`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: "join" })
+      })
+      const data = await res.json()
+      setJoinMessage(data.message || data.error)
+      if (res.ok) fetchTournament()
+    } catch {
+      setJoinMessage("Erro ao enviar solicitação")
+    } finally {
+      setRequestingJoin(false)
+    }
+  }
 
   // Today and tomorrow matches
   const today = new Date()
@@ -391,11 +455,37 @@ export default function TournamentPage() {
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 Organizado por {tournament.owner.name}
+                {!tournament.isPublic && (
+                  <span className="ml-2 inline-flex items-center gap-0.5 text-gray-500">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Privado
+                  </span>
+                )}
               </p>
             </div>
-            <div className="text-right hidden sm:block">
-              <p className="text-2xl font-semibold text-gray-900">{confirmedMembers.length}</p>
-              <p className="text-xs text-gray-500">participantes</p>
+            <div className="flex items-center gap-3">
+              {canRequestJoin && (
+                <div>
+                  <button
+                    onClick={handleRequestJoin}
+                    disabled={requestingJoin}
+                    className="btn-primary text-sm disabled:opacity-50"
+                  >
+                    {requestingJoin ? "Enviando..." : "Solicitar Participação"}
+                  </button>
+                  {joinMessage && (
+                    <p className={`text-xs mt-1 ${joinMessage.includes("Erro") || joinMessage.includes("não") ? "text-red-600" : "text-green-600"}`}>
+                      {joinMessage}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="text-right hidden sm:block">
+                <p className="text-2xl font-semibold text-gray-900">{confirmedMembers.length}</p>
+                <p className="text-xs text-gray-500">participantes</p>
+              </div>
             </div>
           </div>
         </div>
@@ -536,8 +626,12 @@ export default function TournamentPage() {
                       {rankings.slice(0, 5).map((r, i) => (
                         <div key={i} className="flex items-center gap-3 p-2 rounded-lg">
                           <span className="w-6 text-center text-sm font-medium text-gray-500">{r.position || i + 1}</span>
-                          <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-xs font-medium flex-shrink-0">
-                            {r.user.name.charAt(0).toUpperCase()}
+                          <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-xs font-medium flex-shrink-0 overflow-hidden">
+                            {r.user.avatarUrl ? (
+                              <img src={r.user.avatarUrl} alt={r.user.name} className="w-full h-full object-cover" />
+                            ) : (
+                              r.user.name.charAt(0).toUpperCase()
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">{r.user.name}</p>
@@ -561,6 +655,171 @@ export default function TournamentPage() {
                 </div>
               </div>
             )}
+
+            {/* ===== DRAWN MATCHES ===== */}
+            {activeTab === "drawn" && (() => {
+              const pendingMatches = matches.filter(m => 
+                m.status === "pending_scheduling" || m.status === "proposal_sent" || m.status === "awaiting_response"
+              )
+              const scheduledMatches = matches.filter(m => m.status === "scheduled")
+              const now = new Date()
+              const currentMonth = now.getMonth() + 1
+              const currentYear = now.getFullYear()
+              const currentDay = now.getDate()
+              const canScheduleNextMonth = currentDay === 1
+
+              return (
+                <div className="space-y-4">
+                  <div className="bg-white rounded-xl border border-gray-200 p-5">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Jogos Sorteados</h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Todos os confrontos aguardando agendamento de data.
+                    </p>
+
+                    {/* Month block notice */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                      <div className="flex gap-2">
+                        <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-medium text-amber-800">Regra de agendamento por mês</p>
+                          <p className="text-sm text-amber-700">
+                            Jogos de meses futuros só podem ser agendados a partir do dia 1º de cada mês.
+                            {!canScheduleNextMonth && " Aguardando liberação."}
+                            {canScheduleNextMonth && " Mês liberado para agendamento!"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pending matches - no date */}
+                    {pendingMatches.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">
+                          Aguardando Agendamento ({pendingMatches.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {pendingMatches.map(m => {
+                            const isMyMatch = user && (m.homePlayer.id === user.id || m.awayPlayer.id === user.id)
+                            const matchMonth = m.month ? parseInt(m.month.split('/')[0]) : 0
+                            const matchYear = m.month ? parseInt(m.month.split('/')[1]) : 0
+                            const isFutureMonth = matchYear > currentYear || (matchYear === currentYear && matchMonth > currentMonth)
+                            
+                            return (
+                              <div key={m.id} className={`flex items-center justify-between p-3 rounded-lg border ${
+                                isFutureMonth ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200'
+                              }`}>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex -space-x-2">
+                                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                      {m.homePlayer.name.charAt(0)}
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                      {m.awayPlayer.name.charAt(0)}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {m.homePlayer.name} vs {m.awayPlayer.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {m.round || "Rodada"} 
+                                      {m.month && ` • ${m.month}`}
+                                      {m.status === "proposal_sent" && " • Proposta enviada"}
+                                      {m.status === "awaiting_response" && " • Aguardando resposta"}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {isFutureMonth && (
+                                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                      Bloqueado até dia 1º
+                                    </span>
+                                  )}
+                                  {isMyMatch && !isFutureMonth && (
+                                    <Link
+                                      href={`/tournaments/${tournament.id}?tab=my-matches`}
+                                      className="text-xs text-green-600 hover:text-green-700 font-medium"
+                                    >
+                                      Agendar
+                                    </Link>
+                                  )}
+                                  {isOwner && (
+                                    <button
+                                      onClick={() => handleDeleteMatch(m.id)}
+                                      disabled={deletingMatchId === m.id}
+                                      className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                                      title="Apagar partida"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Scheduled matches - have date but not played */}
+                    {scheduledMatches.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">
+                          Já Agendadas ({scheduledMatches.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {scheduledMatches.map(m => (
+                            <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border bg-green-50 border-green-200">
+                              <div className="flex items-center gap-3">
+                                <div className="flex -space-x-2">
+                                  <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700">
+                                    {m.homePlayer.name.charAt(0)}
+                                  </div>
+                                  <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700">
+                                    {m.awayPlayer.name.charAt(0)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {m.homePlayer.name} vs {m.awayPlayer.name}
+                                  </p>
+                                  <p className="text-xs text-green-600">
+                                    {m.round} • {m.scheduledAt ? new Date(m.scheduledAt).toLocaleDateString('pt-BR') : ""}
+                                    {m.court && ` • ${m.court.name}`}
+                                  </p>
+                                </div>
+                              </div>
+                              {isOwner && (
+                                <button
+                                  onClick={() => handleDeleteMatch(m.id)}
+                                  disabled={deletingMatchId === m.id}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors disabled:opacity-50"
+                                  title="Apagar partida"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {pendingMatches.length === 0 && scheduledMatches.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-8">
+                        Todos os jogos já foram realizados ou agendados.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ===== MATCHES ===== */}
             {activeTab === "matches" && (() => {
@@ -710,6 +969,18 @@ export default function TournamentPage() {
                                         Placar
                                       </button>
                                     )}
+                                    {isOwner && (
+                                      <button
+                                        onClick={() => handleDeleteMatch(match.id)}
+                                        disabled={deletingMatchId === match.id}
+                                        className="px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                        title="Apagar partida"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -781,6 +1052,18 @@ export default function TournamentPage() {
                                     {canEdit && (
                                       <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap">
                                         Editar
+                                      </button>
+                                    )}
+                                    {canEdit && (
+                                      <button
+                                        onClick={() => handleDeleteMatch(match.id)}
+                                        disabled={deletingMatchId === match.id}
+                                        className="px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                        title="Apagar partida"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
                                       </button>
                                     )}
                                   </div>
@@ -1033,6 +1316,18 @@ export default function TournamentPage() {
                                       Placar
                                     </button>
                                   )}
+                                  {isOwner && (
+                                    <button
+                                      onClick={() => handleDeleteMatch(match.id)}
+                                      disabled={deletingMatchId === match.id}
+                                      className="px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                      title="Apagar partida"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  )}
                                 </div>
                               </div>
 
@@ -1107,6 +1402,18 @@ export default function TournamentPage() {
                                   {won ? "Vitória" : "Derrota"}
                                 </p>
                               </div>
+                              {isOwner && (
+                                <button
+                                  onClick={() => handleDeleteMatch(match.id)}
+                                  disabled={deletingMatchId === match.id}
+                                  className="flex-shrink-0 px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                  title="Apagar partida"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              )}
                             </div>
                           )
                         })}
@@ -1170,8 +1477,12 @@ export default function TournamentPage() {
                             <td className="py-2 px-2 font-medium text-gray-900">{r.position || i + 1}</td>
                             <td className="py-2 px-2">
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-xs font-medium">
-                                  {r.user.name.charAt(0).toUpperCase()}
+                                <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-xs font-medium overflow-hidden flex-shrink-0">
+                                  {r.user.avatarUrl ? (
+                                    <img src={r.user.avatarUrl} alt={r.user.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    r.user.name.charAt(0).toUpperCase()
+                                  )}
                                 </div>
                                 <span className="font-medium text-gray-900">{r.user.name}</span>
                               </div>
@@ -1257,8 +1568,12 @@ export default function TournamentPage() {
                     <div className="space-y-2">
                       {pendingMembers.map(member => (
                         <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-100">
-                          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-medium flex-shrink-0">
-                            {member.user.name.charAt(0).toUpperCase()}
+                          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-medium flex-shrink-0 overflow-hidden">
+                            {member.user.avatarUrl ? (
+                              <img src={member.user.avatarUrl} alt={member.user.name} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              member.user.name.charAt(0).toUpperCase()
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900">{member.user.name}</p>

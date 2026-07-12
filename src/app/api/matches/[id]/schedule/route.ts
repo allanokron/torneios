@@ -81,6 +81,26 @@ export async function POST(
       )
     }
 
+    // Block scheduling for future months - only allow on 1st of month
+    if (match.month) {
+      const [matchMonth, matchYear] = match.month.split('/').map(Number)
+      const now = new Date()
+      const currentMonth = now.getMonth() + 1
+      const currentYear = now.getFullYear()
+      const currentDay = now.getDate()
+
+      // If match month is in the future, block it
+      if (matchYear > currentYear || (matchYear === currentYear && matchMonth > currentMonth)) {
+        // Allow only on the 1st of the current month for next month
+        if (currentDay !== 1) {
+          return NextResponse.json(
+            { error: `Agendamento bloqueado. Jogos do mês ${String(matchMonth).padStart(2, '0')}/${matchYear} só poderão ser agendados a partir do dia 1º do mês atual.` },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
     // Parse proposed date and time in Brasilia timezone (UTC-3)
     const [hours, minutes] = proposedTime.split(":").map(Number)
     // Create date string in Brasilia time by subtracting 3 hours from UTC

@@ -100,6 +100,235 @@ export async function POST(
       return NextResponse.json({ match: updatedMatch })
     }
 
+    // ACTION: forfeit — player forfeits during in_progress match
+    if (action === "forfeit") {
+      if (match.status !== "in_progress") {
+        return NextResponse.json(
+          { error: "Desistência só é possível durante a partida" },
+          { status: 400 }
+        )
+      }
+
+      const { forfeitById, currentSets } = body
+
+      if (!forfeitById) {
+        return NextResponse.json(
+          { error: "Jogador que desiste é obrigatório" },
+          { status: 400 }
+        )
+      }
+
+      if (forfeitById !== match.homePlayerId && forfeitById !== match.awayPlayerId) {
+        return NextResponse.json(
+          { error: "Jogador inválido" },
+          { status: 400 }
+        )
+      }
+
+      const winnerId = forfeitById === match.homePlayerId ? match.awayPlayerId : match.homePlayerId
+      const isHomeWinner = winnerId === match.homePlayerId
+
+      // Build final sets: current sets + remaining as 0-6 for forfeiting player
+      const { setsPerMatch } = match.tournament
+      const finalSets: Array<{ homeGames: number; awayGames: number }> = []
+
+      if (currentSets && Array.isArray(currentSets) && currentSets.length > 0) {
+        // Use provided current sets
+        for (const s of currentSets) {
+          finalSets.push({ homeGames: s.homeGames || 0, awayGames: s.awayGames || 0 })
+        }
+      }
+
+      // Fill remaining sets: forfeiting player gets 0, winner gets 6
+      while (finalSets.length < setsPerMatch) {
+        if (isHomeWinner) {
+          finalSets.push({ homeGames: 6, awayGames: 0 })
+        } else {
+          finalSets.push({ homeGames: 0, awayGames: 6 })
+        }
+      }
+
+      // Calculate scores
+      let homeSetsWon = 0
+      let awaySetsWon = 0
+      for (const s of finalSets) {
+        if (s.homeGames > s.awayGames) homeSetsWon++
+        else if (s.awayGames > s.homeGames) awaySetsWon++
+      }
+
+      // Delete existing sets and create final ones
+      await prisma.$transaction([
+        prisma.set.deleteMany({ where: { matchId: id } }),
+        ...finalSets.map((s, idx) =>
+          prisma.set.create({
+            data: {
+              matchId: id,
+              setNumber: idx + 1,
+              homeGames: s.homeGames,
+              awayGames: s.awayGames,
+              isTiebreak: false,
+              isSuperTiebreak: false
+            }
+          })
+        )
+      ])
+
+      const updatedMatch = await prisma.match.update({
+        where: { id },
+        data: {
+          status: "finished",
+          homeScore: homeSetsWon,
+          awayScore: awaySetsWon,
+          winnerId,
+          finishedAt: new Date()
+        },
+        include: { sets: { orderBy: { setNumber: "asc" } } }
+      })
+
+      // Update ranking
+      await updateRanking(match.tournamentId, match.id)
+
+      // Notify the other player
+      const otherPlayerId = match.homePlayerId === decoded.userId
+        ? match.awayPlayerId
+        : match.homePlayerId
+
+      await prisma.notification.create({
+        data: {
+          userId: otherPlayerId,
+          title: "Jogo encerrado por desistência",
+          message: "O adversário desistiu da partida.",
+          type: "result",
+          link: `/tournaments/${match.tournamentId}`
+        }
+      })
+
+      // Audit log
+      await prisma.auditLog.create({
+        data: {
+          tournamentId: match.tournamentId,
+          userId: decoded.userId,
+          action: "match_forfeited",
+          entityType: "match",
+          entityId: id,
+          newValue: { winnerId, forfeitById, finalSets }
+        }
+      })
+
+      return NextResponse.json({ match: updatedMatch })
+    }
+
+    // ACTION: wo_victory — walkover victory
+    if (action === "wo_victory") {
+      if (match.status !== "scheduled" && match.status !== "in_progress") {
+        return NextResponse.json(
+          { error: "Esta partida não pode ter walkover registrado" },
+          { status: 400 }
+        )
+      }
+
+      const { winnerId, woReason } = body
+
+      if (!winnerId) {
+        return NextResponse.json(
+          { error: "Vencedor é obrigatório" },
+          { status: 400 }
+        )
+      }
+
+      if (winnerId !== match.homePlayerId && winnerId !== match.awayPlayerId) {
+        return NextResponse.json(
+          { error: "Vencedor inválido" },
+          { status: 400 }
+        )
+      }
+
+      if (!woReason || woReason.trim().length === 0) {
+        return NextResponse.json(
+          { error: "Motivo do W.O. é obrigatório" },
+          { status: 400 }
+        )
+      }
+
+      if (woReason.length > 200) {
+        return NextResponse.json(
+          { error: "Motivo deve ter no máximo 200 caracteres" },
+          { status: 400 }
+        )
+      }
+
+      const looserId = winnerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId
+
+      const updatedMatch = await prisma.match.update({
+        where: { id },
+        data: {
+          status: "wo",
+          winnerId,
+          woGivenById: looserId,
+          woReceivedById: winnerId,
+          woReason: woReason.trim(),
+          finishedAt: new Date()
+        }
+      })
+
+      // Update ranking with W.O. points
+      const { scoringConfig } = match.tournament
+      if (scoringConfig) {
+        for (const playerId of [match.homePlayerId, match.awayPlayerId]) {
+          const isWinner = playerId === winnerId
+          const points = isWinner ? scoringConfig.winByWO : scoringConfig.lossByWO
+
+          await prisma.playerRanking.upsert({
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: playerId } },
+            update: {
+              points: { increment: points },
+              matchesPlayed: { increment: 1 },
+              wins: isWinner ? { increment: 1 } : undefined,
+              losses: !isWinner ? { increment: 1 } : undefined
+            },
+            create: {
+              tournamentId: match.tournamentId,
+              userId: playerId,
+              position: 0,
+              points,
+              matchesPlayed: 1,
+              wins: isWinner ? 1 : 0,
+              losses: isWinner ? 0 : 1
+            }
+          })
+        }
+      }
+
+      // Notify the other player
+      const otherPlayerId = match.homePlayerId === decoded.userId
+        ? match.awayPlayerId
+        : match.homePlayerId
+
+      await prisma.notification.create({
+        data: {
+          userId: otherPlayerId,
+          title: "Walkover registrado",
+          message: `W.O. registrado. Motivo: ${woReason.trim()}`,
+          type: "result",
+          link: `/tournaments/${match.tournamentId}`
+        }
+      })
+
+      // Audit log
+      await prisma.auditLog.create({
+        data: {
+          tournamentId: match.tournamentId,
+          userId: decoded.userId,
+          action: "wo_registered",
+          entityType: "match",
+          entityId: id,
+          newValue: { winnerId, woReason: woReason.trim() }
+        }
+      })
+
+      return NextResponse.json({ match: updatedMatch })
+    }
+
     // ACTION: submit_result — player submits the final score
     if (action === "submit_result") {
       if (match.status !== "in_progress") {
@@ -372,6 +601,35 @@ async function updateRanking(tournamentId: string, matchId: string) {
 
   const { scoringConfig } = match.tournament
   const isHomeWinner = match.winnerId === match.homePlayerId
+
+  // W.O. match: no sets, use W.O. points
+  if (match.status === "wo") {
+    for (const playerId of [match.homePlayerId, match.awayPlayerId]) {
+      const isWinner = playerId === match.winnerId
+      const points = isWinner ? scoringConfig.winByWO : scoringConfig.lossByWO
+
+      await prisma.playerRanking.upsert({
+        where: { tournamentId_userId: { tournamentId, userId: playerId } },
+        update: {
+          points: { increment: points },
+          matchesPlayed: { increment: 1 },
+          wins: isWinner ? { increment: 1 } : undefined,
+          losses: !isWinner ? { increment: 1 } : undefined
+        },
+        create: {
+          tournamentId,
+          userId: playerId,
+          position: 0,
+          points,
+          matchesPlayed: 1,
+          wins: isWinner ? 1 : 0,
+          losses: isWinner ? 0 : 1
+        }
+      })
+    }
+    return
+  }
+
   const homeSetsWon = match.sets.filter(s => s.homeGames > s.awayGames).length
   const awaySetsWon = match.sets.filter(s => s.awayGames > s.homeGames).length
 

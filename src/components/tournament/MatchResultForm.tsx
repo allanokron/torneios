@@ -29,7 +29,7 @@ export default function MatchResultForm({
   onSuccess,
   onClose,
 }: MatchResultFormProps) {
-  const [step, setStep] = useState<"start" | "score" | "confirm">(
+  const [step, setStep] = useState<"start" | "score" | "confirm" | "wo" | "forfeit">(
     matchStatus === "scheduled" ? "start" : "score"
   )
   const [startPhoto, setStartPhoto] = useState<string | null>(existingStartPhoto || null)
@@ -41,6 +41,9 @@ export default function MatchResultForm({
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [woWinner, setWoWinner] = useState<string>("")
+  const [woReason, setWoReason] = useState("")
+  const [forfeitById, setForfeitById] = useState<string>("")
 
   const startInputRef = useRef<HTMLInputElement>(null)
   const endInputRef = useRef<HTMLInputElement>(null)
@@ -157,14 +160,58 @@ export default function MatchResultForm({
     finally { setLoading(false) }
   }
 
+  const handleWOFallback = async () => {
+    if (!woWinner) { setError("Selecione o vencedor"); return }
+    if (!woReason.trim()) { setError("Informe o motivo do W.O."); return }
+    if (woReason.length > 200) { setError("Motivo deve ter no máximo 200 caracteres"); return }
+
+    setLoading(true)
+    setError("")
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/matches/${matchId}/result`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "wo_victory", winnerId: woWinner, woReason: woReason.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || "Erro ao registrar W.O."); return }
+      onSuccess()
+    }     catch { setError("Erro de conexão") }
+    finally { setLoading(false) }
+  }
+
+  const handleForfeit = async () => {
+    if (!forfeitById) { setError("Selecione quem desistiu"); return }
+
+    setLoading(true)
+    setError("")
+    try {
+      const token = localStorage.getItem("token")
+      // Send current sets (only non-zero ones)
+      const currentSets = sets.filter(s => s.homeGames > 0 || s.awayGames > 0)
+      const res = await fetch(`/api/matches/${matchId}/result`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "forfeit", forfeitById, currentSets }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || "Erro ao registrar desistência"); return }
+      onSuccess()
+    } catch { setError("Erro de conexão") }
+    finally { setLoading(false) }
+  }
+
   const isEditing = matchStatus === "finished" && isOwner
+  const canWO = (matchStatus === "scheduled" || matchStatus === "in_progress") && !isEditing
+  const canForfeit = matchStatus === "in_progress" && !isEditing
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900">
-            {isEditing ? "Editar Resultado" : step === "start" ? "Iniciar Jogo" : "Registrar Placar"}
+            {isEditing ? "Editar Resultado" : step === "wo" ? "Walkover (W.O.)" : step === "forfeit" ? "Desistência" : step === "start" ? "Iniciar Jogo" : "Registrar Placar"}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,6 +255,136 @@ export default function MatchResultForm({
               <button onClick={handleStartMatch} disabled={loading || !startPhoto} className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
                 {loading ? "Iniciando..." : "Iniciar Jogo"}
               </button>
+
+              {canWO && (
+                <button onClick={() => { setStep("wo"); setError("") }} className="w-full py-2.5 border border-amber-400 text-amber-700 bg-amber-50 rounded-lg font-medium hover:bg-amber-100 transition-colors text-sm">
+                  Registrar Walkover (W.O.)
+                </button>
+              )}
+
+              {canForfeit && (
+                <button onClick={() => { setStep("forfeit"); setError("") }} className="w-full py-2.5 border border-red-400 text-red-700 bg-red-50 rounded-lg font-medium hover:bg-red-100 transition-colors text-sm">
+                  Registrar Desistência
+                </button>
+              )}
+            </>
+          )}
+
+          {/* STEP: W.O. */}
+          {step === "wo" && (
+            <>
+              <p className="text-sm text-gray-600">
+                Registre uma vitória por walkover. Selecione quem venceu e informe o motivo.
+              </p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vencedor *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setWoWinner(homePlayer.id)}
+                    className={`py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                      woWinner === homePlayer.id
+                        ? "border-green-500 bg-green-50 text-green-700"
+                        : "border-gray-200 text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    {homePlayer.name}
+                  </button>
+                  <button
+                    onClick={() => setWoWinner(awayPlayer.id)}
+                    className={`py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                      woWinner === awayPlayer.id
+                        ? "border-green-500 bg-green-50 text-green-700"
+                        : "border-gray-200 text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    {awayPlayer.name}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Motivo do W.O. *</label>
+                <textarea
+                  value={woReason}
+                  onChange={e => setWoReason(e.target.value)}
+                  maxLength={200}
+                  rows={3}
+                  placeholder="Descreva o motivo do walkover..."
+                  className="input min-h-[80px]"
+                />
+                <p className="text-xs text-gray-400 mt-1">{woReason.length}/200</p>
+              </div>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
+              <div className="flex gap-2">
+                <button onClick={() => { setStep("start"); setError("") }} className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
+                  Voltar
+                </button>
+                <button onClick={handleWOFallback} disabled={loading} className="flex-1 py-2.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors">
+                  {loading ? "Registrando..." : "Confirmar W.O."}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* STEP: Forfeit */}
+          {step === "forfeit" && (
+            <>
+              <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-4">
+                <p className="text-sm text-red-800">
+                  <svg className="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  O jogador que desistir terá os sets restantes marcados como 0-6. O adversário será declarado vencedor.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700">Quem desistiu? *</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setForfeitById(homePlayer.id); setError("") }}
+                    className={`flex-1 p-3 rounded-lg border-2 text-center font-medium transition-colors text-sm ${
+                      forfeitById === homePlayer.id
+                        ? "border-red-500 bg-red-50 text-red-700"
+                        : "border-gray-200 text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    {homePlayer.name}
+                  </button>
+                  <button
+                    onClick={() => { setForfeitById(awayPlayer.id); setError("") }}
+                    className={`flex-1 p-3 rounded-lg border-2 text-center font-medium transition-colors text-sm ${
+                      forfeitById === awayPlayer.id
+                        ? "border-red-500 bg-red-50 text-red-700"
+                        : "border-gray-200 text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    {awayPlayer.name}
+                  </button>
+                </div>
+
+                {forfeitById && (
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+                    <strong>{forfeitById === homePlayer.id ? homePlayer.name : awayPlayer.name}</strong> desiste.
+                    <br />
+                    Vencedor: <strong className="text-green-700">{forfeitById === homePlayer.id ? awayPlayer.name : homePlayer.name}</strong>
+                  </div>
+                )}
+
+                {error && <p className="text-sm text-red-600">{error}</p>}
+
+                <div className="flex gap-2">
+                  <button onClick={() => { setStep("score"); setError("") }} className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
+                    Voltar
+                  </button>
+                  <button onClick={handleForfeit} disabled={loading} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
+                    {loading ? "Registrando..." : "Confirmar Desistência"}
+                  </button>
+                </div>
+              </div>
             </>
           )}
 
@@ -302,6 +479,18 @@ export default function MatchResultForm({
               >
                 {loading ? "Salvando..." : isEditing ? "Salvar Alterações" : "Enviar Resultado"}
               </button>
+
+              {canWO && (
+                <button onClick={() => { setStep("wo"); setError("") }} className="w-full py-2.5 border border-amber-400 text-amber-700 bg-amber-50 rounded-lg font-medium hover:bg-amber-100 transition-colors text-sm">
+                  Registrar Walkover (W.O.)
+                </button>
+              )}
+
+              {canForfeit && (
+                <button onClick={() => { setStep("forfeit"); setError("") }} className="w-full py-2.5 border border-red-400 text-red-700 bg-red-50 rounded-lg font-medium hover:bg-red-100 transition-colors text-sm">
+                  Registrar Desistência
+                </button>
+              )}
             </>
           )}
         </div>

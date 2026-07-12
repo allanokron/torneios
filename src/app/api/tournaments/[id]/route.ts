@@ -162,7 +162,9 @@ export async function PATCH(
         generalRules: body.generalRules,
         termsOfResponsibility: body.termsOfResponsibility,
         cancellationRules: body.cancellationRules,
-        autoFinishOnFirstSubmission: body.autoFinishOnFirstSubmission
+        autoFinishOnFirstSubmission: body.autoFinishOnFirstSubmission,
+        maxPostponements: body.maxPostponements,
+        postponementScope: body.postponementScope
       },
       include: {
         owner: {

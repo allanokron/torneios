@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
@@ -19,6 +19,7 @@ interface Tournament {
   startDate: string
   endDate?: string
   status: string
+  isPublic: boolean
   _count?: {
     members: number
     matches: number
@@ -30,8 +31,8 @@ export default function TournamentsPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<{ id: string; name: string } | null>(null)
   const [filter, setFilter] = useState("all")
-  const [searchCity, setSearchCity] = useState("")
   const [searchState, setSearchState] = useState("")
+  const [searchCity, setSearchCity] = useState("")
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -61,14 +62,23 @@ export default function TournamentsPage() {
     "SP", "SE", "TO"
   ]
 
+  const availableCities = useMemo(() => {
+    if (!searchState) return []
+    const cities = new Set<string>()
+    tournaments.forEach(t => {
+      if (t.state === searchState && t.city) cities.add(t.city)
+    })
+    return Array.from(cities).sort()
+  }, [searchState, tournaments])
+
   const filteredTournaments = tournaments.filter(t => {
     if (filter !== "all" && t.status !== filter) return false
-    if (searchCity && t.city?.toLowerCase().includes(searchCity.toLowerCase()) === false) return false
     if (searchState && t.state !== searchState) return false
+    if (searchCity && t.city !== searchCity) return false
     return true
   })
 
-  const hasLocationFilter = searchCity || searchState
+  const hasLocationFilter = searchState || searchCity
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -87,38 +97,45 @@ export default function TournamentsPage() {
           )}
         </div>
 
-        {/* Location Search */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <span className="text-sm font-medium text-gray-700">Buscar por região</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-2">
-              <input
-                type="text"
-                value={searchCity}
-                onChange={e => setSearchCity(e.target.value)}
-                className="input w-full text-sm"
-                placeholder="Buscar por cidade..."
-              />
-            </div>
             <div>
+              <label className="block text-xs text-gray-500 mb-1">Estado</label>
               <select
                 value={searchState}
-                onChange={e => setSearchState(e.target.value)}
+                onChange={e => {
+                  setSearchState(e.target.value)
+                  setSearchCity("")
+                }}
                 className="input w-full text-sm"
               >
                 <option value="">Todos os estados</option>
                 {states.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs text-gray-500 mb-1">Cidade</label>
+              <select
+                value={searchCity}
+                onChange={e => setSearchCity(e.target.value)}
+                disabled={!searchState}
+                className="input w-full text-sm"
+              >
+                <option value="">{searchState ? "Todas as cidades" : "Selecione o estado primeiro"}</option>
+                {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
           </div>
           {hasLocationFilter && (
             <button
-              onClick={() => { setSearchCity(""); setSearchState("") }}
+              onClick={() => { setSearchState(""); setSearchCity("") }}
               className="text-xs text-gray-500 hover:text-gray-700 mt-2"
             >
               Limpar filtro de região
@@ -126,7 +143,6 @@ export default function TournamentsPage() {
           )}
         </div>
 
-        {/* Status Filters */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {[
             { value: "all", label: "Todos" },
