@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
 
 interface HeaderProps {
   user?: {
@@ -12,11 +13,39 @@ interface HeaderProps {
 
 export default function Header({ user }: HeaderProps) {
   const pathname = usePathname()
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
   
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/"
     return pathname.startsWith(path)
   }
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!profileMenuRef.current?.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsProfileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown)
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isProfileMenuOpen])
+
+  const closeProfileMenu = () => setIsProfileMenuOpen(false)
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -67,8 +96,14 @@ export default function Header({ user }: HeaderProps) {
                   Criar Torneio
                 </Link>
                 
-                <div className="relative group">
-                  <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <div ref={profileMenuRef} className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileMenuOpen(open => !open)}
+                    aria-haspopup="menu"
+                    aria-expanded={isProfileMenuOpen}
+                    className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
                     <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-sm font-medium overflow-hidden">
                       {user.avatarUrl ? (
                         <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
@@ -78,14 +113,21 @@ export default function Header({ user }: HeaderProps) {
                     </div>
                   </button>
                   
-                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                  <div
+                    role="menu"
+                    className={`absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 transition-all duration-150 z-50 ${
+                      isProfileMenuOpen
+                        ? "opacity-100 visible"
+                        : "opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+                    }`}
+                  >
                     <div className="px-3 py-2 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
                     </div>
-                    <Link href="/dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    <Link href="/dashboard" onClick={closeProfileMenu} className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
                       Início
                     </Link>
-                    <Link href="/profile" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    <Link href="/profile" onClick={closeProfileMenu} className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
                       Meu Perfil
                     </Link>
                     <hr className="my-1 border-gray-100" />
