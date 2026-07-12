@@ -133,7 +133,7 @@ export default function ScheduleProposalForm({
               <option value="">Selecione a quadra</option>
               {courts.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}{c.surfaceType ? ` (${c.surfaceType})` : ""}
+                  {c.name}{c.surfaceType ? ` (${c.surfaceType === "hard" ? "Quadra Dura" : c.surfaceType === "clay" ? "Quadra de Saibro" : c.surfaceType === "grass" ? "Quadra de Grama" : c.surfaceType})` : ""}
                 </option>
               ))}
             </select>

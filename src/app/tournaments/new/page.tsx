@@ -55,6 +55,8 @@ export default function NewTournamentPage() {
       lossWithoutWinningSet: 0,
       winByWO: 3,
       lossByWO: 0,
+      winByForfeit: 3,
+      lossByForfeit: 0,
       withdrawalPenalty: -1,
       delayPenalty: -1
     },
@@ -163,6 +165,8 @@ export default function NewTournamentPage() {
             lossWithoutWinningSet: parseInt(formData.scoringConfig.lossWithoutWinningSet.toString()),
             winByWO: parseInt(formData.scoringConfig.winByWO.toString()),
             lossByWO: parseInt(formData.scoringConfig.lossByWO.toString()),
+            winByForfeit: parseInt(formData.scoringConfig.winByForfeit.toString()),
+            lossByForfeit: parseInt(formData.scoringConfig.lossByForfeit.toString()),
             withdrawalPenalty: parseInt(formData.scoringConfig.withdrawalPenalty.toString()),
             delayPenalty: parseInt(formData.scoringConfig.delayPenalty.toString())
           }
@@ -519,10 +523,9 @@ export default function NewTournamentPage() {
                           className="input"
                         >
                           <option value="">Selecione</option>
-                          <option value="clay">Terra Batida</option>
                           <option value="hard">Quadra Dura</option>
-                          <option value="grass">Grama</option>
-                          <option value="carpet">Carpete</option>
+                          <option value="clay">Quadra de Saibro</option>
+                          <option value="grass">Quadra de Grama</option>
                         </select>
                       </div>
 
@@ -757,6 +760,28 @@ export default function NewTournamentPage() {
               </div>
 
               <div>
+                <label className="label">Vitória por desistência</label>
+                <input
+                  type="number"
+                  value={formData.scoringConfig.winByForfeit}
+                  onChange={(e) => handleScoringChange("winByForfeit", parseInt(e.target.value))}
+                  className="input"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label className="label">Derrota por desistência</label>
+                <input
+                  type="number"
+                  value={formData.scoringConfig.lossByForfeit}
+                  onChange={(e) => handleScoringChange("lossByForfeit", parseInt(e.target.value))}
+                  className="input"
+                  min="0"
+                />
+              </div>
+
+              <div>
                 <label className="label">Penalidade por desistência</label>
                 <input
                   type="number"
@@ -815,6 +840,10 @@ export default function NewTournamentPage() {
                   <p>Vitória perdendo set: {formData.scoringConfig.winLosingOneSet} pts</p>
                   <p>Derrota vencendo set: {formData.scoringConfig.lossWinningOneSet} pts</p>
                   <p>Derrota sem vencer: {formData.scoringConfig.lossWithoutWinningSet} pts</p>
+                  <p>Vitória por desistência: {formData.scoringConfig.winByForfeit} pts</p>
+                  <p>Derrota por desistência: {formData.scoringConfig.lossByForfeit} pts</p>
+                  <p>Vitória por W.O.: {formData.scoringConfig.winByWO} pts</p>
+                  <p>Derrota por W.O.: {formData.scoringConfig.lossByWO} pts</p>
                 </div>
               </div>
 

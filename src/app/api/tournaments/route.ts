@@ -186,6 +186,8 @@ export async function POST(request: Request) {
             lossWithoutWinningSet: scoringConfig.lossWithoutWinningSet ?? 0,
             winByWO: scoringConfig.winByWO ?? 3,
             lossByWO: scoringConfig.lossByWO ?? 0,
+            winByForfeit: scoringConfig.winByForfeit ?? 3,
+            lossByForfeit: scoringConfig.lossByForfeit ?? 0,
             withdrawalPenalty: scoringConfig.withdrawalPenalty ?? -1,
             delayPenalty: scoringConfig.delayPenalty ?? -1
           }

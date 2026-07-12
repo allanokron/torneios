@@ -217,6 +217,8 @@ model Match {
   awayScore Int?
   winnerId  String?
 
+  endReason String? // normal, forfeit, wo
+
   woGivenBy    User? @relation("WOGivenBy", fields: [woGivenById], references: [id])
   woReceivedBy User? @relation("WOReceivedBy", fields: [woReceivedById], references: [id])
 
@@ -362,6 +364,12 @@ model ScoringConfig {
   lossWithoutWinningSet Int @default(0)
   winByWO               Int @default(3)
   lossByWO              Int @default(0)
+  woWinSets             Int @default(2)
+  woLossSets            Int @default(0)
+  woWinGames            Int @default(12)
+  woLossGames           Int @default(0)
+  winByForfeit          Int @default(3)
+  lossByForfeit         Int @default(0)
   withdrawalPenalty     Int @default(-1)
   delayPenalty          Int @default(-1)
 
@@ -374,7 +382,7 @@ model TiebreakerConfig {
   tournamentId String     @unique
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
-  criteriaOrder Json // Array ordenado dos critérios
+  criteriaOrder Json // Array ordenado: ["points", "sets_won", "games_balance", "direct_confrontation"]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

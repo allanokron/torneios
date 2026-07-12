@@ -65,6 +65,12 @@ interface Tournament {
     lossWithoutWinningSet: number
     winByWO: number
     lossByWO: number
+    woWinSets: number
+    woLossSets: number
+    woWinGames: number
+    woLossGames: number
+    winByForfeit: number
+    lossByForfeit: number
     withdrawalPenalty: number
     delayPenalty: number
   }
@@ -90,6 +96,7 @@ interface Match {
   sets: Array<{ setNumber: number; homeGames: number; awayGames: number }>
   startPhotoUrl?: string | null
   endPhotoUrl?: string | null
+  endReason?: string | null
   scheduleProposals: Array<{
     id: string
     proposedDate: string
@@ -1400,6 +1407,8 @@ export default function TournamentPage() {
                                 </div>
                                 <p className={`text-xs font-medium ${won ? "text-green-600" : "text-red-500"}`}>
                                   {won ? "Vitória" : "Derrota"}
+                                  {match.endReason === "forfeit" && " (Desistência)"}
+                                  {match.endReason === "wo" && " (W.O.)"}
                                 </p>
                               </div>
                               {isOwner && (
@@ -1639,7 +1648,7 @@ export default function TournamentPage() {
                               </div>
                               <div className="flex-1">
                                 <p className="text-sm font-medium text-gray-900">{court.name}</p>
-                                {court.surfaceType && <p className="text-xs text-gray-500 capitalize">{court.surfaceType}</p>}
+                                {court.surfaceType && <p className="text-xs text-gray-500">{court.surfaceType === "hard" ? "Quadra Dura" : court.surfaceType === "clay" ? "Quadra de Saibro" : court.surfaceType === "grass" ? "Quadra de Grama" : court.surfaceType}</p>}
                               </div>
                               <div className="text-right">
                                 <div className="w-2 h-2 bg-green-500 rounded-full mx-auto mb-1"></div>
@@ -1711,6 +1720,10 @@ export default function TournamentPage() {
                         <li>Vitória perdendo set: {tournament.scoringConfig.winLosingOneSet} pts</li>
                         <li>Derrota vencendo set: {tournament.scoringConfig.lossWinningOneSet} pts</li>
                         <li>Derrota sem vencer: {tournament.scoringConfig.lossWithoutWinningSet} pts</li>
+                        <li>Vitória por desistência: {tournament.scoringConfig.winByForfeit} pts</li>
+                        <li>Derrota por desistência: {tournament.scoringConfig.lossByForfeit} pts</li>
+                        <li>Vitória por W.O.: {tournament.scoringConfig.winByWO} pts</li>
+                        <li>Derrota por W.O.: {tournament.scoringConfig.lossByWO} pts</li>
                       </ul>
                     ) : (
                       <p className="text-gray-500">Configuração padrão</p>

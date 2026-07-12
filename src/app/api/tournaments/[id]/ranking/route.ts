@@ -43,7 +43,18 @@ export async function GET(
       lossWithoutWinningSet: 0,
       winByWO: 3,
       lossByWO: 0,
+      woWinSets: 2,
+      woLossSets: 0,
+      woWinGames: 12,
+      woLossGames: 0,
+      winByForfeit: 3,
+      lossByForfeit: 0,
     }
+
+    // Get all penalties for this tournament
+    const penalties = await prisma.penalty.findMany({
+      where: { tournamentId: id }
+    })
 
     // Build match results from scratch
     const matchStats: Record<string, {
@@ -98,6 +109,58 @@ export async function GET(
         woLoser.losses++
         woLoser.lossesByWO++
         woLoser.matchPoints += scoring.lossByWO
+
+        // Use configured W.O. sets and games
+        const woWinnerSets = scoring.woWinSets ?? 2
+        const woLoserSets = scoring.woLossSets ?? 0
+        const woWinnerGames = scoring.woWinGames ?? 12
+        const woLoserGames = scoring.woLossGames ?? 0
+
+        if (match.winnerId === homeId) {
+          home.setsWon += woWinnerSets
+          home.setsLost += woLoserSets
+          away.setsWon += woLoserSets
+          away.setsLost += woWinnerSets
+          home.gamesWon += woWinnerGames
+          home.gamesLost += woLoserGames
+          away.gamesWon += woLoserGames
+          away.gamesLost += woWinnerGames
+        } else {
+          away.setsWon += woWinnerSets
+          away.setsLost += woLoserSets
+          home.setsWon += woLoserSets
+          home.setsLost += woWinnerSets
+          away.gamesWon += woWinnerGames
+          away.gamesLost += woLoserGames
+          home.gamesWon += woLoserGames
+          home.gamesLost += woWinnerGames
+        }
+        continue
+      }
+
+      // Handle forfeit matches
+      if (match.endReason === "forfeit") {
+        const forfeitWinner = match.winnerId === homeId ? home : away
+        const forfeitLoser = match.winnerId === homeId ? away : home
+        forfeitWinner.wins++
+        forfeitWinner.matchPoints += scoring.winByForfeit
+        forfeitLoser.losses++
+        forfeitLoser.matchPoints += scoring.lossByForfeit
+
+        // Track sets and games from the match
+        const homeSetsWon = match.sets.filter(s => s.homeGames > s.awayGames).length
+        const awaySetsWon = match.sets.filter(s => s.awayGames > s.homeGames).length
+        const homeGamesTotal = match.sets.reduce((sum, s) => sum + s.homeGames, 0)
+        const awayGamesTotal = match.sets.reduce((sum, s) => sum + s.awayGames, 0)
+
+        home.setsWon += homeSetsWon
+        home.setsLost += awaySetsWon
+        away.setsWon += awaySetsWon
+        away.setsLost += homeSetsWon
+        home.gamesWon += homeGamesTotal
+        home.gamesLost += awayGamesTotal
+        away.gamesWon += awayGamesTotal
+        away.gamesLost += homeGamesTotal
         continue
       }
 
@@ -139,7 +202,12 @@ export async function GET(
 
         // Preserve basePoints from existing record
         const basePoints = existing?.basePoints ?? 0
-        const totalPoints = basePoints + stats.matchPoints
+
+        // Calculate penalty points for this player
+        const playerPenalties = penalties.filter(p => p.userId === m.userId)
+        const penaltyPoints = playerPenalties.reduce((sum, p) => sum + p.points, 0)
+
+        const totalPoints = basePoints + stats.matchPoints + penaltyPoints
 
         const setBalance = stats.setsWon - stats.setsLost
         const gamesBalance = stats.gamesWon - stats.gamesLost

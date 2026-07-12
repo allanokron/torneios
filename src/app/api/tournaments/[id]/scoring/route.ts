@@ -51,6 +51,12 @@ export async function PATCH(
         (body.lossWithoutWinningSet !== undefined && body.lossWithoutWinningSet !== existingScoring.lossWithoutWinningSet) ||
         (body.winByWO !== undefined && body.winByWO !== existingScoring.winByWO) ||
         (body.lossByWO !== undefined && body.lossByWO !== existingScoring.lossByWO) ||
+        (body.woWinSets !== undefined && body.woWinSets !== existingScoring.woWinSets) ||
+        (body.woLossSets !== undefined && body.woLossSets !== existingScoring.woLossSets) ||
+        (body.woWinGames !== undefined && body.woWinGames !== existingScoring.woWinGames) ||
+        (body.woLossGames !== undefined && body.woLossGames !== existingScoring.woLossGames) ||
+        (body.winByForfeit !== undefined && body.winByForfeit !== existingScoring.winByForfeit) ||
+        (body.lossByForfeit !== undefined && body.lossByForfeit !== existingScoring.lossByForfeit) ||
         (body.withdrawalPenalty !== undefined && body.withdrawalPenalty !== existingScoring.withdrawalPenalty) ||
         (body.delayPenalty !== undefined && body.delayPenalty !== existingScoring.delayPenalty)
     } else {
@@ -68,6 +74,12 @@ export async function PATCH(
         lossWithoutWinningSet: body.lossWithoutWinningSet ?? 0,
         winByWO: body.winByWO ?? 3,
         lossByWO: body.lossByWO ?? 0,
+        woWinSets: body.woWinSets ?? 2,
+        woLossSets: body.woLossSets ?? 0,
+        woWinGames: body.woWinGames ?? 12,
+        woLossGames: body.woLossGames ?? 0,
+        winByForfeit: body.winByForfeit ?? 3,
+        lossByForfeit: body.lossByForfeit ?? 0,
         withdrawalPenalty: body.withdrawalPenalty ?? -1,
         delayPenalty: body.delayPenalty ?? -1
       },
@@ -78,6 +90,12 @@ export async function PATCH(
         ...(body.lossWithoutWinningSet !== undefined && { lossWithoutWinningSet: body.lossWithoutWinningSet }),
         ...(body.winByWO !== undefined && { winByWO: body.winByWO }),
         ...(body.lossByWO !== undefined && { lossByWO: body.lossByWO }),
+        ...(body.woWinSets !== undefined && { woWinSets: body.woWinSets }),
+        ...(body.woLossSets !== undefined && { woLossSets: body.woLossSets }),
+        ...(body.woWinGames !== undefined && { woWinGames: body.woWinGames }),
+        ...(body.woLossGames !== undefined && { woLossGames: body.woLossGames }),
+        ...(body.winByForfeit !== undefined && { winByForfeit: body.winByForfeit }),
+        ...(body.lossByForfeit !== undefined && { lossByForfeit: body.lossByForfeit }),
         ...(body.withdrawalPenalty !== undefined && { withdrawalPenalty: body.withdrawalPenalty }),
         ...(body.delayPenalty !== undefined && { delayPenalty: body.delayPenalty })
       }
@@ -107,13 +125,21 @@ export async function PATCH(
           winWithoutLosingSet: existingScoring.winWithoutLosingSet,
           winLosingOneSet: existingScoring.winLosingOneSet,
           lossWinningOneSet: existingScoring.lossWinningOneSet,
-          lossWithoutWinningSet: existingScoring.lossWithoutWinningSet
+          lossWithoutWinningSet: existingScoring.lossWithoutWinningSet,
+          winByWO: existingScoring.winByWO,
+          lossByWO: existingScoring.lossByWO,
+          winByForfeit: existingScoring.winByForfeit,
+          lossByForfeit: existingScoring.lossByForfeit
         } : undefined,
         newValue: {
           winWithoutLosingSet: scoringConfig.winWithoutLosingSet,
           winLosingOneSet: scoringConfig.winLosingOneSet,
           lossWinningOneSet: scoringConfig.lossWinningOneSet,
-          lossWithoutWinningSet: scoringConfig.lossWithoutWinningSet
+          lossWithoutWinningSet: scoringConfig.lossWithoutWinningSet,
+          winByWO: scoringConfig.winByWO,
+          lossByWO: scoringConfig.lossByWO,
+          winByForfeit: scoringConfig.winByForfeit,
+          lossByForfeit: scoringConfig.lossByForfeit
         }
       }
     })

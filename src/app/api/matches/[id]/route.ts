@@ -63,6 +63,27 @@ export async function DELETE(
 
         if (match.status === "wo") {
           pointsToSubtract = isWinner ? scoringConfig.winByWO : scoringConfig.lossByWO
+          // Use configured W.O. sets and games
+          const woWinSets = scoringConfig.woWinSets ?? 2
+          const woLossSets = scoringConfig.woLossSets ?? 0
+          const woWinGames = scoringConfig.woWinGames ?? 12
+          const woLossGames = scoringConfig.woLossGames ?? 0
+          setsWonToSubtract = isWinner ? woWinSets : woLossSets
+          setsLostToSubtract = isWinner ? woLossSets : woWinSets
+          gamesWonToSubtract = isWinner ? woWinGames : woLossGames
+          gamesLostToSubtract = isWinner ? woLossGames : woWinGames
+        } else if (match.endReason === "forfeit") {
+          pointsToSubtract = isWinner ? scoringConfig.winByForfeit : scoringConfig.lossByForfeit
+          const homeSetsWon = match.sets.filter(s => s.homeGames > s.awayGames).length
+          const awaySetsWon = match.sets.filter(s => s.awayGames > s.homeGames).length
+          setsWonToSubtract = isHome ? homeSetsWon : awaySetsWon
+          setsLostToSubtract = isHome ? awaySetsWon : homeSetsWon
+          gamesWonToSubtract = isHome
+            ? match.sets.reduce((sum, s) => sum + s.homeGames, 0)
+            : match.sets.reduce((sum, s) => sum + s.awayGames, 0)
+          gamesLostToSubtract = isHome
+            ? match.sets.reduce((sum, s) => sum + s.awayGames, 0)
+            : match.sets.reduce((sum, s) => sum + s.homeGames, 0)
         } else {
           const homeSetsWon = match.sets.filter(s => s.homeGames > s.awayGames).length
           const awaySetsWon = match.sets.filter(s => s.awayGames > s.homeGames).length

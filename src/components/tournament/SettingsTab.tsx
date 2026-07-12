@@ -41,8 +41,17 @@ interface Tournament {
     lossWithoutWinningSet: number
     winByWO: number
     lossByWO: number
+    woWinSets: number
+    woLossSets: number
+    woWinGames: number
+    woLossGames: number
+    winByForfeit: number
+    lossByForfeit: number
     withdrawalPenalty: number
     delayPenalty: number
+  }
+  tiebreakerConfig?: {
+    criteriaOrder: string[]
   }
 }
 
@@ -52,7 +61,7 @@ interface SettingsTabProps {
 }
 
 export default function SettingsTab({ tournament, onTournamentUpdated }: SettingsTabProps) {
-  const [activeSection, setActiveSection] = useState<"general" | "rules" | "scoring" | "courts">("general")
+  const [activeSection, setActiveSection] = useState<"general" | "rules" | "scoring" | "tiebreaker" | "courts">("general")
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState("")
   const [error, setError] = useState("")
@@ -93,11 +102,28 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
     lossWithoutWinningSet: tournament.scoringConfig?.lossWithoutWinningSet ?? 0,
     winByWO: tournament.scoringConfig?.winByWO ?? 3,
     lossByWO: tournament.scoringConfig?.lossByWO ?? 0,
+    woWinSets: tournament.scoringConfig?.woWinSets ?? 2,
+    woLossSets: tournament.scoringConfig?.woLossSets ?? 0,
+    woWinGames: tournament.scoringConfig?.woWinGames ?? 12,
+    woLossGames: tournament.scoringConfig?.woLossGames ?? 0,
+    winByForfeit: tournament.scoringConfig?.winByForfeit ?? 3,
+    lossByForfeit: tournament.scoringConfig?.lossByForfeit ?? 0,
     withdrawalPenalty: tournament.scoringConfig?.withdrawalPenalty ?? -1,
     delayPenalty: tournament.scoringConfig?.delayPenalty ?? -1
   })
   const [scoringChanged, setScoringChanged] = useState(false)
   const [showRankingWarning, setShowRankingWarning] = useState(false)
+
+  // Tiebreaker form
+  const [tiebreakerCriteria, setTiebreakerCriteria] = useState<string[]>(
+    tournament.tiebreakerConfig?.criteriaOrder ?? [
+      "points",
+      "sets_won",
+      "games_balance",
+      "direct_confrontation"
+    ]
+  )
+  const [tiebreakerChanged, setTiebreakerChanged] = useState(false)
 
   // Courts
   const [courts, setCourts] = useState(tournament.courts)
@@ -205,6 +231,25 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
         setError(data.error)
         return
       }
+
+      // Also save scoring if changed (forfeit fields moved to rules)
+      if (scoringChanged) {
+        const scoringRes = await fetch(`/api/tournaments/${tournament.id}/scoring`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(scoring)
+        })
+        const scoringData = await scoringRes.json()
+        if (!scoringRes.ok) {
+          setError(scoringData.error)
+          return
+        }
+        setScoringChanged(false)
+      }
+
       setSuccess("Regras salvas!")
       onTournamentUpdated(data.tournament)
     } catch {
@@ -239,6 +284,33 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
       } else {
         setSuccess("Pontuação salva!")
       }
+    } catch {
+      setError("Erro ao salvar")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Save tiebreaker
+  const saveTiebreaker = async () => {
+    clearMessages()
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/tournaments/${tournament.id}/tiebreaker`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ criteriaOrder: tiebreakerCriteria })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error)
+        return
+      }
+      setTiebreakerChanged(false)
+      setSuccess("Regras de desempate salvas!")
     } catch {
       setError("Erro ao salvar")
     } finally {
@@ -331,6 +403,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
     { id: "general" as const, label: "Geral" },
     { id: "rules" as const, label: "Regras" },
     { id: "scoring" as const, label: "Pontuação" },
+    { id: "tiebreaker" as const, label: "Desempate" },
     { id: "courts" as const, label: "Quadras" },
   ]
 
@@ -552,6 +625,32 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
               <textarea value={woCriteria} onChange={e => setWoCriteria(e.target.value)} className="input min-h-[60px]" placeholder="Quando aplicar walkover..." />
             </div>
 
+            <div className="border-t border-gray-100 pt-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Desistência e Penalidades</h4>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Pontos por Desistência (vitória)</label>
+                    <input type="number" value={scoring.winByForfeit} onChange={e => { setScoring({...scoring, winByForfeit: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
+                  </div>
+                  <div>
+                    <label className="label">Pontos por Desistência (derrota)</label>
+                    <input type="number" value={scoring.lossByForfeit} onChange={e => { setScoring({...scoring, lossByForfeit: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Penalidade por desistência</label>
+                    <input type="number" value={scoring.withdrawalPenalty} onChange={e => { setScoring({...scoring, withdrawalPenalty: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
+                  </div>
+                  <div>
+                    <label className="label">Penalidade por atraso</label>
+                    <input type="number" value={scoring.delayPenalty} onChange={e => { setScoring({...scoring, delayPenalty: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="pt-2">
               <button onClick={saveRules} disabled={saving} className="btn-primary disabled:opacity-50">
                 {saving ? "Salvando..." : "Salvar"}
@@ -615,7 +714,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
             </div>
 
             <div className="border-t border-gray-100 pt-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Walkover e Penalidades</h4>
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Walkover</h4>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -629,12 +728,22 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="label">Penalidade por desistência</label>
-                    <input type="number" value={scoring.withdrawalPenalty} onChange={e => { setScoring({...scoring, withdrawalPenalty: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
+                    <label className="label">Sets por W.O. (vitória)</label>
+                    <input type="number" value={scoring.woWinSets} onChange={e => { setScoring({...scoring, woWinSets: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
                   </div>
                   <div>
-                    <label className="label">Penalidade por atraso</label>
-                    <input type="number" value={scoring.delayPenalty} onChange={e => { setScoring({...scoring, delayPenalty: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
+                    <label className="label">Sets por W.O. (derrota)</label>
+                    <input type="number" value={scoring.woLossSets} onChange={e => { setScoring({...scoring, woLossSets: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Games por W.O. (vitória)</label>
+                    <input type="number" value={scoring.woWinGames} onChange={e => { setScoring({...scoring, woWinGames: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
+                  </div>
+                  <div>
+                    <label className="label">Games por W.O. (derrota)</label>
+                    <input type="number" value={scoring.woLossGames} onChange={e => { setScoring({...scoring, woLossGames: Number(e.target.value)}); setScoringChanged(true); }} className="input" />
                   </div>
                 </div>
               </div>
@@ -644,6 +753,86 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
               {scoringChanged ? (
                 <button onClick={() => setShowRankingWarning(true)} className="btn-primary">
                   Salvar Pontuação
+                </button>
+              ) : (
+                <button disabled className="btn-secondary opacity-50 cursor-not-allowed">
+                  Nenhuma alteração
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ===== TIEBREAKER ===== */}
+        {activeSection === "tiebreaker" && (
+          <div className="space-y-5 max-w-xl">
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Regras de Desempate</h4>
+              <p className="text-xs text-gray-500 mb-4">
+                Configure a hierarquia dos critérios de desempate. Arraste para reordenar ou selecione a posição.
+              </p>
+              
+              <div className="space-y-3">
+                {tiebreakerCriteria.map((criteria, index) => (
+                  <div key={criteria} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50">
+                    <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                      {index + 1}
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {criteria === "points" && "Soma de Pontos"}
+                        {criteria === "sets_won" && "Sets Vencidos"}
+                        {criteria === "games_balance" && "Saldo de Games"}
+                        {criteria === "direct_confrontation" && "Confronto Direto"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {criteria === "points" && "Maior pontuação total"}
+                        {criteria === "sets_won" && "Maior quantidade de sets vencidos"}
+                        {criteria === "games_balance" && "Maior saldo de games (ganhos - perdidos)"}
+                        {criteria === "direct_confrontation" && "Resultado do confronto direto entre os jogadores"}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => {
+                          if (index === 0) return
+                          const newCriteria = [...tiebreakerCriteria]
+                          ;[newCriteria[index - 1], newCriteria[index]] = [newCriteria[index], newCriteria[index - 1]]
+                          setTiebreakerCriteria(newCriteria)
+                          setTiebreakerChanged(true)
+                        }}
+                        disabled={index === 0}
+                        className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (index === tiebreakerCriteria.length - 1) return
+                          const newCriteria = [...tiebreakerCriteria]
+                          ;[newCriteria[index], newCriteria[index + 1]] = [newCriteria[index + 1], newCriteria[index]]
+                          setTiebreakerCriteria(newCriteria)
+                          setTiebreakerChanged(true)
+                        }}
+                        disabled={index === tiebreakerCriteria.length - 1}
+                        className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2">
+              {tiebreakerChanged ? (
+                <button onClick={saveTiebreaker} className="btn-primary">
+                  Salvar Regras de Desempate
                 </button>
               ) : (
                 <button disabled className="btn-secondary opacity-50 cursor-not-allowed">
@@ -668,10 +857,9 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
               />
               <select value={newCourtSurface} onChange={e => setNewCourtSurface(e.target.value)} className="input sm:w-36">
                 <option value="">Superfície</option>
-                <option value="hard">Hard court</option>
-                <option value="clay">Saibro</option>
-                <option value="grass">Grama</option>
-                <option value="carpet">Carpete</option>
+                <option value="hard">Quadra Dura</option>
+                <option value="clay">Quadra de Saibro</option>
+                <option value="grass">Quadra de Grama</option>
               </select>
               <button onClick={addCourt} className="btn-primary sm:whitespace-nowrap">
                 Adicionar
@@ -690,10 +878,9 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                         <input value={editCourtName} onChange={e => setEditCourtName(e.target.value)} className="input text-sm" />
                         <select value={editCourtSurface} onChange={e => setEditCourtSurface(e.target.value)} className="input w-24 text-sm">
                           <option value="">Tipo</option>
-                          <option value="hard">Hard</option>
-                          <option value="clay">Saibro</option>
-                          <option value="grass">Grama</option>
-                          <option value="carpet">Carpete</option>
+                          <option value="hard">Quadra Dura</option>
+                          <option value="clay">Quadra de Saibro</option>
+                          <option value="grass">Quadra de Grama</option>
                         </select>
                         <button onClick={() => updateCourt(court.id)} className="text-sm text-green-600 hover:text-green-700 font-medium">
                           Salvar
@@ -711,7 +898,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900">{court.name}</p>
-                          {court.surfaceType && <p className="text-xs text-gray-500 capitalize">{court.surfaceType}</p>}
+                          {court.surfaceType && <p className="text-xs text-gray-500">{court.surfaceType === "hard" ? "Quadra Dura" : court.surfaceType === "clay" ? "Quadra de Saibro" : court.surfaceType === "grass" ? "Quadra de Grama" : court.surfaceType}</p>}
                         </div>
                         <button onClick={() => { setEditingCourt(court.id); setEditCourtName(court.name); setEditCourtSurface(court.surfaceType || ""); }} className="text-sm text-gray-500 hover:text-gray-700">
                           Editar
