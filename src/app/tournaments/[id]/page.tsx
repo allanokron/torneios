@@ -190,6 +190,7 @@ export default function TournamentPage() {
   const [filterPlayerId, setFilterPlayerId] = useState("")
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [matchSubTab, setMatchSubTab] = useState<"upcoming" | "completed">("upcoming")
+  const [drawnSubTab, setDrawnSubTab] = useState<"month" | "future">("month")
   const [resultMatch, setResultMatch] = useState<Match | null>(null)
   const [editingMatch, setEditingMatch] = useState<Match | null>(null)
   const [deletingMatchId, setDeletingMatchId] = useState<string | null>(null)
@@ -755,7 +756,7 @@ export default function TournamentPage() {
 
             {/* ===== DRAWN MATCHES ===== */}
             {activeTab === "drawn" && (() => {
-              const pendingMatches = matches.filter(m => 
+              const pendingMatches = matches.filter(m =>
                 m.status === "pending_scheduling" || m.status === "proposal_sent" || m.status === "awaiting_response"
               )
               const scheduledMatches = matches.filter(m => m.status === "scheduled")
@@ -765,164 +766,236 @@ export default function TournamentPage() {
               const currentDay = now.getDate()
               const canScheduleNextMonth = currentDay === 1
 
+              const currentMonthStr = `${String(currentMonth).padStart(2, "0")}/${currentYear}`
+              const myPendingMonth = pendingMatches.filter(m =>
+                m.month === currentMonthStr &&
+                user && (m.homePlayer.id === user.id || m.awayPlayer.id === user.id)
+              )
+              const myPendingFuture = pendingMatches.filter(m => {
+                if (!m.month || !user) return false
+                if (m.homePlayer.id !== user.id && m.awayPlayer.id !== user.id) return false
+                const [fm, fy] = m.month.split("/").map(Number)
+                return fy > currentYear || (fy === currentYear && fm > currentMonth)
+              })
+
               return (
                 <div className="space-y-4">
                   <div className="bg-white rounded-xl border border-gray-200 p-5">
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Jogos Sorteados</h3>
                     <p className="text-sm text-gray-500 mb-4">
-                      Todos os confrontos aguardando agendamento de data.
+                      Confrontos aguardando agendamento de data.
                     </p>
 
-                    {/* Month block notice */}
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                      <div className="flex gap-2">
-                        <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                        </svg>
-                        <div>
-                          <p className="text-sm font-medium text-amber-800">Regra de agendamento por mês</p>
-                          <p className="text-sm text-amber-700">
-                            Jogos de meses futuros só podem ser agendados a partir do dia 1º de cada mês.
-                            {!canScheduleNextMonth && " Aguardando liberação."}
-                            {canScheduleNextMonth && " Mês liberado para agendamento!"}
-                          </p>
-                        </div>
-                      </div>
+                    {/* Sub-tabs */}
+                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-4">
+                      <button
+                        onClick={() => setDrawnSubTab("month")}
+                        className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                          drawnSubTab === "month"
+                            ? "bg-white text-green-700 shadow-sm"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        Jogos do Mês ({myPendingMonth.length})
+                      </button>
+                      <button
+                        onClick={() => setDrawnSubTab("future")}
+                        className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                          drawnSubTab === "future"
+                            ? "bg-white text-green-700 shadow-sm"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        Jogos Futuros ({myPendingFuture.length})
+                      </button>
                     </div>
 
-                    {/* Pending matches - no date */}
-                    {pendingMatches.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                          Aguardando Agendamento ({pendingMatches.length})
-                        </h4>
-                        <div className="space-y-2">
-                          {pendingMatches.map(m => {
-                            const isMyMatch = user && (m.homePlayer.id === user.id || m.awayPlayer.id === user.id)
-                            const matchMonth = m.month ? parseInt(m.month.split('/')[0]) : 0
-                            const matchYear = m.month ? parseInt(m.month.split('/')[1]) : 0
-                            const isFutureMonth = matchYear > currentYear || (matchYear === currentYear && matchMonth > currentMonth)
-                            
-                            return (
-                              <div key={m.id} className={`flex items-center justify-between p-3 rounded-lg border ${
-                                isFutureMonth ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200'
-                              }`}>
-                                <div className="flex items-center gap-3">
-                                  <div className="flex -space-x-2">
-                                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
-                                      {m.homePlayer.name.charAt(0)}
+                    {/* MONTH sub-tab */}
+                    {drawnSubTab === "month" && (
+                      <>
+                        {/* Month block notice */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                          <div className="flex gap-2">
+                            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                            <div>
+                              <p className="text-sm font-medium text-amber-800">Regra de agendamento por mês</p>
+                              <p className="text-sm text-amber-700">
+                                Jogos de meses futuros só podem ser agendados a partir do dia 1º de cada mês.
+                                {!canScheduleNextMonth && " Aguardando liberação."}
+                                {canScheduleNextMonth && " Mês liberado para agendamento!"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Scheduled matches for this month */}
+                        {scheduledMatches.filter(m => {
+                          if (!m.month) return false
+                          return m.month === currentMonthStr
+                        }).length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                              Já Agendados este Mês ({scheduledMatches.filter(m => m.month === currentMonthStr).length})
+                            </h4>
+                            <div className="space-y-2">
+                              {scheduledMatches.filter(m => m.month === currentMonthStr).map(m => (
+                                <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border bg-green-50 border-green-200">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex -space-x-2">
+                                      <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700">
+                                        {m.homePlayer.name.charAt(0)}
+                                      </div>
+                                      <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700">
+                                        {m.awayPlayer.name.charAt(0)}
+                                      </div>
                                     </div>
-                                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
-                                      {m.awayPlayer.name.charAt(0)}
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">
+                                        {m.homePlayer.name} vs {m.awayPlayer.name}
+                                      </p>
+                                      <p className="text-xs text-green-600">
+                                        {m.scheduledAt ? new Date(m.scheduledAt).toLocaleDateString('pt-BR') : ""}
+                                        {m.court && ` • ${m.court.name}`}
+                                      </p>
                                     </div>
                                   </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-900">
-                                      {m.homePlayer.name} vs {m.awayPlayer.name}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {m.round || "Rodada"} 
-                                      {m.month && ` • ${m.month}`}
-                                      {m.status === "proposal_sent" && " • Proposta enviada"}
-                                      {m.status === "awaiting_response" && " • Aguardando resposta"}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {isFutureMonth && (
-                                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                                      Bloqueado até dia 1º
-                                    </span>
-                                  )}
-                                  {isMyMatch && !isFutureMonth && (
-                                    <Link
-                                      href={`/tournaments/${tournament.id}?tab=my-matches`}
-                                      className="text-xs text-green-600 hover:text-green-700 font-medium"
-                                    >
-                                      Agendar
-                                    </Link>
-                                  )}
                                   {isOwner && (
                                     <button
-                                      onClick={() => handleDeleteMatch(m.id)}
-                                      disabled={deletingMatchId === m.id}
-                                      className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors disabled:opacity-50"
-                                      title="Apagar partida"
+                                      onClick={() => setEditingMatch(m)}
+                                      className="text-gray-700 bg-gray-100 hover:bg-gray-200 p-1.5 rounded-lg transition-colors"
+                                      title="Editar partida"
                                     >
-                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                       </svg>
                                     </button>
                                   )}
                                 </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Scheduled matches - have date but not played */}
-                    {scheduledMatches.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                          Já Agendadas ({scheduledMatches.length})
-                        </h4>
-                        <div className="space-y-2">
-                          {scheduledMatches.map(m => (
-                            <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border bg-green-50 border-green-200">
-                              <div className="flex items-center gap-3">
-                                <div className="flex -space-x-2">
-                                  <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700">
-                                    {m.homePlayer.name.charAt(0)}
-                                  </div>
-                                  <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700">
-                                    {m.awayPlayer.name.charAt(0)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {m.homePlayer.name} vs {m.awayPlayer.name}
-                                  </p>
-                                  <p className="text-xs text-green-600">
-                                    {m.round} • {m.scheduledAt ? new Date(m.scheduledAt).toLocaleDateString('pt-BR') : ""}
-                                    {m.court && ` • ${m.court.name}`}
-                                  </p>
-                                </div>
-                              </div>
-                              {isOwner && (
-                                <button
-                                  onClick={() => setEditingMatch(m)}
-                                  className="text-gray-700 bg-gray-100 hover:bg-gray-200 p-1.5 rounded-lg transition-colors"
-                                  title="Editar partida"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
-                              )}
-                              {isOwner && (
-                                <button
-                                  onClick={() => handleDeleteMatch(m.id)}
-                                  disabled={deletingMatchId === m.id}
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors disabled:opacity-50"
-                                  title="Apagar partida"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              )}
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </div>
+                          </div>
+                        )}
+
+                        {/* Pending matches for this month (my matches) */}
+                        {myPendingMonth.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                              Aguardando Agendamento ({myPendingMonth.length})
+                            </h4>
+                            <div className="space-y-2">
+                              {myPendingMonth.map(m => {
+                                const isMyMatch = user && (m.homePlayer.id === user.id || m.awayPlayer.id === user.id)
+                                return (
+                                  <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border bg-white border-gray-200">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex -space-x-2">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                          {m.homePlayer.name.charAt(0)}
+                                        </div>
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                          {m.awayPlayer.name.charAt(0)}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-900">
+                                          {m.homePlayer.name} vs {m.awayPlayer.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          {m.round || "Rodada"}
+                                          {m.round?.startsWith("Adiado") && (
+                                            <span className="text-amber-600 ml-1">• {m.round}</span>
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {isMyMatch && (
+                                        <Link
+                                          href={`/tournaments/${tournament.id}?tab=my-matches`}
+                                          className="text-xs text-green-600 hover:text-green-700 font-medium"
+                                        >
+                                          Agendar
+                                        </Link>
+                                      )}
+                                      {isOwner && (
+                                        <button
+                                          onClick={() => handleDeleteMatch(m.id)}
+                                          disabled={deletingMatchId === m.id}
+                                          className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                                          title="Apagar partida"
+                                        >
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {myPendingMonth.length === 0 && scheduledMatches.filter(m => m.month === currentMonthStr).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-8">
+                            Nenhum jogo seu para agendar este mês.
+                          </p>
+                        )}
+                      </>
                     )}
 
-                    {pendingMatches.length === 0 && scheduledMatches.length === 0 && (
-                      <p className="text-sm text-gray-500 text-center py-8">
-                        Todos os jogos já foram realizados ou agendados.
-                      </p>
+                    {/* FUTURE sub-tab */}
+                    {drawnSubTab === "future" && (
+                      <>
+                        {myPendingFuture.length > 0 ? (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                              Seus Jogos Futuros ({myPendingFuture.length})
+                            </h4>
+                            <div className="space-y-2">
+                              {myPendingFuture.map(m => {
+                                const fm = (m.month || "").split("/")[0]
+                                const monthNames: Record<string, string> = {
+                                  "08": "Agosto", "09": "Setembro", "10": "Outubro"
+                                }
+                                const monthLabel = monthNames[fm] || m.month
+                                return (
+                                  <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 border-gray-200 opacity-70">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex -space-x-2">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                          {m.homePlayer.name.charAt(0)}
+                                        </div>
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                          {m.awayPlayer.name.charAt(0)}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-900">
+                                          {m.homePlayer.name} vs {m.awayPlayer.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          {monthLabel} • Aguardando liberação
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                      Bloqueado até dia 1º
+                                    </span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 text-center py-8">
+                            Nenhum jogo futuro seu encontrado.
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
