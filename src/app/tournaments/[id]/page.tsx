@@ -217,26 +217,20 @@ export default function TournamentPage() {
       return
     }
 
-    fetch("/api/auth/me", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) setUser(data.user)
-      })
-      .catch(() => {})
+    const [authRes, tournamentRes] = await Promise.all([
+      fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json()).catch(() => null),
+      fetch(`/api/tournaments/${params.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json()).catch(() => null)
+    ])
 
-    fetch(`/api/tournaments/${params.id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setTournament(data.tournament)
-        setLoading(false)
-      })
-      .catch(() => {
-        setLoading(false)
-      })
+    if (authRes?.user) setUser(authRes.user)
+    if (tournamentRes?.tournament) {
+      setTournament(tournamentRes.tournament)
+    }
+    setLoading(false)
   }, [params.id, router])
 
   useEffect(() => {
