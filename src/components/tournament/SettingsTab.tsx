@@ -56,6 +56,20 @@ interface Tournament {
   tiebreakerConfig?: {
     criteriaOrder: string[]
   }
+  challengeConfig?: {
+    enabled: boolean
+    rankingReference: string
+    maxPositionsAhead: number
+    pointsPerPosition: number
+    challengerWinMultiplier: number
+    challengerLossMultiplier: number
+    challengedWinMultiplier: number
+    challengedLossMultiplier: number
+    countWins: boolean
+    countSets: boolean
+    countGames: boolean
+    showChallengeColumn: boolean
+  }
 }
 
 interface SettingsTabProps {
@@ -69,7 +83,7 @@ const normalizeTournamentFormat = (format?: string) =>
     : "points_ranking"
 
 export default function SettingsTab({ tournament, onTournamentUpdated }: SettingsTabProps) {
-  const [activeSection, setActiveSection] = useState<"general" | "rules" | "scoring" | "tiebreaker" | "courts">("general")
+  const [activeSection, setActiveSection] = useState<"general" | "rules" | "scoring" | "tiebreaker" | "challenge" | "courts">("general")
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState("")
   const [error, setError] = useState("")
@@ -134,6 +148,20 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
     ]
   )
   const [tiebreakerChanged, setTiebreakerChanged] = useState(false)
+
+  // Challenge form
+  const [challengeEnabled, setChallengeEnabled] = useState(tournament.challengeConfig?.enabled ?? false)
+  const [challengeRankingRef, setChallengeRankingRef] = useState(tournament.challengeConfig?.rankingReference ?? "previous_month")
+  const [challengeMaxPos, setChallengeMaxPos] = useState(tournament.challengeConfig?.maxPositionsAhead ?? 0)
+  const [challengePointsPerPos, setChallengePointsPerPos] = useState(tournament.challengeConfig?.pointsPerPosition ?? 50)
+  const [challengeChallengerWinMult, setChallengeChallengerWinMult] = useState(tournament.challengeConfig?.challengerWinMultiplier ?? 1.0)
+  const [challengeChallengerLossMult, setChallengeChallengerLossMult] = useState(tournament.challengeConfig?.challengerLossMultiplier ?? 1.0)
+  const [challengeChallengedWinMult, setChallengeChallengedWinMult] = useState(tournament.challengeConfig?.challengedWinMultiplier ?? 0.5)
+  const [challengeChallengedLossMult, setChallengeChallengedLossMult] = useState(tournament.challengeConfig?.challengedLossMultiplier ?? 0)
+  const [challengeCountWins, setChallengeCountWins] = useState(tournament.challengeConfig?.countWins ?? false)
+  const [challengeCountSets, setChallengeCountSets] = useState(tournament.challengeConfig?.countSets ?? false)
+  const [challengeCountGames, setChallengeCountGames] = useState(tournament.challengeConfig?.countGames ?? false)
+  const [challengeShowColumn, setChallengeShowColumn] = useState(tournament.challengeConfig?.showChallengeColumn ?? true)
 
   // Courts
   const [courts, setCourts] = useState(tournament.courts)
@@ -330,6 +358,45 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
     }
   }
 
+  // Save challenge config
+  const saveChallenge = async () => {
+    clearMessages()
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/tournaments/${tournament.id}/challenge`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          enabled: challengeEnabled,
+          rankingReference: challengeRankingRef,
+          maxPositionsAhead: challengeMaxPos,
+          pointsPerPosition: challengePointsPerPos,
+          challengerWinMultiplier: challengeChallengerWinMult,
+          challengerLossMultiplier: challengeChallengerLossMult,
+          challengedWinMultiplier: challengeChallengedWinMult,
+          challengedLossMultiplier: challengeChallengedLossMult,
+          countWins: challengeCountWins,
+          countSets: challengeCountSets,
+          countGames: challengeCountGames,
+          showChallengeColumn: challengeShowColumn,
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error)
+        return
+      }
+      setSuccess("Configurações de desafio salvas!")
+    } catch {
+      setError("Erro ao salvar")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Add court
   const addCourt = async () => {
     if (!newCourtName.trim()) return
@@ -416,6 +483,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
     { id: "rules" as const, label: "Regras" },
     { id: "scoring" as const, label: "Pontuação" },
     { id: "tiebreaker" as const, label: "Desempate" },
+    { id: "challenge" as const, label: "Desafio" },
     { id: "courts" as const, label: "Quadras" },
   ]
 
@@ -882,6 +950,122 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                   Nenhuma alteração
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ===== COURTS ===== */}
+        {activeSection === "challenge" && (
+          <div className="space-y-5 max-w-xl">
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={challengeEnabled}
+                  onChange={e => setChallengeEnabled(e.target.checked)}
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                />
+                <span className="text-sm font-medium text-gray-900">Habilitar Jogo Desafio</span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1 ml-6">
+                Permite que jogadores desafiem outros de posições acima no ranking.
+              </p>
+            </div>
+
+            {challengeEnabled && (
+              <>
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Regras Gerais</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="label">Referência do ranking</label>
+                      <select value={challengeRankingRef} onChange={e => setChallengeRankingRef(e.target.value)} className="input">
+                        <option value="previous_month">Mês anterior</option>
+                        <option value="current">Mês atual</option>
+                      </select>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Posições usadas para validar o desafio. "Mês anterior" usa o ranking consolidado do mês anterior.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Máx. posições acima</label>
+                        <input type="number" min={0} value={challengeMaxPos} onChange={e => setChallengeMaxPos(Number(e.target.value))} className="input" />
+                        <p className="text-xs text-gray-400 mt-1">0 = ilimitado</p>
+                      </div>
+                      <div>
+                        <label className="label">Pontos por posição</label>
+                        <input type="number" min={1} value={challengePointsPerPos} onChange={e => setChallengePointsPerPos(Number(e.target.value))} className="input" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Multiplicadores</h4>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Base = diferença de posições × pontos por posição. Valores negativos significam perda de pontos.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Desafiador vence</label>
+                        <input type="number" step={0.1} min={0} value={challengeChallengerWinMult} onChange={e => setChallengeChallengerWinMult(Number(e.target.value))} className="input" />
+                      </div>
+                      <div>
+                        <label className="label">Desafiador perde</label>
+                        <input type="number" step={0.1} min={0} value={challengeChallengerLossMult} onChange={e => setChallengeChallengerLossMult(Number(e.target.value))} className="input" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Desafiado vence</label>
+                        <input type="number" step={0.1} min={0} value={challengeChallengedWinMult} onChange={e => setChallengeChallengedWinMult(Number(e.target.value))} className="input" />
+                      </div>
+                      <div>
+                        <label className="label">Desafiado perde</label>
+                        <input type="number" step={0.1} min={0} value={challengeChallengedLossMult} onChange={e => setChallengeChallengedLossMult(Number(e.target.value))} className="input" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Contabilização</h4>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={challengeCountWins} onChange={e => setChallengeCountWins(e.target.checked)} className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" />
+                      <span className="text-sm text-gray-700">Contabilizar vitórias/derrotas no ranking geral</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={challengeCountSets} onChange={e => setChallengeCountSets(e.target.checked)} className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" />
+                      <span className="text-sm text-gray-700">Contabilizar sets no ranking geral</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={challengeCountGames} onChange={e => setChallengeCountGames(e.target.checked)} className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" />
+                      <span className="text-sm text-gray-700">Contabilizar games no ranking geral</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={challengeShowColumn} onChange={e => setChallengeShowColumn(e.target.checked)} className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" />
+                      <span className="text-sm text-gray-700">Mostrar coluna de desafio no ranking</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                  <p className="font-medium">Exemplo de cálculo:</p>
+                  <p className="mt-1">
+                    Desafiante na 15ª posição desafia o 5ª (diferença = 10). Base = 10 × {challengePointsPerPos} = {10 * challengePointsPerPos} pts.
+                    Se vencer: desafiador ganha {Math.round(10 * challengePointsPerPos * challengeChallengerWinMult)} pts, desafiado perde {Math.round(10 * challengePointsPerPos * challengeChallengedLossMult)} pts.
+                  </p>
+                </div>
+              </>
+            )}
+
+            <div className="pt-2">
+              <button onClick={saveChallenge} disabled={saving} className="btn-primary disabled:opacity-50">
+                {saving ? "Salvando..." : "Salvar"}
+              </button>
             </div>
           </div>
         )}

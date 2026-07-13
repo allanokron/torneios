@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { advanceKnockoutMatch } from "@/lib/knockout"
 import { recalculateTournamentRanking } from "@/lib/ranking"
+import { getChallengeConfig, calculateChallengePoints } from "@/lib/challengeCalc"
 
 export async function POST(
   request: Request,
@@ -277,6 +278,64 @@ export async function POST(
         })
       }
 
+      // Calculate and save challenge points if this is a challenge match
+      if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
+        const challengeConfig = await getChallengeConfig(match.tournamentId)
+        if (challengeConfig) {
+          const challengerWins = winnerId === match.homePlayerId
+          const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
+          const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
+
+          await prisma.match.update({
+            where: { id },
+            data: { challengePoints: result.challengerPoints },
+          })
+
+          // Update challenger (home player) ranking
+          await prisma.playerRanking.upsert({
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.homePlayerId } },
+            update: {
+              challengePoints: { increment: result.challengerPoints },
+              challengeMatches: { increment: 1 },
+              challengeWins: { increment: challengerWins ? 1 : 0 },
+              challengeLosses: { increment: challengerWins ? 0 : 1 },
+            },
+            create: {
+              tournamentId: match.tournamentId,
+              userId: match.homePlayerId,
+              position: 0,
+              points: result.challengerPoints,
+              challengePoints: result.challengerPoints,
+              challengeMatches: 1,
+              challengeWins: challengerWins ? 1 : 0,
+              challengeLosses: challengerWins ? 0 : 1,
+            },
+          })
+
+          // Update challenged (away player) ranking
+          const challengedPoints = -result.challengerPoints
+          await prisma.playerRanking.upsert({
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.awayPlayerId } },
+            update: {
+              challengePoints: { increment: challengedPoints },
+              challengeMatches: { increment: 1 },
+              challengeWins: { increment: challengerWins ? 0 : 1 },
+              challengeLosses: { increment: challengerWins ? 1 : 0 },
+            },
+            create: {
+              tournamentId: match.tournamentId,
+              userId: match.awayPlayerId,
+              position: 0,
+              points: challengedPoints,
+              challengePoints: challengedPoints,
+              challengeMatches: 1,
+              challengeWins: challengerWins ? 0 : 1,
+              challengeLosses: challengerWins ? 1 : 0,
+            },
+          })
+        }
+      }
+
       // Notify the other player
       const otherPlayerId = match.homePlayerId === decoded.userId
         ? match.awayPlayerId
@@ -431,6 +490,64 @@ export async function POST(
         }
       })
 
+      // Calculate and save challenge points if this is a challenge match
+      if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
+        const challengeConfig = await getChallengeConfig(match.tournamentId)
+        if (challengeConfig) {
+          const challengerWins = winnerId === match.homePlayerId
+          const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
+          const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
+
+          await prisma.match.update({
+            where: { id },
+            data: { challengePoints: result.challengerPoints },
+          })
+
+          // Update challenger (home player) ranking
+          await prisma.playerRanking.upsert({
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.homePlayerId } },
+            update: {
+              challengePoints: { increment: result.challengerPoints },
+              challengeMatches: { increment: 1 },
+              challengeWins: { increment: challengerWins ? 1 : 0 },
+              challengeLosses: { increment: challengerWins ? 0 : 1 },
+            },
+            create: {
+              tournamentId: match.tournamentId,
+              userId: match.homePlayerId,
+              position: 0,
+              points: result.challengerPoints,
+              challengePoints: result.challengerPoints,
+              challengeMatches: 1,
+              challengeWins: challengerWins ? 1 : 0,
+              challengeLosses: challengerWins ? 0 : 1,
+            },
+          })
+
+          // Update challenged (away player) ranking
+          const challengedPoints = -result.challengerPoints
+          await prisma.playerRanking.upsert({
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.awayPlayerId } },
+            update: {
+              challengePoints: { increment: challengedPoints },
+              challengeMatches: { increment: 1 },
+              challengeWins: { increment: challengerWins ? 0 : 1 },
+              challengeLosses: { increment: challengerWins ? 1 : 0 },
+            },
+            create: {
+              tournamentId: match.tournamentId,
+              userId: match.awayPlayerId,
+              position: 0,
+              points: challengedPoints,
+              challengePoints: challengedPoints,
+              challengeMatches: 1,
+              challengeWins: challengerWins ? 0 : 1,
+              challengeLosses: challengerWins ? 1 : 0,
+            },
+          })
+        }
+      }
+
       // Audit log
       await prisma.auditLog.create({
         data: {
@@ -543,6 +660,64 @@ export async function POST(
           sets: { orderBy: { setNumber: "asc" } }
         }
       })
+
+      // Calculate and save challenge points if this is a challenge match
+      if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
+        const challengeConfig = await getChallengeConfig(match.tournamentId)
+        if (challengeConfig) {
+          const challengerWins = winnerId === match.homePlayerId
+          const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
+          const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
+
+          await prisma.match.update({
+            where: { id },
+            data: { challengePoints: result.challengerPoints },
+          })
+
+          // Update challenger (home player) ranking
+          await prisma.playerRanking.upsert({
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.homePlayerId } },
+            update: {
+              challengePoints: { increment: result.challengerPoints },
+              challengeMatches: { increment: 1 },
+              challengeWins: { increment: challengerWins ? 1 : 0 },
+              challengeLosses: { increment: challengerWins ? 0 : 1 },
+            },
+            create: {
+              tournamentId: match.tournamentId,
+              userId: match.homePlayerId,
+              position: 0,
+              points: result.challengerPoints,
+              challengePoints: result.challengerPoints,
+              challengeMatches: 1,
+              challengeWins: challengerWins ? 1 : 0,
+              challengeLosses: challengerWins ? 0 : 1,
+            },
+          })
+
+          // Update challenged (away player) ranking
+          const challengedPoints = -result.challengerPoints
+          await prisma.playerRanking.upsert({
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.awayPlayerId } },
+            update: {
+              challengePoints: { increment: challengedPoints },
+              challengeMatches: { increment: 1 },
+              challengeWins: { increment: challengerWins ? 0 : 1 },
+              challengeLosses: { increment: challengerWins ? 1 : 0 },
+            },
+            create: {
+              tournamentId: match.tournamentId,
+              userId: match.awayPlayerId,
+              position: 0,
+              points: challengedPoints,
+              challengePoints: challengedPoints,
+              challengeMatches: 1,
+              challengeWins: challengerWins ? 0 : 1,
+              challengeLosses: challengerWins ? 1 : 0,
+            },
+          })
+        }
+      }
 
       if (match.phase === "knockout") {
         await advanceKnockoutMatch(match.id, winnerId)

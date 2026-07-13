@@ -116,6 +116,7 @@ model Tournament {
   bracketMatches   BracketMatch[]
   scoringConfig    ScoringConfig?
   tiebreakerConfig TiebreakerConfig?
+  challengeConfig  ChallengeConfig?
   rankings         PlayerRanking[]
   announcements    Announcement[]
   auditLogs        AuditLog[]
@@ -242,6 +243,13 @@ model Match {
   // Round & Month (for spreadsheet import)
   round String?
   month String?
+
+  // Jogo Desafio
+  isChallenge              Boolean @default(false)
+  challengePositionHome    Int?
+  challengePositionAway    Int?
+  challengePoints          Int?
+  challengeReferenceMonth  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -425,6 +433,30 @@ model TiebreakerConfig {
   updatedAt DateTime @updatedAt
 }
 
+model ChallengeConfig {
+  id           String     @id @default(cuid())
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  enabled                   Boolean @default(false)
+  rankingReference          String  @default("previous_month") // "previous_month" | "current"
+  maxPositionsAhead         Int     @default(0) // 0 = ilimitado
+  pointsPerPosition         Int     @default(50)
+
+  challengerWinMultiplier   Float   @default(1.0)
+  challengerLossMultiplier  Float   @default(1.0)
+  challengedWinMultiplier   Float   @default(0.5)
+  challengedLossMultiplier  Float   @default(0)
+
+  countWins                 Boolean @default(false)
+  countSets                 Boolean @default(false)
+  countGames                Boolean @default(false)
+  showChallengeColumn       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model PlayerRanking {
   id           String     @id @default(cuid())
   tournamentId String
@@ -449,6 +481,12 @@ model PlayerRanking {
   directConfrontation Int?
   setBalance          Int?
   gamesBalance        Int?
+
+  // Estatísticas de desafio
+  challengePoints   Int @default(0)
+  challengeMatches  Int @default(0)
+  challengeWins     Int @default(0)
+  challengeLosses   Int @default(0)
 
   lastResults Json? // Array dos últimos resultados
 

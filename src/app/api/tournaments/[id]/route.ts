@@ -38,6 +38,7 @@ export async function GET(
         courts: true,
         scoringConfig: true,
         tiebreakerConfig: true,
+        challengeConfig: true,
         _count: {
           select: {
             matches: true,
@@ -234,6 +235,7 @@ export async function PATCH(
         courts: true,
         scoringConfig: true,
         tiebreakerConfig: true,
+        challengeConfig: true,
         _count: {
           select: {
             matches: true,

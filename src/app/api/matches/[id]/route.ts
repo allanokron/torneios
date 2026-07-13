@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { recalculateTournamentRanking } from "@/lib/ranking"
+import { getChallengeConfig, getPlayerPosition, validateChallengePositions } from "@/lib/challengeCalc"
 
 export async function PATCH(
   request: Request,
@@ -39,7 +40,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { scheduledAt, homePlayerId, awayPlayerId, courtId, status, duration } = body
+    const { scheduledAt, homePlayerId, awayPlayerId, courtId, status, duration, isChallenge } = body
 
     const updateData: Record<string, unknown> = {}
 
@@ -78,6 +79,50 @@ export async function PATCH(
       updateData.duration = duration
     }
 
+    if (isChallenge !== undefined && typeof isChallenge === "boolean") {
+      const challengeConfig = await getChallengeConfig(match.tournamentId)
+
+      if (isChallenge && !challengeConfig) {
+        return NextResponse.json(
+          { error: "Desafio não habilitado neste torneio" },
+          { status: 400 }
+        )
+      }
+
+      if (isChallenge) {
+        const mHome = updateData.homePlayerId as string || match.homePlayerId
+        const mAway = updateData.awayPlayerId as string || match.awayPlayerId
+
+        const [homePos, awayPos] = await Promise.all([
+          getPlayerPosition(match.tournamentId, mHome, challengeConfig!.rankingReference === "previous_month" ? match.month || undefined : undefined),
+          getPlayerPosition(match.tournamentId, mAway, challengeConfig!.rankingReference === "previous_month" ? match.month || undefined : undefined),
+        ])
+
+        if (homePos === null || awayPos === null) {
+          return NextResponse.json(
+            { error: "Jogadores ainda sem posição no ranking" },
+            { status: 400 }
+          )
+        }
+
+        const validation = validateChallengePositions(homePos, awayPos, challengeConfig!.maxPositionsAhead)
+        if (!validation.valid) {
+          return NextResponse.json({ error: validation.error }, { status: 400 })
+        }
+
+        updateData.isChallenge = true
+        updateData.challengePositionHome = homePos
+        updateData.challengePositionAway = awayPos
+        updateData.challengeReferenceMonth = challengeConfig!.rankingReference === "previous_month" ? match.month || null : null
+      } else {
+        updateData.isChallenge = false
+        updateData.challengePositionHome = null
+        updateData.challengePositionAway = null
+        updateData.challengePoints = null
+        updateData.challengeReferenceMonth = null
+      }
+    }
+
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "Nenhum dado para atualizar" }, { status: 400 })
     }
@@ -97,7 +142,7 @@ export async function PATCH(
       data: {
         tournamentId: match.tournamentId,
         userId: decoded.userId,
-        action: "match_edited",
+        action: isChallenge !== undefined ? "match_challenge_toggled" : "match_edited",
         entityType: "match",
         entityId: id,
         oldValue: {
@@ -105,7 +150,8 @@ export async function PATCH(
           homePlayerId: match.homePlayerId,
           awayPlayerId: match.awayPlayerId,
           courtId: match.courtId,
-          status: match.status
+          status: match.status,
+          isChallenge: match.isChallenge,
         },
         newValue: updateData as Record<string, string | number | null>
       }

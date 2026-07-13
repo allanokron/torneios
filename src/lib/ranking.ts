@@ -40,6 +40,13 @@ type RankingStats = {
   matchPoints: number
 }
 
+type ChallengeStats = {
+  challengePoints: number
+  challengeMatches: number
+  challengeWins: number
+  challengeLosses: number
+}
+
 type RankingRow = RankingStats & {
   userId: string
   user: {
@@ -54,6 +61,10 @@ type RankingRow = RankingStats & {
   basePoints: number
   setBalance: number
   gamesBalance: number
+  challengePoints: number
+  challengeMatches: number
+  challengeWins: number
+  challengeLosses: number
 }
 
 function emptyStats(): RankingStats {
@@ -68,6 +79,15 @@ function emptyStats(): RankingStats {
     gamesWon: 0,
     gamesLost: 0,
     matchPoints: 0,
+  }
+}
+
+function emptyChallengeStats(): ChallengeStats {
+  return {
+    challengePoints: 0,
+    challengeMatches: 0,
+    challengeWins: 0,
+    challengeLosses: 0,
   }
 }
 
@@ -88,7 +108,7 @@ function parseMonthToEndOfMonth(month: string): Date {
 }
 
 export async function recalculateTournamentRanking(tournamentId: string, month?: string) {
-  const [members, existingRankings, tournament, penalties, finishedMatches] = await Promise.all([
+  const [members, existingRankings, tournament, penalties, finishedMatches, challengeMatches] = await Promise.all([
     prisma.tournamentMember.findMany({
       where: { tournamentId, status: "accepted" },
       include: {
@@ -102,7 +122,7 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
     }),
     prisma.tournament.findUnique({
       where: { id: tournamentId },
-      include: { scoringConfig: true, tiebreakerConfig: true },
+      include: { scoringConfig: true, tiebreakerConfig: true, challengeConfig: true },
     }),
     prisma.penalty.findMany({
       where: { tournamentId },
@@ -112,6 +132,7 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
         tournamentId,
         phase: "ranking",
         status: { in: ["finished", "wo"] },
+        isChallenge: false,
         ...(month
           ? {
               OR: [
@@ -123,15 +144,34 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
       },
       include: { sets: true },
     }),
+    prisma.match.findMany({
+      where: {
+        tournamentId,
+        phase: "ranking",
+        status: { in: ["finished", "wo"] },
+        isChallenge: true,
+        ...(month
+          ? {
+              OR: [
+                { scheduledAt: { lte: parseMonthToEndOfMonth(month) } },
+                { month: month, scheduledAt: null },
+              ],
+            }
+          : {}),
+      },
+    }),
   ])
 
   const scoring = tournament?.scoringConfig ?? DEFAULT_SCORING
+  const challengeConfig = tournament?.challengeConfig
   const criteriaOrder = normalizeCriteriaOrder(tournament?.tiebreakerConfig?.criteriaOrder)
   const existingMap = new Map(existingRankings.map((ranking) => [ranking.userId, ranking]))
   const matchStats: Record<string, RankingStats> = {}
+  const challengeStats: Record<string, ChallengeStats> = {}
 
   for (const member of members) {
     matchStats[member.userId] = emptyStats()
+    challengeStats[member.userId] = emptyChallengeStats()
   }
 
   for (const match of finishedMatches) {
@@ -216,15 +256,70 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
     }
   }
 
+  // Accumulate challenge stats
+  for (const match of challengeMatches) {
+    if (match.challengePoints === null) continue
+    const homeId = match.homePlayerId
+    const awayId = match.awayPlayerId
+
+    challengeStats[homeId] ??= emptyChallengeStats()
+    challengeStats[awayId] ??= emptyChallengeStats()
+
+    const homeCs = challengeStats[homeId]
+    const awayCs = challengeStats[awayId]
+
+    homeCs.challengeMatches++
+    awayCs.challengeMatches++
+
+    // challengePoints is stored from the home player's perspective
+    homeCs.challengePoints += match.challengePoints
+    awayCs.challengePoints -= match.challengePoints
+
+    const homeIsChallengerWinner = match.challengePoints > 0
+    if (homeIsChallengerWinner) {
+      homeCs.challengeWins++
+      awayCs.challengeLosses++
+    } else {
+      awayCs.challengeWins++
+      homeCs.challengeLosses++
+    }
+
+    // Optionally count wins/losses, sets, games in normal stats
+    if (challengeConfig?.countWins) {
+      const homeMs = matchStats[homeId] ?? emptyStats()
+      const awayMs = matchStats[awayId] ?? emptyStats()
+      if (homeIsChallengerWinner) {
+        homeMs.wins++
+        awayMs.losses++
+      } else {
+        awayMs.wins++
+        homeMs.losses++
+      }
+    }
+    if (challengeConfig?.countSets) {
+      const homeMs = matchStats[homeId] ?? emptyStats()
+      const awayMs = matchStats[awayId] ?? emptyStats()
+      homeMs.setsWon += 2
+      awayMs.setsLost += 2
+    }
+    if (challengeConfig?.countGames) {
+      const homeMs = matchStats[homeId] ?? emptyStats()
+      const awayMs = matchStats[awayId] ?? emptyStats()
+      homeMs.gamesWon += 12
+      awayMs.gamesLost += 12
+    }
+  }
+
   const ranking = await Promise.all(
     members.map(async (member) => {
       const stats = matchStats[member.userId] ?? emptyStats()
+      const cs = challengeStats[member.userId] ?? emptyChallengeStats()
       const existing = existingMap.get(member.userId)
       const basePoints = existing?.basePoints ?? 0
       const penaltyPoints = penalties
         .filter((penalty) => penalty.userId === member.userId)
         .reduce((sum, penalty) => sum + penalty.points, 0)
-      const points = basePoints + stats.matchPoints + penaltyPoints
+      const points = basePoints + stats.matchPoints + penaltyPoints + cs.challengePoints
       const setBalance = stats.setsWon - stats.setsLost
       const gamesBalance = stats.gamesWon - stats.gamesLost
 
@@ -237,6 +332,10 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
         ...stats,
         setBalance,
         gamesBalance,
+        challengePoints: cs.challengePoints,
+        challengeMatches: cs.challengeMatches,
+        challengeWins: cs.challengeWins,
+        challengeLosses: cs.challengeLosses,
       }
 
       if (!month) {
@@ -256,6 +355,10 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
             gamesLost: stats.gamesLost,
             setBalance,
             gamesBalance,
+            challengePoints: cs.challengePoints,
+            challengeMatches: cs.challengeMatches,
+            challengeWins: cs.challengeWins,
+            challengeLosses: cs.challengeLosses,
           },
           create: {
             tournamentId,
@@ -274,6 +377,10 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
             gamesLost: stats.gamesLost,
             setBalance,
             gamesBalance,
+            challengePoints: cs.challengePoints,
+            challengeMatches: cs.challengeMatches,
+            challengeWins: cs.challengeWins,
+            challengeLosses: cs.challengeLosses,
           },
         })
       }
