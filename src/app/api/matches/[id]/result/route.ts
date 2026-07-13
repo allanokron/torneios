@@ -49,18 +49,24 @@ export async function POST(
     }
 
     if (match.homePlayerId !== decoded.userId && match.awayPlayerId !== decoded.userId) {
-      return NextResponse.json(
-        { error: "Apenas os jogadores desta partida podem registrar o resultado" },
-        { status: 403 }
-      )
+      // Check if user is tournament owner
+      const tournament = await prisma.tournament.findUnique({ where: { id: match.tournamentId } })
+      if (!tournament || tournament.ownerId !== decoded.userId) {
+        return NextResponse.json(
+          { error: "Apenas os jogadores desta partida ou o organizador podem registrar o resultado" },
+          { status: 403 }
+        )
+      }
     }
+
+    const isOwner = (await prisma.tournament.findUnique({ where: { id: match.tournamentId } }))?.ownerId === decoded.userId
 
     const body = await request.json()
     const { action } = body
 
     // ACTION: start_match — player starts the match with a start photo
     if (action === "start_match") {
-      if (match.status !== "scheduled") {
+      if (!isOwner && match.status !== "scheduled") {
         return NextResponse.json(
           { error: "Esta partida não pode ser iniciada" },
           { status: 400 }
@@ -68,7 +74,7 @@ export async function POST(
       }
 
       const { startPhotoUrl } = body
-      if (!startPhotoUrl) {
+      if (!isOwner && !startPhotoUrl) {
         return NextResponse.json(
           { error: "Foto do início do jogo é obrigatória" },
           { status: 400 }
@@ -104,7 +110,7 @@ export async function POST(
 
     // ACTION: forfeit — player forfeits during in_progress match
     if (action === "forfeit") {
-      if (match.status !== "in_progress") {
+      if (!isOwner && match.status !== "in_progress") {
         return NextResponse.json(
           { error: "Desistência só é possível durante a partida" },
           { status: 400 }
@@ -309,7 +315,7 @@ export async function POST(
 
     // ACTION: wo_victory — walkover victory
     if (action === "wo_victory") {
-      if (match.status !== "scheduled" && match.status !== "in_progress") {
+      if (!isOwner && match.status !== "scheduled" && match.status !== "in_progress") {
         return NextResponse.json(
           { error: "Esta partida não pode ter walkover registrado" },
           { status: 400 }
@@ -448,7 +454,7 @@ export async function POST(
 
     // ACTION: submit_result — player submits the final score
     if (action === "submit_result") {
-      if (match.status !== "in_progress") {
+      if (!isOwner && match.status !== "in_progress") {
         return NextResponse.json(
           { error: "Esta partida não pode ter resultado registrado" },
           { status: 400 }
@@ -464,7 +470,7 @@ export async function POST(
         )
       }
 
-      if (!endPhotoUrl) {
+      if (!isOwner && !endPhotoUrl) {
         return NextResponse.json(
           { error: "Foto do final do jogo é obrigatória" },
           { status: 400 }
@@ -622,9 +628,9 @@ export async function PATCH(
       )
     }
 
-    if (match.status !== "finished") {
+    if (match.status !== "finished" && match.status !== "wo") {
       return NextResponse.json(
-        { error: "Apenas jogos finalizados podem ser editados" },
+        { error: "Apenas jogos finalizados ou W.O. podem ser editados" },
         { status: 400 }
       )
     }

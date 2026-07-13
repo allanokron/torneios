@@ -10,6 +10,7 @@ import SettingsTab from "@/components/tournament/SettingsTab"
 import ScheduleProposalForm from "@/components/tournament/ScheduleProposalForm"
 import ProposalCard from "@/components/tournament/ProposalCard"
 import MatchResultForm from "@/components/tournament/MatchResultForm"
+import MatchEditForm from "@/components/tournament/MatchEditForm"
 
 interface Tournament {
   id: string
@@ -190,6 +191,7 @@ export default function TournamentPage() {
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [matchSubTab, setMatchSubTab] = useState<"upcoming" | "completed">("upcoming")
   const [resultMatch, setResultMatch] = useState<Match | null>(null)
+  const [editingMatch, setEditingMatch] = useState<Match | null>(null)
   const [deletingMatchId, setDeletingMatchId] = useState<string | null>(null)
   const [showNewMatch, setShowNewMatch] = useState(false)
   const [newMatchOpponent, setNewMatchOpponent] = useState("")
@@ -896,6 +898,17 @@ export default function TournamentPage() {
                               </div>
                               {isOwner && (
                                 <button
+                                  onClick={() => setEditingMatch(m)}
+                                  className="text-gray-700 bg-gray-100 hover:bg-gray-200 p-1.5 rounded-lg transition-colors"
+                                  title="Editar partida"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                              )}
+                              {isOwner && (
+                                <button
                                   onClick={() => handleDeleteMatch(m.id)}
                                   disabled={deletingMatchId === m.id}
                                   className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors disabled:opacity-50"
@@ -1072,6 +1085,17 @@ export default function TournamentPage() {
                                     )}
                                     {isOwner && (
                                       <button
+                                        onClick={() => setEditingMatch(match)}
+                                        className="px-2 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                        title="Editar partida"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                    {isOwner && (
+                                      <button
                                         onClick={() => handleDeleteMatch(match.id)}
                                         disabled={deletingMatchId === match.id}
                                         className="px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
@@ -1202,6 +1226,23 @@ export default function TournamentPage() {
                       existingEndPhoto={resultMatch.endPhotoUrl}
                       onSuccess={() => { setResultMatch(null); fetchMatches() }}
                       onClose={() => setResultMatch(null)}
+                    />
+                  )}
+
+                  {/* Edit modal */}
+                  {editingMatch && (
+                    <MatchEditForm
+                      matchId={editingMatch.id}
+                      homePlayer={editingMatch.homePlayer}
+                      awayPlayer={editingMatch.awayPlayer}
+                      scheduledAt={editingMatch.scheduledAt}
+                      courtId={editingMatch.court?.id || null}
+                      status={editingMatch.status}
+                      duration={editingMatch.duration}
+                      members={tournament.members.filter(m => m.status === "accepted")}
+                      courts={tournament.courts}
+                      onSuccess={() => { setEditingMatch(null); fetchMatches() }}
+                      onClose={() => setEditingMatch(null)}
                     />
                   )}
                 </div>
@@ -1419,6 +1460,17 @@ export default function TournamentPage() {
                                   )}
                                   {isOwner && (
                                     <button
+                                      onClick={() => setEditingMatch(match)}
+                                      className="px-2 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                      title="Editar partida"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                  {isOwner && (
+                                    <button
                                       onClick={() => handleDeleteMatch(match.id)}
                                       disabled={deletingMatchId === match.id}
                                       className="px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
@@ -1507,6 +1559,17 @@ export default function TournamentPage() {
                               </div>
                               {isOwner && (
                                 <button
+                                  onClick={() => setEditingMatch(match)}
+                                  className="flex-shrink-0 px-2 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                  title="Editar partida"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                              )}
+                              {isOwner && (
+                                <button
                                   onClick={() => handleDeleteMatch(match.id)}
                                   disabled={deletingMatchId === match.id}
                                   className="flex-shrink-0 px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
@@ -1549,6 +1612,23 @@ export default function TournamentPage() {
                       existingEndPhoto={resultMatch.endPhotoUrl}
                       onSuccess={() => { setResultMatch(null); fetchMatches() }}
                       onClose={() => setResultMatch(null)}
+                    />
+                  )}
+
+                  {/* Edit modal */}
+                  {editingMatch && (
+                    <MatchEditForm
+                      matchId={editingMatch.id}
+                      homePlayer={editingMatch.homePlayer}
+                      awayPlayer={editingMatch.awayPlayer}
+                      scheduledAt={editingMatch.scheduledAt}
+                      courtId={editingMatch.court?.id || null}
+                      status={editingMatch.status}
+                      duration={editingMatch.duration}
+                      members={tournament.members.filter(m => m.status === "accepted")}
+                      courts={tournament.courts}
+                      onSuccess={() => { setEditingMatch(null); fetchMatches() }}
+                      onClose={() => setEditingMatch(null)}
                     />
                   )}
                 </div>
