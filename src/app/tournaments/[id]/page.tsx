@@ -288,6 +288,22 @@ export default function TournamentPage() {
     }
   }, [fetchMatches, tournament])
 
+  const handleUnlockMatches = useCallback(async (matchIds: string[]) => {
+    if (!tournament) return
+    if (!confirm(`Liberar ${matchIds.length} jogo(s) para agendamento?`)) return
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/tournaments/${tournament.id}/matches/unlock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ matchIds })
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || "Erro ao liberar jogos"); return }
+      fetchMatches()
+    } catch { alert("Erro de conexão") }
+  }, [tournament, fetchMatches])
+
   useEffect(() => {
     fetchMatches()
   }, [fetchMatches])
@@ -668,6 +684,13 @@ export default function TournamentPage() {
                     <div className="space-y-2">
                       {todayMatches.map(match => (
                         <div key={match.id} className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-100">
+                          <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 text-xs font-medium overflow-hidden flex-shrink-0">
+                            {(match.homePlayer.avatarUrl || match.awayPlayer.avatarUrl) ? (
+                              <img src={match.homePlayer.avatarUrl || match.awayPlayer.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              match.homePlayer.name.charAt(0)
+                            )}
+                          </div>
                           <div className="text-center min-w-[50px]">
                             <div className="text-xs font-medium text-green-700">
                               {new Date(match.scheduledAt!).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -694,6 +717,13 @@ export default function TournamentPage() {
                     <div className="space-y-2">
                       {tomorrowMatches.map(match => (
                         <div key={match.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-medium overflow-hidden flex-shrink-0">
+                            {(match.homePlayer.avatarUrl || match.awayPlayer.avatarUrl) ? (
+                              <img src={match.homePlayer.avatarUrl || match.awayPlayer.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              match.homePlayer.name.charAt(0)
+                            )}
+                          </div>
                           <div className="text-center min-w-[50px]">
                             <div className="text-xs font-medium text-gray-900">
                               {new Date(match.scheduledAt!).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -758,9 +788,12 @@ export default function TournamentPage() {
 
             {/* ===== DRAWN MATCHES ===== */}
             {activeTab === "drawn" && (() => {
-              const pendingMatches = matches.filter(m =>
+              const allPendingMatches = matches.filter(m =>
                 m.status === "pending_scheduling" || m.status === "proposal_sent" || m.status === "awaiting_response"
               )
+              const pendingMatches = isOwner ? allPendingMatches : (user ? allPendingMatches.filter(m =>
+                m.homePlayer.id === user.id || m.awayPlayer.id === user.id
+              ) : [])
               const scheduledMatches = matches.filter(m => m.status === "scheduled")
               const now = new Date()
               const currentMonth = now.getMonth() + 1
@@ -793,8 +826,8 @@ export default function TournamentPage() {
                       Confrontos aguardando agendamento de data.
                     </p>
 
-                    {/* Player filter */}
-                    {allMembers.length > 0 && (
+                    {/* Player filter - only for admin */}
+                    {isOwner && allMembers.length > 0 && (
                       <div className="mb-4">
                         <select
                           value={drawnFilterPlayer}
@@ -856,22 +889,35 @@ export default function TournamentPage() {
                         {/* Scheduled matches for this month */}
                         {scheduledMatches.filter(m => {
                           if (!m.month) return false
+                          if (!isOwner && user && m.homePlayer.id !== user.id && m.awayPlayer.id !== user.id) return false
                           return m.month === currentMonthStr
                         }).length > 0 && (
                           <div className="mb-4">
                             <h4 className="text-sm font-medium text-gray-700 mb-2">
-                              Já Agendados este Mês ({scheduledMatches.filter(m => m.month === currentMonthStr).length})
+                              Já Agendados este Mês ({scheduledMatches.filter(m => m.month === currentMonthStr && (isOwner || !user || m.homePlayer.id === user.id || m.awayPlayer.id === user.id)).length})
                             </h4>
                             <div className="space-y-2">
-                              {scheduledMatches.filter(m => m.month === currentMonthStr).map(m => (
+                              {scheduledMatches.filter(m => {
+                                if (m.month !== currentMonthStr) return false
+                                if (!isOwner && user && m.homePlayer.id !== user.id && m.awayPlayer.id !== user.id) return false
+                                return true
+                              }).map(m => (
                                 <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border bg-green-50 border-green-200">
                                   <div className="flex items-center gap-3">
                                     <div className="flex -space-x-2">
-                                      <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700">
-                                        {m.homePlayer.name.charAt(0)}
+                                      <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700 overflow-hidden">
+                                        {m.homePlayer.avatarUrl ? (
+                                          <img src={m.homePlayer.avatarUrl} alt={m.homePlayer.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                          m.homePlayer.name.charAt(0)
+                                        )}
                                       </div>
-                                      <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700">
-                                        {m.awayPlayer.name.charAt(0)}
+                                      <div className="w-8 h-8 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-xs font-medium text-green-700 overflow-hidden">
+                                        {m.awayPlayer.avatarUrl ? (
+                                          <img src={m.awayPlayer.avatarUrl} alt={m.awayPlayer.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                          m.awayPlayer.name.charAt(0)
+                                        )}
                                       </div>
                                     </div>
                                     <div>
@@ -914,11 +960,19 @@ export default function TournamentPage() {
                                   <div key={m.id} className={`flex items-center justify-between p-3 rounded-lg border ${isPostponed ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-200'}`}>
                                     <div className="flex items-center gap-3">
                                       <div className="flex -space-x-2">
-                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
-                                          {m.homePlayer.name.charAt(0)}
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium overflow-hidden ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
+                                          {m.homePlayer.avatarUrl ? (
+                                            <img src={m.homePlayer.avatarUrl} alt={m.homePlayer.name} className="w-full h-full object-cover" />
+                                          ) : (
+                                            m.homePlayer.name.charAt(0)
+                                          )}
                                         </div>
-                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
-                                          {m.awayPlayer.name.charAt(0)}
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium overflow-hidden ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
+                                          {m.awayPlayer.avatarUrl ? (
+                                            <img src={m.awayPlayer.avatarUrl} alt={m.awayPlayer.name} className="w-full h-full object-cover" />
+                                          ) : (
+                                            m.awayPlayer.name.charAt(0)
+                                          )}
                                         </div>
                                       </div>
                                       <div>
@@ -972,9 +1026,19 @@ export default function TournamentPage() {
                       <>
                         {drawnPendingFuture.length > 0 ? (
                           <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">
-                              Jogos Futuros ({drawnPendingFuture.length})
-                            </h4>
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-medium text-gray-700">
+                                Jogos Futuros ({drawnPendingFuture.length})
+                              </h4>
+                              {isOwner && (
+                                <button
+                                  onClick={() => handleUnlockMatches(drawnPendingFuture.map(m => m.id))}
+                                  className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                                >
+                                  Liberar Todos para Agendamento
+                                </button>
+                              )}
+                            </div>
                             <div className="space-y-2">
                               {drawnPendingFuture.map(m => {
                                 const fm = (m.month || "").split("/")[0]
@@ -987,11 +1051,19 @@ export default function TournamentPage() {
                                   <div key={m.id} className={`flex items-center justify-between p-3 rounded-lg border ${isPostponed ? 'bg-orange-50 border-orange-300' : 'bg-gray-50 border-gray-200 opacity-70'}`}>
                                     <div className="flex items-center gap-3">
                                       <div className="flex -space-x-2">
-                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
-                                          {m.homePlayer.name.charAt(0)}
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium overflow-hidden ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
+                                          {m.homePlayer.avatarUrl ? (
+                                            <img src={m.homePlayer.avatarUrl} alt={m.homePlayer.name} className="w-full h-full object-cover" />
+                                          ) : (
+                                            m.homePlayer.name.charAt(0)
+                                          )}
                                         </div>
-                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
-                                          {m.awayPlayer.name.charAt(0)}
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium overflow-hidden ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
+                                          {m.awayPlayer.avatarUrl ? (
+                                            <img src={m.awayPlayer.avatarUrl} alt={m.awayPlayer.name} className="w-full h-full object-cover" />
+                                          ) : (
+                                            m.awayPlayer.name.charAt(0)
+                                          )}
                                         </div>
                                       </div>
                                       <div>
@@ -1012,9 +1084,18 @@ export default function TournamentPage() {
                                           ADIADO
                                         </span>
                                       )}
-                                      <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                                        Bloqueado até dia 1º
-                                      </span>
+                                      {isOwner ? (
+                                        <button
+                                          onClick={() => handleUnlockMatches([m.id])}
+                                          className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
+                                        >
+                                          Liberar
+                                        </button>
+                                      ) : (
+                                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                          Bloqueado até dia 1º
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                 )
@@ -1064,6 +1145,14 @@ export default function TournamentPage() {
 
               const filteredUpcoming = applyFilters(upcoming)
               const filteredCompleted = applyFilters(completed)
+
+              const sortNewest = (a: Match, b: Match) => {
+                const da = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0
+                const db = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0
+                return db - da
+              }
+              filteredUpcoming.sort(sortNewest)
+              filteredCompleted.sort(sortNewest)
 
               return (
                 <div className="space-y-4">
@@ -1138,6 +1227,22 @@ export default function TournamentPage() {
                             return (
                               <div key={match.id} className="border border-gray-100 rounded-lg overflow-hidden">
                                 <div className="flex flex-wrap items-center gap-3 p-3 hover:bg-gray-50 transition-colors">
+                                  <div className="flex -space-x-2 flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600 overflow-hidden">
+                                      {match.homePlayer.avatarUrl ? (
+                                        <img src={match.homePlayer.avatarUrl} alt={match.homePlayer.name} className="w-full h-full object-cover" />
+                                      ) : (
+                                        match.homePlayer.name.charAt(0)
+                                      )}
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600 overflow-hidden">
+                                      {match.awayPlayer.avatarUrl ? (
+                                        <img src={match.awayPlayer.avatarUrl} alt={match.awayPlayer.name} className="w-full h-full object-cover" />
+                                      ) : (
+                                        match.awayPlayer.name.charAt(0)
+                                      )}
+                                    </div>
+                                  </div>
                                   <div className="text-center min-w-[50px]">
                                     {match.scheduledAt ? (
                                       <>
@@ -1216,11 +1321,27 @@ export default function TournamentPage() {
                         <p className="text-sm text-gray-500">Nenhum jogo realizado encontrado</p>
                       ) : (
                         <div className="space-y-3">
-                          {filteredCompleted.map(match => {
+                           {filteredCompleted.map(match => {
                             const canEdit = user?.id === tournament.owner.id
                             return (
                               <div key={match.id} className="border border-gray-100 rounded-lg overflow-hidden">
                                 <div className="flex items-center gap-3 p-3">
+                                  <div className="flex -space-x-2 flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600 overflow-hidden">
+                                      {match.homePlayer.avatarUrl ? (
+                                        <img src={match.homePlayer.avatarUrl} alt={match.homePlayer.name} className="w-full h-full object-cover" />
+                                      ) : (
+                                        match.homePlayer.name.charAt(0)
+                                      )}
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600 overflow-hidden">
+                                      {match.awayPlayer.avatarUrl ? (
+                                        <img src={match.awayPlayer.avatarUrl} alt={match.awayPlayer.name} className="w-full h-full object-cover" />
+                                      ) : (
+                                        match.awayPlayer.name.charAt(0)
+                                      )}
+                                    </div>
+                                  </div>
                                   <div className="text-center min-w-[50px]">
                                     {match.scheduledAt ? (
                                       <>
@@ -1346,12 +1467,36 @@ export default function TournamentPage() {
               const myMatches = matches.filter(m => m.homePlayer.id === user.id || m.awayPlayer.id === user.id)
               const now = new Date()
               const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+              const currentMonth = now.getMonth() + 1
+              const currentYear = now.getFullYear()
+              const currentMonthStr = `${String(currentMonth).padStart(2, "0")}/${currentYear}`
+
               const completed = myMatches.filter(m => m.status === "finished" || m.status === "wo")
-              const upcoming = myMatches.filter(m => {
+              const scheduledUpcoming = myMatches.filter(m => {
                 if (m.status === "finished" || m.status === "wo" || m.status === "cancelled") return false
-                if (!m.scheduledAt) return true
+                if (!m.scheduledAt) return false
                 return new Date(m.scheduledAt) >= todayStart
               })
+              const pendingCurrentMonth = myMatches.filter(m => {
+                if (m.status !== "pending_scheduling" && m.status !== "proposal_sent" && m.status !== "awaiting_response") return false
+                if (m.month !== currentMonthStr) return false
+                return true
+              })
+              const pendingFuture = myMatches.filter(m => {
+                if (m.status !== "pending_scheduling" && m.status !== "proposal_sent" && m.status !== "awaiting_response") return false
+                if (!m.month) return false
+                const [fm, fy] = m.month.split("/").map(Number)
+                return fy > currentYear || (fy === currentYear && fm > currentMonth)
+              })
+
+              const sortNewest = (a: Match, b: Match) => {
+                const da = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0
+                const db = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0
+                return db - da
+              }
+
+              scheduledUpcoming.sort(sortNewest)
+              completed.sort(sortNewest)
 
               const isWin = (m: Match) => {
                 if (m.status === "wo") return m.winnerId === user.id
@@ -1370,7 +1515,7 @@ export default function TournamentPage() {
               }
 
               const filteredCompleted = filterByDate(completed)
-              const filteredUpcoming = filterByDate(upcoming)
+              const filteredScheduledUpcoming = filterByDate(scheduledUpcoming)
 
               const winCount = completed.filter(isWin).length
               const lossCount = completed.length - winCount
@@ -1496,23 +1641,31 @@ export default function TournamentPage() {
                     )}
                   </div>
 
-                  {/* Upcoming Games */}
+                  {/* Upcoming Games - Current Month */}
                   <div className="bg-white rounded-xl border border-gray-200 p-5">
-                    <h3 className="font-medium text-gray-900 mb-3">Próximos Jogos ({filteredUpcoming.length})</h3>
-                    {filteredUpcoming.length === 0 ? (
+                    <h3 className="font-medium text-gray-900 mb-3">Próximos Jogos ({filteredScheduledUpcoming.length + pendingCurrentMonth.length})</h3>
+                    {(filteredScheduledUpcoming.length === 0 && pendingCurrentMonth.length === 0) ? (
                       <p className="text-sm text-gray-500">Nenhum jogo agendado</p>
                     ) : (
                       <div className="space-y-2">
-                        {filteredUpcoming.map(match => {
+                        {[...filteredScheduledUpcoming, ...pendingCurrentMonth].map(match => {
                           const isPlayer = user && (match.homePlayer.id === user.id || match.awayPlayer.id === user.id)
                           const canSchedule = (isPlayer || isOwner) && (match.status === "pending_scheduling" || match.status === "proposal_sent" || match.status === "awaiting_response")
                           const canStart = (isPlayer || isOwner) && match.status === "scheduled"
                           const canResult = (isPlayer || isOwner) && match.status === "in_progress"
                           const hasPendingProposal = match.scheduleProposals.some(p => p.status === "pending")
+                          const opponent = match.homePlayer.id === user?.id ? match.awayPlayer : match.homePlayer
 
                           return (
                             <div key={match.id} className="border border-gray-100 rounded-lg overflow-hidden">
                               <div className="flex flex-wrap items-center gap-3 p-3">
+                                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-medium overflow-hidden flex-shrink-0">
+                                  {opponent.avatarUrl ? (
+                                    <img src={opponent.avatarUrl} alt={opponent.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    opponent.name.charAt(0).toUpperCase()
+                                  )}
+                                </div>
                                 <div className="text-center min-w-[60px]">
                                   {match.scheduledAt ? (
                                     <>
@@ -1528,7 +1681,7 @@ export default function TournamentPage() {
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-900">vs {(match.homePlayer.id === user.id ? match.awayPlayer : match.homePlayer).name}</p>
+                                  <p className="text-sm font-medium text-gray-900">vs {opponent.name}</p>
                                   {match.court && <p className="text-xs text-gray-500">{match.court.name}</p>}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -1592,6 +1745,45 @@ export default function TournamentPage() {
                     )}
                   </div>
 
+                  {/* Future Games - Blocked */}
+                  {pendingFuture.length > 0 && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                      <h3 className="font-medium text-gray-900 mb-2">Jogos Futuros ({pendingFuture.length})</h3>
+                      <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                        Estes jogos ficarão disponíveis para agendamento a partir do dia 1º do respectivo mês.
+                      </p>
+                      <div className="space-y-2">
+                        {pendingFuture.map(match => {
+                          const opponent = match.homePlayer.id === user?.id ? match.awayPlayer : match.homePlayer
+                          const monthNames: Record<string, string> = {
+                            "08": "Agosto", "09": "Setembro", "10": "Outubro"
+                          }
+                          const fm = (match.month || "").split("/")[0]
+                          const monthLabel = monthNames[fm] || match.month
+
+                          return (
+                            <div key={match.id} className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50 border-gray-200 opacity-70">
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-medium overflow-hidden flex-shrink-0">
+                                {opponent.avatarUrl ? (
+                                  <img src={opponent.avatarUrl} alt={opponent.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  opponent.name.charAt(0).toUpperCase()
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900">vs {opponent.name}</p>
+                                <p className="text-xs text-gray-500">{monthLabel}</p>
+                              </div>
+                              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                Bloqueado até dia 1º
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Completed Games */}
                   <div className="bg-white rounded-xl border border-gray-200 p-5">
                     <h3 className="font-medium text-gray-900 mb-3">Jogos Realizados ({filteredCompleted.length})</h3>
@@ -1607,17 +1799,11 @@ export default function TournamentPage() {
 
                           return (
                             <div key={match.id} className={`flex items-center gap-3 p-3 rounded-lg border ${won ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-                              <div className="flex-shrink-0">
-                                {won ? (
-                                  <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                  </svg>
+                              <div className={`w-10 h-10 rounded-full bg-white border-2 flex items-center justify-center text-xs font-medium overflow-hidden flex-shrink-0 ${won ? 'border-green-300' : 'border-red-300'}`}>
+                                {opponent.avatarUrl ? (
+                                  <img src={opponent.avatarUrl} alt={opponent.name} className="w-full h-full object-cover" />
                                 ) : (
-                                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                  </div>
+                                  <span className={won ? "text-green-700" : "text-red-600"}>{opponent.name.charAt(0).toUpperCase()}</span>
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
