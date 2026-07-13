@@ -769,6 +769,17 @@ async function main() {
   console.log(`Not found/skipped: ${notFound}`)
   console.log(`Total pairs processed: ${schedule.length}`)
 
+  // Fix July finished matches without scheduledAt
+  const julyFix = await prisma.$executeRaw`
+    UPDATE "Match"
+    SET "scheduledAt" = '2026-07-01T06:00:00.000Z'
+    WHERE "tournamentId" = ${TOURNAMENT_ID}
+    AND "status" IN ('finished', 'wo')
+    AND "month" = '07/2026'
+    AND "scheduledAt" IS NULL
+  `
+  console.log(`\nJuly date fix: ${julyFix} matches updated`)
+
   await prisma.$disconnect()
 }
 

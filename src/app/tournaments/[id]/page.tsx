@@ -191,6 +191,8 @@ export default function TournamentPage() {
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [matchSubTab, setMatchSubTab] = useState<"upcoming" | "completed">("upcoming")
   const [drawnSubTab, setDrawnSubTab] = useState<"month" | "future">("month")
+  const [drawnFilterPlayer, setDrawnFilterPlayer] = useState("")
+  const [rankingMonth, setRankingMonth] = useState("")
   const [resultMatch, setResultMatch] = useState<Match | null>(null)
   const [editingMatch, setEditingMatch] = useState<Match | null>(null)
   const [deletingMatchId, setDeletingMatchId] = useState<string | null>(null)
@@ -767,16 +769,21 @@ export default function TournamentPage() {
               const canScheduleNextMonth = currentDay === 1
 
               const currentMonthStr = `${String(currentMonth).padStart(2, "0")}/${currentYear}`
-              const myPendingMonth = pendingMatches.filter(m =>
-                m.month === currentMonthStr &&
-                user && (m.homePlayer.id === user.id || m.awayPlayer.id === user.id)
-              )
-              const myPendingFuture = pendingMatches.filter(m => {
-                if (!m.month || !user) return false
-                if (m.homePlayer.id !== user.id && m.awayPlayer.id !== user.id) return false
+              const allPendingMonth = pendingMatches.filter(m => m.month === currentMonthStr)
+              const allPendingFuture = pendingMatches.filter(m => {
+                if (!m.month) return false
                 const [fm, fy] = m.month.split("/").map(Number)
                 return fy > currentYear || (fy === currentYear && fm > currentMonth)
               })
+
+              const filterByPlayer = (list: typeof pendingMatches) => {
+                if (!drawnFilterPlayer) return list
+                return list.filter(m => m.homePlayer.id === drawnFilterPlayer || m.awayPlayer.id === drawnFilterPlayer)
+              }
+
+              const drawnPendingMonth = filterByPlayer(allPendingMonth)
+              const drawnPendingFuture = filterByPlayer(allPendingFuture)
+              const allMembers = tournament?.members.filter(m => m.status === "accepted") || []
 
               return (
                 <div className="space-y-4">
@@ -786,27 +793,43 @@ export default function TournamentPage() {
                       Confrontos aguardando agendamento de data.
                     </p>
 
-                    {/* Sub-tabs */}
-                    <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-4">
+                    {/* Player filter */}
+                    {allMembers.length > 0 && (
+                      <div className="mb-4">
+                        <select
+                          value={drawnFilterPlayer}
+                          onChange={e => setDrawnFilterPlayer(e.target.value)}
+                          className="w-full sm:w-64 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        >
+                          <option value="">Todos os jogadores</option>
+                          {allMembers.map(m => (
+                            <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Real tabs - underline style */}
+                    <div className="flex border-b border-gray-200 mb-4">
                       <button
                         onClick={() => setDrawnSubTab("month")}
-                        className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                        className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                           drawnSubTab === "month"
-                            ? "bg-white text-green-700 shadow-sm"
-                            : "text-gray-600 hover:text-gray-900"
+                            ? "border-green-600 text-green-700"
+                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                         }`}
                       >
-                        Jogos do Mês ({myPendingMonth.length})
+                        Jogos do Mês ({drawnPendingMonth.length})
                       </button>
                       <button
                         onClick={() => setDrawnSubTab("future")}
-                        className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                        className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                           drawnSubTab === "future"
-                            ? "bg-white text-green-700 shadow-sm"
-                            : "text-gray-600 hover:text-gray-900"
+                            ? "border-green-600 text-green-700"
+                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                         }`}
                       >
-                        Jogos Futuros ({myPendingFuture.length})
+                        Jogos Futuros ({drawnPendingFuture.length})
                       </button>
                     </div>
 
@@ -878,23 +901,23 @@ export default function TournamentPage() {
                           </div>
                         )}
 
-                        {/* Pending matches for this month (my matches) */}
-                        {myPendingMonth.length > 0 && (
+                        {/* Pending matches for this month */}
+                        {drawnPendingMonth.length > 0 && (
                           <div>
                             <h4 className="text-sm font-medium text-gray-700 mb-2">
-                              Aguardando Agendamento ({myPendingMonth.length})
+                              Aguardando Agendamento ({drawnPendingMonth.length})
                             </h4>
                             <div className="space-y-2">
-                              {myPendingMonth.map(m => {
-                                const isMyMatch = user && (m.homePlayer.id === user.id || m.awayPlayer.id === user.id)
+                              {drawnPendingMonth.map(m => {
+                                const isPostponed = m.round?.startsWith("Adiado")
                                 return (
-                                  <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border bg-white border-gray-200">
+                                  <div key={m.id} className={`flex items-center justify-between p-3 rounded-lg border ${isPostponed ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-200'}`}>
                                     <div className="flex items-center gap-3">
                                       <div className="flex -space-x-2">
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
                                           {m.homePlayer.name.charAt(0)}
                                         </div>
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
                                           {m.awayPlayer.name.charAt(0)}
                                         </div>
                                       </div>
@@ -904,20 +927,17 @@ export default function TournamentPage() {
                                         </p>
                                         <p className="text-xs text-gray-500">
                                           {m.round || "Rodada"}
-                                          {m.round?.startsWith("Adiado") && (
-                                            <span className="text-amber-600 ml-1">• {m.round}</span>
-                                          )}
                                         </p>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      {isMyMatch && (
-                                        <Link
-                                          href={`/tournaments/${tournament.id}?tab=my-matches`}
-                                          className="text-xs text-green-600 hover:text-green-700 font-medium"
-                                        >
-                                          Agendar
-                                        </Link>
+                                      {isPostponed && (
+                                        <span className="inline-flex items-center gap-1 bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                          </svg>
+                                          ADIADO
+                                        </span>
                                       )}
                                       {isOwner && (
                                         <button
@@ -939,9 +959,9 @@ export default function TournamentPage() {
                           </div>
                         )}
 
-                        {myPendingMonth.length === 0 && scheduledMatches.filter(m => m.month === currentMonthStr).length === 0 && (
+                        {drawnPendingMonth.length === 0 && scheduledMatches.filter(m => m.month === currentMonthStr).length === 0 && (
                           <p className="text-sm text-gray-500 text-center py-8">
-                            Nenhum jogo seu para agendar este mês.
+                            {drawnFilterPlayer ? "Nenhum jogo deste jogador para agendar este mês." : "Nenhum jogo para agendar este mês."}
                           </p>
                         )}
                       </>
@@ -950,26 +970,27 @@ export default function TournamentPage() {
                     {/* FUTURE sub-tab */}
                     {drawnSubTab === "future" && (
                       <>
-                        {myPendingFuture.length > 0 ? (
+                        {drawnPendingFuture.length > 0 ? (
                           <div>
                             <h4 className="text-sm font-medium text-gray-700 mb-2">
-                              Seus Jogos Futuros ({myPendingFuture.length})
+                              Jogos Futuros ({drawnPendingFuture.length})
                             </h4>
                             <div className="space-y-2">
-                              {myPendingFuture.map(m => {
+                              {drawnPendingFuture.map(m => {
                                 const fm = (m.month || "").split("/")[0]
                                 const monthNames: Record<string, string> = {
                                   "08": "Agosto", "09": "Setembro", "10": "Outubro"
                                 }
                                 const monthLabel = monthNames[fm] || m.month
+                                const isPostponed = m.round?.startsWith("Adiado")
                                 return (
-                                  <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 border-gray-200 opacity-70">
+                                  <div key={m.id} className={`flex items-center justify-between p-3 rounded-lg border ${isPostponed ? 'bg-orange-50 border-orange-300' : 'bg-gray-50 border-gray-200 opacity-70'}`}>
                                     <div className="flex items-center gap-3">
                                       <div className="flex -space-x-2">
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
                                           {m.homePlayer.name.charAt(0)}
                                         </div>
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs font-medium text-gray-600">
+                                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isPostponed ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-100 border-white text-gray-600'}`}>
                                           {m.awayPlayer.name.charAt(0)}
                                         </div>
                                       </div>
@@ -982,9 +1003,19 @@ export default function TournamentPage() {
                                         </p>
                                       </div>
                                     </div>
-                                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                                      Bloqueado até dia 1º
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      {isPostponed && (
+                                        <span className="inline-flex items-center gap-1 bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                          </svg>
+                                          ADIADO
+                                        </span>
+                                      )}
+                                      <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                        Bloqueado até dia 1º
+                                      </span>
+                                    </div>
                                   </div>
                                 )
                               })}
@@ -992,7 +1023,7 @@ export default function TournamentPage() {
                           </div>
                         ) : (
                           <p className="text-sm text-gray-500 text-center py-8">
-                            Nenhum jogo futuro seu encontrado.
+                            {drawnFilterPlayer ? "Nenhum jogo futuro deste jogador encontrado." : "Nenhum jogo futuro encontrado."}
                           </p>
                         )}
                       </>
@@ -1691,58 +1722,97 @@ export default function TournamentPage() {
             })()}
 
             {/* ===== RANKING ===== */}
-            {activeTab === "ranking" && (
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <h3 className="font-medium text-gray-900 mb-3">Ranking</h3>
-                {rankings.length === 0 ? (
-                  <p className="text-sm text-gray-500">Aguardando resultados para gerar ranking</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-100">
-                          <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">#</th>
-                          <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Jogador</th>
-                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Pts</th>
-                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">V</th>
-                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">D</th>
-                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Sets</th>
-                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Saldo Sets</th>
-                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Games</th>
-                          <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Saldo Games</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rankings.map((r, i) => (
-                          <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-                            <td className="py-2 px-2 font-medium text-gray-900">{r.position || i + 1}</td>
-                            <td className="py-2 px-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-xs font-medium overflow-hidden flex-shrink-0">
-                                  {r.user.avatarUrl ? (
-                                    <img src={r.user.avatarUrl} alt={r.user.name} className="w-full h-full object-cover" />
-                                  ) : (
-                                    r.user.name.charAt(0).toUpperCase()
-                                  )}
-                                </div>
-                                <span className="font-medium text-gray-900">{r.user.name}</span>
-                              </div>
-                            </td>
-                            <td className="py-2 px-2 text-center font-semibold text-gray-900">{r.points}</td>
-                            <td className="py-2 px-2 text-center text-green-600">{r.wins}</td>
-                            <td className="py-2 px-2 text-center text-red-500">{r.losses}</td>
-                            <td className="py-2 px-2 text-center text-gray-600">{r.setsWon}-{r.setsLost}</td>
-                            <td className="py-2 px-2 text-center text-gray-600">{r.setBalance}</td>
-                            <td className="py-2 px-2 text-center text-gray-600">{r.gamesWon}-{r.gamesLost}</td>
-                            <td className="py-2 px-2 text-center text-gray-600">{r.gamesBalance}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            {activeTab === "ranking" && (() => {
+              const monthNames: Record<string, string> = {
+                "02/2026": "Fevereiro", "03/2026": "Março", "04/2026": "Abril",
+                "05/2026": "Maio", "06/2026": "Junho", "07/2026": "Julho",
+                "08/2026": "Agosto", "09/2026": "Setembro"
+              }
+
+              const handleMonthChange = async (month: string) => {
+                setRankingMonth(month)
+                if (!tournament) return
+                const token = localStorage.getItem("token")
+                const qs = month ? `?month=${encodeURIComponent(month)}` : ""
+                try {
+                  const res = await fetch(`/api/tournaments/${tournament.id}/ranking${qs}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  })
+                  const data = await res.json()
+                  setRankings(data.ranking || [])
+                } catch {}
+              }
+
+              return (
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                    <h3 className="font-medium text-gray-900">Ranking</h3>
+                    <select
+                      value={rankingMonth}
+                      onChange={e => handleMonthChange(e.target.value)}
+                      className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="">Geral (todos os meses)</option>
+                      {Object.entries(monthNames).map(([key, label]) => (
+                        <option key={key} value={key}>{label} {key}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
-              </div>
-            )}
+                  {rankingMonth && (
+                    <p className="text-xs text-gray-500 mb-3">
+                      Mostrando ranking acumulado até {monthNames[rankingMonth]} {rankingMonth}
+                    </p>
+                  )}
+                  {rankings.length === 0 ? (
+                    <p className="text-sm text-gray-500">Aguardando resultados para gerar ranking</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-100">
+                            <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">#</th>
+                            <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Jogador</th>
+                            <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Pts</th>
+                            <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">V</th>
+                            <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">D</th>
+                            <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Sets</th>
+                            <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Saldo Sets</th>
+                            <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Games</th>
+                            <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Saldo Games</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rankings.map((r, i) => (
+                            <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
+                              <td className="py-2 px-2 font-medium text-gray-900">{r.position || i + 1}</td>
+                              <td className="py-2 px-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-xs font-medium overflow-hidden flex-shrink-0">
+                                    {r.user.avatarUrl ? (
+                                      <img src={r.user.avatarUrl} alt={r.user.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                      r.user.name.charAt(0).toUpperCase()
+                                    )}
+                                  </div>
+                                  <span className="font-medium text-gray-900">{r.user.name}</span>
+                                </div>
+                              </td>
+                              <td className="py-2 px-2 text-center font-semibold text-gray-900">{r.points}</td>
+                              <td className="py-2 px-2 text-center text-green-600">{r.wins}</td>
+                              <td className="py-2 px-2 text-center text-red-500">{r.losses}</td>
+                              <td className="py-2 px-2 text-center text-gray-600">{r.setsWon}-{r.setsLost}</td>
+                              <td className="py-2 px-2 text-center text-gray-600">{r.setBalance}</td>
+                              <td className="py-2 px-2 text-center text-gray-600">{r.gamesWon}-{r.gamesLost}</td>
+                              <td className="py-2 px-2 text-center text-gray-600">{r.gamesBalance}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* ===== KNOCKOUT ===== */}
             {activeTab === "knockout" && (

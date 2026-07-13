@@ -2,12 +2,14 @@ import { NextResponse } from "next/server"
 import { recalculateTournamentRanking } from "@/lib/ranking"
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    const ranking = await recalculateTournamentRanking(id)
+    const { searchParams } = new URL(request.url)
+    const month = searchParams.get("month") || undefined
+    const ranking = await recalculateTournamentRanking(id, month)
 
     return NextResponse.json({ ranking })
   } catch (error) {

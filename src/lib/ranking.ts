@@ -82,7 +82,12 @@ function compareNumbers(a: number, b: number, direction: "asc" | "desc" = "desc"
   return direction === "desc" ? b - a : a - b
 }
 
-export async function recalculateTournamentRanking(tournamentId: string) {
+function parseMonthToEndOfMonth(month: string): Date {
+  const [m, y] = month.split("/").map(Number)
+  return new Date(y, m, 0, 23, 59, 59, 999)
+}
+
+export async function recalculateTournamentRanking(tournamentId: string, month?: string) {
   const [members, existingRankings, tournament, penalties, finishedMatches] = await Promise.all([
     prisma.tournamentMember.findMany({
       where: { tournamentId, status: "accepted" },
@@ -103,7 +108,19 @@ export async function recalculateTournamentRanking(tournamentId: string) {
       where: { tournamentId },
     }),
     prisma.match.findMany({
-      where: { tournamentId, phase: "ranking", status: { in: ["finished", "wo"] } },
+      where: {
+        tournamentId,
+        phase: "ranking",
+        status: { in: ["finished", "wo"] },
+        ...(month
+          ? {
+              OR: [
+                { scheduledAt: { lte: parseMonthToEndOfMonth(month) } },
+                { month: month, scheduledAt: null },
+              ],
+            }
+          : {}),
+      },
       include: { sets: true },
     }),
   ])
@@ -222,48 +239,54 @@ export async function recalculateTournamentRanking(tournamentId: string) {
         gamesBalance,
       }
 
-      await prisma.playerRanking.upsert({
-        where: { tournamentId_userId: { tournamentId, userId: member.userId } },
-        update: {
-          points,
-          basePoints,
-          matchesPlayed: stats.matchesPlayed,
-          wins: stats.wins,
-          losses: stats.losses,
-          winsByWO: stats.winsByWO,
-          lossesByWO: stats.lossesByWO,
-          setsWon: stats.setsWon,
-          setsLost: stats.setsLost,
-          gamesWon: stats.gamesWon,
-          gamesLost: stats.gamesLost,
-          setBalance,
-          gamesBalance,
-        },
-        create: {
-          tournamentId,
-          userId: member.userId,
-          position: 0,
-          points,
-          basePoints,
-          matchesPlayed: stats.matchesPlayed,
-          wins: stats.wins,
-          losses: stats.losses,
-          winsByWO: stats.winsByWO,
-          lossesByWO: stats.lossesByWO,
-          setsWon: stats.setsWon,
-          setsLost: stats.setsLost,
-          gamesWon: stats.gamesWon,
-          gamesLost: stats.gamesLost,
-          setBalance,
-          gamesBalance,
-        },
-      })
+      if (!month) {
+        await prisma.playerRanking.upsert({
+          where: { tournamentId_userId: { tournamentId, userId: member.userId } },
+          update: {
+            points,
+            basePoints,
+            matchesPlayed: stats.matchesPlayed,
+            wins: stats.wins,
+            losses: stats.losses,
+            winsByWO: stats.winsByWO,
+            lossesByWO: stats.lossesByWO,
+            setsWon: stats.setsWon,
+            setsLost: stats.setsLost,
+            gamesWon: stats.gamesWon,
+            gamesLost: stats.gamesLost,
+            setBalance,
+            gamesBalance,
+          },
+          create: {
+            tournamentId,
+            userId: member.userId,
+            position: 0,
+            points,
+            basePoints,
+            matchesPlayed: stats.matchesPlayed,
+            wins: stats.wins,
+            losses: stats.losses,
+            winsByWO: stats.winsByWO,
+            lossesByWO: stats.lossesByWO,
+            setsWon: stats.setsWon,
+            setsLost: stats.setsLost,
+            gamesWon: stats.gamesWon,
+            gamesLost: stats.gamesLost,
+            setBalance,
+            gamesBalance,
+          },
+        })
+      }
 
       return rankingRow
     })
   )
 
   ranking.sort((a, b) => compareRankingRows(a, b, criteriaOrder, finishedMatches))
+
+  if (month) {
+    return ranking.map((row, index) => ({ ...row, position: index + 1 }))
+  }
 
   return Promise.all(
     ranking.map(async (row, index) => {
