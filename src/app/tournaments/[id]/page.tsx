@@ -1032,14 +1032,14 @@ export default function TournamentPage() {
                         <div className="space-y-3">
                           {filteredUpcoming.map(match => {
                             const isPlayer = user && (match.homePlayer.id === user.id || match.awayPlayer.id === user.id)
-                            const canSchedule = isPlayer && (match.status === "pending_scheduling" || match.status === "proposal_sent" || match.status === "awaiting_response")
-                            const canStart = isPlayer && match.status === "scheduled"
-                            const canResult = isPlayer && match.status === "in_progress"
+                            const canSchedule = (isPlayer || isOwner) && (match.status === "pending_scheduling" || match.status === "proposal_sent" || match.status === "awaiting_response")
+                            const canStart = (isPlayer || isOwner) && match.status === "scheduled"
+                            const canResult = (isPlayer || isOwner) && match.status === "in_progress"
                             const hasPendingProposal = match.scheduleProposals.some(p => p.status === "pending")
 
                             return (
                               <div key={match.id} className="border border-gray-100 rounded-lg overflow-hidden">
-                                <div className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors">
+                                <div className="flex flex-wrap items-center gap-3 p-3 hover:bg-gray-50 transition-colors">
                                   <div className="text-center min-w-[50px]">
                                     {match.scheduledAt ? (
                                       <>
@@ -1064,7 +1064,7 @@ export default function TournamentPage() {
                                       <p className="text-xs text-gray-500 mt-0.5">{match.court.name}</p>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <span className={`status-badge match-${match.status}`}>
                                       {getMatchStatusLabel(match.status)}
                                     </span>
@@ -1086,24 +1086,18 @@ export default function TournamentPage() {
                                     {isOwner && (
                                       <button
                                         onClick={() => setEditingMatch(match)}
-                                        className="px-2 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                                        title="Editar partida"
+                                        className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
                                       >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
+                                        Editar
                                       </button>
                                     )}
                                     {isOwner && (
                                       <button
                                         onClick={() => handleDeleteMatch(match.id)}
                                         disabled={deletingMatchId === match.id}
-                                        className="px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                        title="Apagar partida"
+                                        className="px-3 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
                                       >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
+                                        Apagar
                                       </button>
                                     )}
                                   </div>
@@ -1412,15 +1406,15 @@ export default function TournamentPage() {
                     ) : (
                       <div className="space-y-2">
                         {filteredUpcoming.map(match => {
-                          const opponent = match.homePlayer.id === user.id ? match.awayPlayer : match.homePlayer
-                          const canSchedule = match.status === "pending_scheduling" || match.status === "proposal_sent" || match.status === "awaiting_response"
-                          const canStart = match.status === "scheduled"
-                          const canResult = match.status === "in_progress"
+                          const isPlayer = user && (match.homePlayer.id === user.id || match.awayPlayer.id === user.id)
+                          const canSchedule = (isPlayer || isOwner) && (match.status === "pending_scheduling" || match.status === "proposal_sent" || match.status === "awaiting_response")
+                          const canStart = (isPlayer || isOwner) && match.status === "scheduled"
+                          const canResult = (isPlayer || isOwner) && match.status === "in_progress"
                           const hasPendingProposal = match.scheduleProposals.some(p => p.status === "pending")
 
                           return (
                             <div key={match.id} className="border border-gray-100 rounded-lg overflow-hidden">
-                              <div className="flex items-center gap-3 p-3">
+                              <div className="flex flex-wrap items-center gap-3 p-3">
                                 <div className="text-center min-w-[60px]">
                                   {match.scheduledAt ? (
                                     <>
@@ -1436,10 +1430,10 @@ export default function TournamentPage() {
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-900">vs {opponent.name}</p>
+                                  <p className="text-sm font-medium text-gray-900">vs {(match.homePlayer.id === user.id ? match.awayPlayer : match.homePlayer).name}</p>
                                   {match.court && <p className="text-xs text-gray-500">{match.court.name}</p>}
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                   <span className={`status-badge match-${match.status}`}>
                                     {getMatchStatusLabel(match.status)}
                                   </span>
@@ -1461,24 +1455,18 @@ export default function TournamentPage() {
                                   {isOwner && (
                                     <button
                                       onClick={() => setEditingMatch(match)}
-                                      className="px-2 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                                      title="Editar partida"
+                                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
                                     >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                      </svg>
+                                      Editar
                                     </button>
                                   )}
                                   {isOwner && (
                                     <button
                                       onClick={() => handleDeleteMatch(match.id)}
                                       disabled={deletingMatchId === match.id}
-                                      className="px-2 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                      title="Apagar partida"
+                                      className="px-3 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
                                     >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
+                                      Apagar
                                     </button>
                                   )}
                                 </div>

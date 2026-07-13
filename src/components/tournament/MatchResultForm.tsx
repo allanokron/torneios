@@ -91,7 +91,7 @@ export default function MatchResultForm({
   const awaySetsWon = sets.filter(s => s.awayGames > s.homeGames).length
 
   const handleStartMatch = async () => {
-    if (!startPhoto) {
+    if (!isOwner && !startPhoto) {
       setError("Foto do início é obrigatória")
       return
     }
@@ -114,7 +114,7 @@ export default function MatchResultForm({
   const handleSubmitResult = async () => {
     const hasValidSets = sets.some(s => s.homeGames > 0 || s.awayGames > 0)
     if (!hasValidSets) { setError("Preencha pelo menos um set"); return }
-    if (!endPhoto) { setError("Foto do final é obrigatória"); return }
+    if (!isOwner && !endPhoto) { setError("Foto do final é obrigatória"); return }
 
     const requiredSets = Math.ceil(setsPerMatch / 2)
     if (homeSetsWon < requiredSets && awaySetsWon < requiredSets) {
@@ -231,28 +231,36 @@ export default function MatchResultForm({
           {/* STEP: Start match */}
           {step === "start" && (
             <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Início do Jogo *</label>
-                <input ref={startInputRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoUpload(e, "start")} />
-                {startPhoto ? (
-                  <div className="relative">
-                    <img src={startPhoto} alt="Início" className="w-full h-48 object-cover rounded-lg" />
-                    <button onClick={() => setStartPhoto(null)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">X</button>
-                  </div>
-                ) : (
-                  <button onClick={() => startInputRef.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors">
-                    <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="text-sm">Tirar foto do início</span>
-                  </button>
-                )}
-              </div>
+              {!isOwner && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Início do Jogo *</label>
+                  <input ref={startInputRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoUpload(e, "start")} />
+                  {startPhoto ? (
+                    <div className="relative">
+                      <img src={startPhoto} alt="Início" className="w-full h-48 object-cover rounded-lg" />
+                      <button onClick={() => setStartPhoto(null)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">X</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => startInputRef.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors">
+                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm">Tirar foto do início</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {isOwner && (
+                <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                  Como organizador, a foto do início não é obrigatória.
+                </p>
+              )}
 
               {error && <p className="text-sm text-red-600">{error}</p>}
 
-              <button onClick={handleStartMatch} disabled={loading || !startPhoto} className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+              <button onClick={handleStartMatch} disabled={loading || (!isOwner && !startPhoto)} className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
                 {loading ? "Iniciando..." : "Iniciar Jogo"}
               </button>
 
@@ -451,24 +459,32 @@ export default function MatchResultForm({
               </div>
 
               {/* End photo */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Final do Jogo *</label>
-                <input ref={endInputRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoUpload(e, "end")} />
-                {endPhoto ? (
-                  <div className="relative">
-                    <img src={endPhoto} alt="Final" className="w-full h-48 object-cover rounded-lg" />
-                    <button onClick={() => setEndPhoto(null)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">X</button>
-                  </div>
-                ) : (
-                  <button onClick={() => endInputRef.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors">
-                    <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="text-sm">Tirar foto do final</span>
-                  </button>
-                )}
-              </div>
+              {!isOwner && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Final do Jogo *</label>
+                  <input ref={endInputRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoUpload(e, "end")} />
+                  {endPhoto ? (
+                    <div className="relative">
+                      <img src={endPhoto} alt="Final" className="w-full h-48 object-cover rounded-lg" />
+                      <button onClick={() => setEndPhoto(null)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">X</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => endInputRef.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors">
+                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm">Tirar foto do final</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {isOwner && (
+                <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                  Como organizador, a foto do final não é obrigatória.
+                </p>
+              )}
 
               {error && <p className="text-sm text-red-600">{error}</p>}
 
