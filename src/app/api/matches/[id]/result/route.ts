@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { advanceKnockoutMatch } from "@/lib/knockout"
 import { recalculateTournamentRanking } from "@/lib/ranking"
-import { getChallengeConfig, calculateChallengePoints } from "@/lib/challengeCalc"
+import { getChallengeConfig, calculateChallengePoints, getChallengerId } from "@/lib/challengeCalc"
 
 export async function POST(
   request: Request,
@@ -282,7 +282,9 @@ export async function POST(
       if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
         const challengeConfig = await getChallengeConfig(match.tournamentId)
         if (challengeConfig) {
-          const challengerWins = winnerId === match.homePlayerId
+          const challengerId = getChallengerId(match.homePlayerId, match.awayPlayerId, match.challengePositionHome, match.challengePositionAway)
+          const challengedId = challengerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId
+          const challengerWins = winnerId === challengerId
           const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
           const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
 
@@ -291,9 +293,9 @@ export async function POST(
             data: { challengePoints: result.challengerPoints },
           })
 
-          // Update challenger (home player) ranking
+          // Update challenger ranking
           await prisma.playerRanking.upsert({
-            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.homePlayerId } },
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: challengerId } },
             update: {
               challengePoints: { increment: result.challengerPoints },
               challengeMatches: { increment: 1 },
@@ -302,7 +304,7 @@ export async function POST(
             },
             create: {
               tournamentId: match.tournamentId,
-              userId: match.homePlayerId,
+              userId: challengerId,
               position: 0,
               points: result.challengerPoints,
               challengePoints: result.challengerPoints,
@@ -312,10 +314,10 @@ export async function POST(
             },
           })
 
-          // Update challenged (away player) ranking
+          // Update challenged ranking
           const challengedPoints = -result.challengerPoints
           await prisma.playerRanking.upsert({
-            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.awayPlayerId } },
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: challengedId } },
             update: {
               challengePoints: { increment: challengedPoints },
               challengeMatches: { increment: 1 },
@@ -324,7 +326,7 @@ export async function POST(
             },
             create: {
               tournamentId: match.tournamentId,
-              userId: match.awayPlayerId,
+              userId: challengedId,
               position: 0,
               points: challengedPoints,
               challengePoints: challengedPoints,
@@ -494,7 +496,9 @@ export async function POST(
       if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
         const challengeConfig = await getChallengeConfig(match.tournamentId)
         if (challengeConfig) {
-          const challengerWins = winnerId === match.homePlayerId
+          const challengerId = getChallengerId(match.homePlayerId, match.awayPlayerId, match.challengePositionHome, match.challengePositionAway)
+          const challengedId = challengerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId
+          const challengerWins = winnerId === challengerId
           const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
           const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
 
@@ -503,9 +507,9 @@ export async function POST(
             data: { challengePoints: result.challengerPoints },
           })
 
-          // Update challenger (home player) ranking
+          // Update challenger ranking
           await prisma.playerRanking.upsert({
-            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.homePlayerId } },
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: challengerId } },
             update: {
               challengePoints: { increment: result.challengerPoints },
               challengeMatches: { increment: 1 },
@@ -514,7 +518,7 @@ export async function POST(
             },
             create: {
               tournamentId: match.tournamentId,
-              userId: match.homePlayerId,
+              userId: challengerId,
               position: 0,
               points: result.challengerPoints,
               challengePoints: result.challengerPoints,
@@ -524,10 +528,10 @@ export async function POST(
             },
           })
 
-          // Update challenged (away player) ranking
+          // Update challenged ranking
           const challengedPoints = -result.challengerPoints
           await prisma.playerRanking.upsert({
-            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.awayPlayerId } },
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: challengedId } },
             update: {
               challengePoints: { increment: challengedPoints },
               challengeMatches: { increment: 1 },
@@ -536,7 +540,7 @@ export async function POST(
             },
             create: {
               tournamentId: match.tournamentId,
-              userId: match.awayPlayerId,
+              userId: challengedId,
               position: 0,
               points: challengedPoints,
               challengePoints: challengedPoints,
@@ -665,7 +669,9 @@ export async function POST(
       if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
         const challengeConfig = await getChallengeConfig(match.tournamentId)
         if (challengeConfig) {
-          const challengerWins = winnerId === match.homePlayerId
+          const challengerId = getChallengerId(match.homePlayerId, match.awayPlayerId, match.challengePositionHome, match.challengePositionAway)
+          const challengedId = challengerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId
+          const challengerWins = winnerId === challengerId
           const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
           const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
 
@@ -674,9 +680,9 @@ export async function POST(
             data: { challengePoints: result.challengerPoints },
           })
 
-          // Update challenger (home player) ranking
+          // Update challenger ranking
           await prisma.playerRanking.upsert({
-            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.homePlayerId } },
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: challengerId } },
             update: {
               challengePoints: { increment: result.challengerPoints },
               challengeMatches: { increment: 1 },
@@ -685,7 +691,7 @@ export async function POST(
             },
             create: {
               tournamentId: match.tournamentId,
-              userId: match.homePlayerId,
+              userId: challengerId,
               position: 0,
               points: result.challengerPoints,
               challengePoints: result.challengerPoints,
@@ -695,10 +701,10 @@ export async function POST(
             },
           })
 
-          // Update challenged (away player) ranking
+          // Update challenged ranking
           const challengedPoints = -result.challengerPoints
           await prisma.playerRanking.upsert({
-            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: match.awayPlayerId } },
+            where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: challengedId } },
             update: {
               challengePoints: { increment: challengedPoints },
               challengeMatches: { increment: 1 },
@@ -707,7 +713,7 @@ export async function POST(
             },
             create: {
               tournamentId: match.tournamentId,
-              userId: match.awayPlayerId,
+              userId: challengedId,
               position: 0,
               points: challengedPoints,
               challengePoints: challengedPoints,

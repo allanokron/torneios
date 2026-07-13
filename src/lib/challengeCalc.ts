@@ -76,6 +76,24 @@ export async function getChallengeConfig(
   return config
 }
 
+export function getChallengerId(
+  homePlayerId: string,
+  awayPlayerId: string,
+  homePosition: number,
+  awayPosition: number
+): string {
+  return homePosition > awayPosition ? homePlayerId : awayPlayerId
+}
+
+export function getChallengedId(
+  homePlayerId: string,
+  awayPlayerId: string,
+  homePosition: number,
+  awayPosition: number
+): string {
+  return homePosition > awayPosition ? awayPlayerId : homePlayerId
+}
+
 export async function getPlayerPosition(
   tournamentId: string,
   userId: string,

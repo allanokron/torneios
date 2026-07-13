@@ -159,6 +159,14 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
             }
           : {}),
       },
+      select: {
+        id: true,
+        homePlayerId: true,
+        awayPlayerId: true,
+        challengePoints: true,
+        challengePositionHome: true,
+        challengePositionAway: true,
+      },
     }),
   ])
 
@@ -259,6 +267,8 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
   // Accumulate challenge stats
   for (const match of challengeMatches) {
     if (match.challengePoints === null) continue
+    if (match.challengePositionHome === null || match.challengePositionAway === null) continue
+
     const homeId = match.homePlayerId
     const awayId = match.awayPlayerId
 
@@ -271,29 +281,59 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
     homeCs.challengeMatches++
     awayCs.challengeMatches++
 
-    // challengePoints is stored from the home player's perspective
-    homeCs.challengePoints += match.challengePoints
-    awayCs.challengePoints -= match.challengePoints
+    // challenger is the player with the higher position (worse rank)
+    const challengerIsHome = match.challengePositionHome > match.challengePositionAway
+    const challengerPoints = match.challengePoints
 
-    const homeIsChallengerWinner = match.challengePoints > 0
-    if (homeIsChallengerWinner) {
-      homeCs.challengeWins++
-      awayCs.challengeLosses++
+    if (challengerIsHome) {
+      homeCs.challengePoints += challengerPoints
+      awayCs.challengePoints -= challengerPoints
     } else {
-      awayCs.challengeWins++
-      homeCs.challengeLosses++
+      awayCs.challengePoints += challengerPoints
+      homeCs.challengePoints -= challengerPoints
+    }
+
+    const challengerWins = challengerPoints > 0
+    if (challengerIsHome) {
+      if (challengerWins) {
+        homeCs.challengeWins++
+        awayCs.challengeLosses++
+      } else {
+        awayCs.challengeWins++
+        homeCs.challengeLosses++
+      }
+    } else {
+      if (challengerWins) {
+        awayCs.challengeWins++
+        homeCs.challengeLosses++
+      } else {
+        homeCs.challengeWins++
+        awayCs.challengeLosses++
+      }
     }
 
     // Optionally count wins/losses, sets, games in normal stats
     if (challengeConfig?.countWins) {
       const homeMs = matchStats[homeId] ?? emptyStats()
       const awayMs = matchStats[awayId] ?? emptyStats()
-      if (homeIsChallengerWinner) {
-        homeMs.wins++
-        awayMs.losses++
+      if (challengerWins) {
+        const winnerIsHome = challengerIsHome
+        if (winnerIsHome) {
+          homeMs.wins++
+          awayMs.losses++
+        } else {
+          awayMs.wins++
+          homeMs.losses++
+        }
       } else {
-        awayMs.wins++
-        homeMs.losses++
+        const loserIsHome = challengerIsHome
+        if (loserIsHome) {
+          homeMs.losses++
+          awayMs.wins++
+        } else {
+          awayMs.losses++
+          homeMs.wins++
+        }
       }
     }
     if (challengeConfig?.countSets) {
