@@ -1053,11 +1053,20 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                  <p className="font-medium">Exemplo de cálculo:</p>
+                  <p className="font-medium">Exemplo de cálculo (diferença = 10 posições):</p>
                   <p className="mt-1">
-                    Desafiante na 15ª posição desafia o 5ª (diferença = 10). Base = 10 × {challengePointsPerPos} = {10 * challengePointsPerPos} pts.
-                    Se vencer: desafiador ganha {Math.round(10 * challengePointsPerPos * challengeChallengerWinMult)} pts, desafiado perde {Math.round(10 * challengePointsPerPos * challengeChallengedLossMult)} pts.
+                    Base = 10 × {challengePointsPerPos} = {10 * challengePointsPerPos} pts
                   </p>
+                  <ul className="mt-2 space-y-1 list-disc list-inside">
+                    <li>
+                      <span className="font-medium">Se o desafiador vencer:</span>{" "}
+                      desafiador ganha {Math.round(10 * challengePointsPerPos * challengeChallengerWinMult)} pts, desafiado perde {Math.round(10 * challengePointsPerPos * challengeChallengedLossMult)} pts
+                    </li>
+                    <li>
+                      <span className="font-medium">Se o desafiado vencer:</span>{" "}
+                      desafiado ganha {Math.round(10 * challengePointsPerPos * challengeChallengedWinMult)} pts, desafiador perde {Math.round(10 * challengePointsPerPos * challengeChallengerLossMult)} pts
+                    </li>
+                  </ul>
                 </div>
               </>
             )}
