@@ -164,8 +164,6 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
         homePlayerId: true,
         awayPlayerId: true,
         challengePoints: true,
-        challengePositionHome: true,
-        challengePositionAway: true,
       },
     }),
   ])
@@ -265,9 +263,10 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
   }
 
   // Accumulate challenge stats
+  // challengePoints on match = challenger's points (positive = challenger won, negative = challenger lost)
+  // Challenger is always the home player (set at match creation via PATCH)
   for (const match of challengeMatches) {
     if (match.challengePoints === null) continue
-    if (match.challengePositionHome === null || match.challengePositionAway === null) continue
 
     const homeId = match.homePlayerId
     const awayId = match.awayPlayerId
@@ -281,59 +280,29 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
     homeCs.challengeMatches++
     awayCs.challengeMatches++
 
-    // challenger is the player with the higher position (worse rank)
-    const challengerIsHome = match.challengePositionHome > match.challengePositionAway
-    const challengerPoints = match.challengePoints
+    // Home player is the challenger, challengePoints is from challenger's perspective
+    homeCs.challengePoints += match.challengePoints
+    awayCs.challengePoints -= match.challengePoints
 
-    if (challengerIsHome) {
-      homeCs.challengePoints += challengerPoints
-      awayCs.challengePoints -= challengerPoints
+    const challengerWon = match.challengePoints > 0
+    if (challengerWon) {
+      homeCs.challengeWins++
+      awayCs.challengeLosses++
     } else {
-      awayCs.challengePoints += challengerPoints
-      homeCs.challengePoints -= challengerPoints
-    }
-
-    const challengerWins = challengerPoints > 0
-    if (challengerIsHome) {
-      if (challengerWins) {
-        homeCs.challengeWins++
-        awayCs.challengeLosses++
-      } else {
-        awayCs.challengeWins++
-        homeCs.challengeLosses++
-      }
-    } else {
-      if (challengerWins) {
-        awayCs.challengeWins++
-        homeCs.challengeLosses++
-      } else {
-        homeCs.challengeWins++
-        awayCs.challengeLosses++
-      }
+      awayCs.challengeWins++
+      homeCs.challengeLosses++
     }
 
     // Optionally count wins/losses, sets, games in normal stats
     if (challengeConfig?.countWins) {
       const homeMs = matchStats[homeId] ?? emptyStats()
       const awayMs = matchStats[awayId] ?? emptyStats()
-      if (challengerWins) {
-        const winnerIsHome = challengerIsHome
-        if (winnerIsHome) {
-          homeMs.wins++
-          awayMs.losses++
-        } else {
-          awayMs.wins++
-          homeMs.losses++
-        }
+      if (challengerWon) {
+        homeMs.wins++
+        awayMs.losses++
       } else {
-        const loserIsHome = challengerIsHome
-        if (loserIsHome) {
-          homeMs.losses++
-          awayMs.wins++
-        } else {
-          awayMs.losses++
-          homeMs.wins++
-        }
+        awayMs.wins++
+        homeMs.losses++
       }
     }
     if (challengeConfig?.countSets) {

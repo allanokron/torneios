@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { advanceKnockoutMatch } from "@/lib/knockout"
 import { recalculateTournamentRanking } from "@/lib/ranking"
-import { getChallengeConfig, calculateChallengePoints, getChallengerId } from "@/lib/challengeCalc"
+import { getChallengeConfig, calculateChallengePoints } from "@/lib/challengeCalc"
 
 export async function POST(
   request: Request,
@@ -282,8 +282,8 @@ export async function POST(
       if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
         const challengeConfig = await getChallengeConfig(match.tournamentId)
         if (challengeConfig) {
-          const challengerId = getChallengerId(match.homePlayerId, match.awayPlayerId, match.challengePositionHome, match.challengePositionAway)
-          const challengedId = challengerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId
+          const challengerId = match.homePlayerId
+          const challengedId = match.awayPlayerId
           const challengerWins = winnerId === challengerId
           const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
           const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
@@ -496,8 +496,8 @@ export async function POST(
       if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
         const challengeConfig = await getChallengeConfig(match.tournamentId)
         if (challengeConfig) {
-          const challengerId = getChallengerId(match.homePlayerId, match.awayPlayerId, match.challengePositionHome, match.challengePositionAway)
-          const challengedId = challengerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId
+          const challengerId = match.homePlayerId
+          const challengedId = match.awayPlayerId
           const challengerWins = winnerId === challengerId
           const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
           const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
@@ -669,8 +669,8 @@ export async function POST(
       if (match.isChallenge && match.challengePositionHome !== null && match.challengePositionAway !== null) {
         const challengeConfig = await getChallengeConfig(match.tournamentId)
         if (challengeConfig) {
-          const challengerId = getChallengerId(match.homePlayerId, match.awayPlayerId, match.challengePositionHome, match.challengePositionAway)
-          const challengedId = challengerId === match.homePlayerId ? match.awayPlayerId : match.homePlayerId
+          const challengerId = match.homePlayerId
+          const challengedId = match.awayPlayerId
           const challengerWins = winnerId === challengerId
           const positionDiff = Math.abs(match.challengePositionHome - match.challengePositionAway)
           const result = calculateChallengePoints(challengerWins, positionDiff, challengeConfig)
