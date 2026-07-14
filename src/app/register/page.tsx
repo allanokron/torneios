@@ -76,24 +76,24 @@ export default function RegisterPage() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       <Header />
       
       <main className="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 className="text-center text-2xl font-semibold text-gray-900">
+          <h2 className="text-center text-2xl font-semibold" style={{ color: 'var(--text)' }}>
             Criar conta
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-500">
+          <p className="mt-2 text-center text-sm" style={{ color: 'var(--neutral-400)' }}>
             já tem uma conta?{" "}
-            <Link href="/login" className="text-green-600 hover:text-green-700 font-medium">
+            <Link href="/login" className="font-medium" style={{ color: 'var(--accent-dark)' }}>
               entrar
             </Link>
           </p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
-          <div className="bg-white py-8 px-6 shadow-sm rounded-xl border border-gray-200">
+          <div className="py-8 px-6 shadow-sm rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <form className="space-y-4" onSubmit={handleSubmit}>
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">

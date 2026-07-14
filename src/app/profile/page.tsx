@@ -163,28 +163,28 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--accent)' }}></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <Header user={user} />
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/dashboard" className="text-gray-400 hover:text-gray-600">
+          <Link href="/dashboard" style={{ color: 'var(--neutral-300)' }} className="hover:opacity-70">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h2 className="text-xl font-semibold text-gray-900">Meu Perfil</h2>
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>Meu Perfil</h2>
         </div>
 
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm">
+          <div className="px-4 py-3 rounded-lg mb-6 text-sm" style={{ background: 'rgba(184, 224, 0, 0.1)', borderColor: 'rgba(184, 224, 0, 0.2)', color: 'var(--accent-dark)', border: '1px solid rgba(184, 224, 0, 0.2)' }}>
             {success}
           </div>
         )}
@@ -195,11 +195,11 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="rounded-2xl p-6 space-y-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           {/* Photo */}
           <div className="flex items-center gap-6">
             <div className="relative">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-2xl font-bold overflow-hidden">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold overflow-hidden" style={{ background: 'rgba(184, 224, 0, 0.12)', color: 'var(--accent-dark)' }}>
                 {user?.avatarUrl ? (
                   <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
@@ -217,11 +217,12 @@ export default function ProfilePage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="text-sm font-medium text-green-600 hover:text-green-700 disabled:opacity-50"
+                className="text-sm font-medium disabled:opacity-50"
+                style={{ color: 'var(--accent-dark)' }}
               >
                 {uploading ? "Enviando..." : "Alterar foto"}
               </button>
-              <p className="text-xs text-gray-400 mt-1">JPG ou PNG, máx. 2MB. Recomendado: 400x400px.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--neutral-300)' }}>JPG ou PNG, máx. 2MB. Recomendado: 400x400px.</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -233,7 +234,7 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome completo</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>Nome completo</label>
             <input
               type="text"
               name="name"
@@ -245,18 +246,19 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>E-mail</label>
             <input
               type="email"
               value={user?.email || ""}
-              className="input w-full bg-gray-50"
+              className="input w-full"
+              style={{ background: 'var(--neutral-50)' }}
               disabled
             />
-            <p className="text-xs text-gray-400 mt-1">E-mail não pode ser alterado</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--neutral-300)' }}>E-mail não pode ser alterado</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>Telefone / WhatsApp</label>
             <input
               type="tel"
               name="phone"
@@ -269,7 +271,7 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>Cidade</label>
               <input
                 type="text"
                 name="city"
@@ -279,7 +281,7 @@ export default function ProfilePage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>Estado</label>
               <select name="state" value={formData.state} onChange={handleChange} className="input w-full">
                 <option value="">UF</option>
                 {states.map(s => <option key={s} value={s}>{s}</option>)}
@@ -288,7 +290,7 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data de nascimento</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>Data de nascimento</label>
             <input
               type="date"
               name="birthDate"
@@ -300,7 +302,7 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nível de jogo</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>Nível de jogo</label>
               <select name="gameLevel" value={formData.gameLevel} onChange={handleChange} className="input w-full">
                 <option value="">Selecione</option>
                 <option value="beginner">Iniciante</option>
@@ -310,7 +312,7 @@ export default function ProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mão dominante</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>Mão dominante</label>
               <select name="dominantHand" value={formData.dominantHand} onChange={handleChange} className="input w-full">
                 <option value="">Selecione</option>
                 <option value="right">Destro</option>
@@ -321,7 +323,7 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Biografia</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--neutral-600)' }}>Biografia</label>
             <textarea
               name="bio"
               value={formData.bio}

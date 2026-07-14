@@ -81,14 +81,14 @@ export default function TournamentsPage() {
   const hasLocationFilter = searchState || searchCity
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       <Header user={user} />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Torneios</h1>
-            <p className="text-sm text-gray-500 mt-1">Encontre ou crie um torneio</p>
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>Torneios</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--neutral-400)' }}>Encontre ou crie um torneio</p>
           </div>
           {user && (
             <Link href="/tournaments/new" className="btn-primary text-sm">
@@ -97,17 +97,17 @@ export default function TournamentsPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+        <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <div className="flex items-center gap-2 mb-3">
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" style={{ color: 'var(--neutral-400)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="text-sm font-medium text-gray-700">Buscar por região</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--neutral-600)' }}>Buscar por região</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Estado</label>
+              <label className="block text-xs mb-1" style={{ color: 'var(--neutral-400)' }}>Estado</label>
               <select
                 value={searchState}
                 onChange={e => {
@@ -121,7 +121,7 @@ export default function TournamentsPage() {
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">Cidade</label>
+              <label className="block text-xs mb-1" style={{ color: 'var(--neutral-400)' }}>Cidade</label>
               <select
                 value={searchCity}
                 onChange={e => setSearchCity(e.target.value)}
@@ -136,7 +136,8 @@ export default function TournamentsPage() {
           {hasLocationFilter && (
             <button
               onClick={() => { setSearchState(""); setSearchCity("") }}
-              className="text-xs text-gray-500 hover:text-gray-700 mt-2"
+              className="text-xs mt-2"
+              style={{ color: 'var(--neutral-400)' }}
             >
               Limpar filtro de região
             </button>
@@ -153,11 +154,11 @@ export default function TournamentsPage() {
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
-                filter === f.value
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-              }`}
+              className="px-3 py-1.5 text-sm font-medium rounded-lg whitespace-nowrap transition-colors"
+              style={filter === f.value
+                ? { background: 'var(--accent)', color: 'var(--primary)' }
+                : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--neutral-600)' }
+              }
             >
               {f.label}
             </button>
@@ -167,16 +168,16 @@ export default function TournamentsPage() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse">
-                <div className="h-32 bg-gray-100 rounded-lg mb-4"></div>
-                <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+              <div key={i} className="rounded-xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="h-32 rounded-lg mb-4" style={{ background: 'var(--neutral-100)' }}></div>
+                <div className="h-4 rounded w-3/4 mb-2" style={{ background: 'var(--neutral-100)' }}></div>
+                <div className="h-3 rounded w-1/2" style={{ background: 'var(--neutral-100)' }}></div>
               </div>
             ))}
           </div>
         ) : filteredTournaments.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-            <p className="text-gray-500 mb-4">Nenhum torneio encontrado</p>
+          <div className="text-center py-12 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <p className="mb-4" style={{ color: 'var(--neutral-400)' }}>Nenhum torneio encontrado</p>
             {user && (
               <Link href="/tournaments/new" className="btn-primary text-sm">
                 Criar Torneio

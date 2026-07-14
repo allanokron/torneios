@@ -81,26 +81,27 @@ export default function ScheduleProposalForm({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-xl shadow-lg w-full max-w-md mx-4 p-6"
+        style={{ background: 'var(--surface)', borderRadius: 20 }}
+        className="shadow-lg w-full max-w-md mx-4 p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Propor Horário</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h3 style={{ color: 'var(--text)' }} className="text-lg font-semibold">Propor Horário</h3>
+          <button onClick={onClose} style={{ color: 'var(--neutral-400)' }} className="hover:text-gray-600">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4">
-          Convidar <span className="font-medium text-gray-900">{opponentName}</span> para jogar
+        <p className="text-sm mb-4" style={{ color: 'var(--neutral-400)' }}>
+          Convidar <span className="font-medium" style={{ color: 'var(--text)' }}>{opponentName}</span> para jogar
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
+              <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Data</label>
               <input
                 type="date"
                 value={date}
@@ -111,7 +112,7 @@ export default function ScheduleProposalForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Horário</label>
+              <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Horário</label>
               <input
                 type="time"
                 value={time}
@@ -123,7 +124,7 @@ export default function ScheduleProposalForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quadra</label>
+            <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Quadra</label>
             <select
               value={courtId}
               onChange={(e) => setCourtId(e.target.value)}
@@ -140,8 +141,8 @@ export default function ScheduleProposalForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mensagem <span className="text-gray-400 font-normal">(opcional, máx. 200 caracteres)</span>
+            <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">
+              Mensagem <span className="font-normal" style={{ color: 'var(--neutral-400)' }}>(opcional, máx. 200 caracteres)</span>
             </label>
             <textarea
               value={message}
@@ -151,7 +152,7 @@ export default function ScheduleProposalForm({
               className="input w-full resize-none"
               placeholder="Ex: Podemos jogar nesse horário?"
             />
-            <p className="text-xs text-gray-400 mt-1 text-right">{message.length}/200</p>
+            <p className="text-xs mt-1 text-right" style={{ color: 'var(--neutral-400)' }}>{message.length}/200</p>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -160,14 +161,16 @@ export default function ScheduleProposalForm({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              style={{ background: 'var(--neutral-100)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              className="flex-1 px-4 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+              style={{ background: 'var(--accent)', color: 'var(--primary)' }}
+              className="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg disabled:opacity-50 transition-colors hover:bg-[var(--accent-hover)]"
             >
               {submitting ? "Enviando..." : "Enviar Proposta"}
             </button>

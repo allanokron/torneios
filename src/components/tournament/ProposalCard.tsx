@@ -107,26 +107,27 @@ export default function ProposalCard({
 
   if (isAccepted) {
     return (
-      <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+      <div className="p-3 rounded-lg" style={{ background: 'rgba(184, 224, 0, 0.1)', borderColor: 'var(--accent)' }}>
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" style={{ color: 'var(--accent-dark)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span className="text-sm font-medium text-green-800">Proposta Aceita</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--accent-dark)' }}>Proposta Aceita</span>
         </div>
-        <p className="text-sm text-green-700">
+        <p className="text-sm" style={{ color: 'var(--accent-dark)' }}>
           {dateStr} às {proposal.proposedTime} — {proposal.court.name}
         </p>
         {proposal.message && (
           <div className="mt-1">
             <button
               onClick={() => setShowMessage(!showMessage)}
-              className="text-xs text-green-600 hover:text-green-800 underline"
+              className="text-xs underline"
+              style={{ color: 'var(--accent-dark)' }}
             >
               {showMessage ? "Ocultar mensagem" : "Exibir mensagem"}
             </button>
             {showMessage && (
-              <p className="text-xs text-green-600 mt-1 italic">&ldquo;{proposal.message}&rdquo;</p>
+              <p className="text-xs mt-1 italic" style={{ color: 'var(--accent-dark)' }}>&ldquo;{proposal.message}&rdquo;</p>
             )}
           </div>
         )}
@@ -136,26 +137,27 @@ export default function ProposalCard({
 
   if (isRejected) {
     return (
-      <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+      <div className="p-3 rounded-lg" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" style={{ color: 'var(--neutral-400)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
-          <span className="text-sm font-medium text-gray-700">Proposta Recusada</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>Proposta Recusada</span>
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
           {proposal.sender.name} propôs {dateStr} às {proposal.proposedTime}
         </p>
         {proposal.responseMessage && (
           <div className="mt-1">
             <button
               onClick={() => setShowMessage(!showMessage)}
-              className="text-xs text-gray-500 hover:text-gray-700 underline"
+              className="text-xs underline"
+              style={{ color: 'var(--neutral-400)' }}
             >
               {showMessage ? "Ocultar mensagem" : "Exibir mensagem"}
             </button>
             {showMessage && (
-              <p className="text-xs text-gray-500 mt-1 italic">&ldquo;{proposal.responseMessage}&rdquo;</p>
+              <p className="text-xs mt-1 italic" style={{ color: 'var(--neutral-400)' }}>&ldquo;{proposal.responseMessage}&rdquo;</p>
             )}
           </div>
         )}
@@ -196,7 +198,8 @@ export default function ProposalCard({
           <button
             onClick={() => handleAction("accept")}
             disabled={loading}
-            className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+            style={{ background: 'var(--accent)', color: 'var(--primary)' }}
+            className="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
           >
             {loading ? "..." : "Aceitar"}
           </button>
@@ -231,7 +234,8 @@ export default function ProposalCard({
           <div className="flex gap-2">
             <button
               onClick={() => { setShowRejectForm(false); setRejectMessage(""); setError("") }}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+              style={{ background: 'var(--neutral-100)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              className="px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-gray-200"
             >
               Voltar
             </button>
@@ -287,7 +291,8 @@ export default function ProposalCard({
           <div className="flex gap-2">
             <button
               onClick={() => { setShowCounterForm(false); setError(""); setCounterDate(""); setCounterTime(""); setCounterCourtId(""); setCounterMessage("") }}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+              style={{ background: 'var(--neutral-100)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              className="px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-gray-200"
             >
               Voltar
             </button>

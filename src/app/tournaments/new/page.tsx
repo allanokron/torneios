@@ -222,17 +222,17 @@ export default function NewTournamentPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">🎾</span>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+                  <span className="text-xl" style={{ color: 'var(--primary)' }}>🎾</span>
                 </div>
-                <h1 className="text-xl font-bold text-gray-900">Torneios</h1>
+                <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Torneio+</h1>
               </Link>
             </div>
           </div>
@@ -240,7 +240,7 @@ export default function NewTournamentPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Criar Torneio</h2>
+        <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--text)' }}>Criar Torneio</h2>
 
         {/* Progress Steps */}
         <div className="mb-8">
@@ -248,25 +248,24 @@ export default function NewTournamentPage() {
             {[1, 2, 3, 4, 5].map((s) => (
               <div key={s} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step >= s
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-200 text-gray-600"
-                  }`}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+                  style={step >= s
+                    ? { background: 'var(--accent)', color: 'var(--primary)' }
+                    : { background: 'var(--neutral-200)', color: 'var(--neutral-600)' }
+                  }
                 >
                   {s}
                 </div>
                 {s < 5 && (
                   <div
-                    className={`h-1 w-12 sm:w-20 ${
-                      step > s ? "bg-green-600" : "bg-gray-200"
-                    }`}
+                    className="h-1 w-12 sm:w-20"
+                    style={{ background: step > s ? 'var(--accent)' : 'var(--neutral-200)' }}
                   />
                 )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between mt-2 text-xs text-gray-500">
+          <div className="flex justify-between mt-2 text-xs" style={{ color: 'var(--neutral-400)' }}>
             <span>Informações</span>
             <span>Quadras</span>
             <span>Regras</span>
@@ -284,7 +283,7 @@ export default function NewTournamentPage() {
         {/* Step 1: General Information */}
         {step === 1 && (
           <div className="card space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Informações Gerais</h3>
+            <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Informações Gerais</h3>
             
             <div>
               <label className="label">Nome do Torneio *</label>
@@ -344,10 +343,10 @@ export default function NewTournamentPage() {
               <label className="label">Foto de Capa</label>
               <div className="flex items-center gap-4">
                 {coverPreview && (
-                  <img src={coverPreview} alt="Capa" className="w-24 h-16 object-cover rounded-lg border border-gray-200" />
+                  <img src={coverPreview} alt="Capa" className="w-24 h-16 object-cover rounded-lg" style={{ border: '1px solid var(--border)' }} />
                 )}
                 <div>
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors" style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)', border: '1px solid var(--neutral-200)' }}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -366,7 +365,7 @@ export default function NewTournamentPage() {
                       }}
                     />
                   </label>
-                  <p className="text-xs text-gray-400 mt-1">Opcional. Recomendado: 1200x600px</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--neutral-300)' }}>Opcional. Recomendado: 1200x600px</p>
                 </div>
               </div>
             </div>
@@ -484,9 +483,10 @@ export default function NewTournamentPage() {
                   name="isPublic"
                   checked={formData.isPublic}
                   onChange={handleChange}
-                  className="w-4 h-4 text-green-600 rounded"
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent)' }}
                 />
-                <span className="text-sm text-gray-700">Torneio Público</span>
+                <span className="text-sm" style={{ color: 'var(--neutral-600)' }}>Torneio Público</span>
               </label>
 
               {!formData.isPublic && (
@@ -509,15 +509,15 @@ export default function NewTournamentPage() {
         {step === 2 && (
           <div className="card space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Quadras</h3>
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Quadras</h3>
               <button onClick={addCourt} className="btn-secondary text-sm">
                 + Adicionar Quadra
               </button>
             </div>
 
             {courts.length === 0 ? (
-              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                <p className="text-gray-500 mb-4">Nenhuma quadra adicionada</p>
+              <div className="text-center py-8 rounded-lg" style={{ border: '2px dashed var(--neutral-200)' }}>
+                <p className="mb-4" style={{ color: 'var(--neutral-400)' }}>Nenhuma quadra adicionada</p>
                 <button onClick={addCourt} className="btn-primary">
                   Adicionar Primeira Quadra
                 </button>
@@ -525,9 +525,9 @@ export default function NewTournamentPage() {
             ) : (
               <div className="space-y-4">
                 {courts.map((court, index) => (
-                  <div key={index} className="p-4 border border-gray-200 rounded-lg">
+                  <div key={index} className="p-4 rounded-lg" style={{ border: '1px solid var(--border)' }}>
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-medium text-gray-900">Quadra {index + 1}</h4>
+                      <h4 className="font-medium" style={{ color: 'var(--text)' }}>Quadra {index + 1}</h4>
                       <button
                         onClick={() => removeCourt(index)}
                         className="text-red-500 hover:text-red-600 text-sm"
@@ -566,9 +566,10 @@ export default function NewTournamentPage() {
                           type="checkbox"
                           checked={court.isCovered}
                           onChange={(e) => updateCourt(index, "isCovered", e.target.checked)}
-                          className="w-4 h-4 text-green-600 rounded"
+                          className="w-4 h-4 rounded"
+                          style={{ accentColor: 'var(--accent)' }}
                         />
-                        <span className="text-sm text-gray-700">Coberta</span>
+                        <span className="text-sm" style={{ color: 'var(--neutral-600)' }}>Coberta</span>
                       </div>
                     </div>
                   </div>
@@ -581,7 +582,7 @@ export default function NewTournamentPage() {
         {/* Step 3: Rules */}
         {step === 3 && (
           <div className="card space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Regras da Competição</h3>
+            <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Regras da Competição</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -631,9 +632,10 @@ export default function NewTournamentPage() {
                   name="hasTiebreak"
                   checked={formData.hasTiebreak}
                   onChange={handleChange}
-                  className="w-4 h-4 text-green-600 rounded"
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent)' }}
                 />
-                <span className="text-sm text-gray-700">Tiebreak</span>
+                <span className="text-sm" style={{ color: 'var(--neutral-600)' }}>Tiebreak</span>
               </div>
 
               {formData.hasTiebreak && (
@@ -659,9 +661,10 @@ export default function NewTournamentPage() {
                   name="hasSuperTiebreak"
                   checked={formData.hasSuperTiebreak}
                   onChange={handleChange}
-                  className="w-4 h-4 text-green-600 rounded"
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent)' }}
                 />
-                <span className="text-sm text-gray-700">Super Tiebreak</span>
+                <span className="text-sm" style={{ color: 'var(--neutral-600)' }}>Super Tiebreak</span>
               </div>
 
               {formData.hasSuperTiebreak && (
@@ -722,7 +725,7 @@ export default function NewTournamentPage() {
         {/* Step 4: Scoring */}
         {step === 4 && (
           <div className="card space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Pontuação</h3>
+            <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Pontuação</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -839,35 +842,35 @@ export default function NewTournamentPage() {
         {/* Step 5: Review */}
         {step === 5 && (
           <div className="card space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Revisão</h3>
+            <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Revisão</h3>
             
             <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">{formData.name || "Nome do Torneio"}</h4>
-                <p className="text-sm text-gray-600">
+              <div className="p-4 rounded-lg" style={{ background: 'var(--neutral-50)' }}>
+                <h4 className="font-medium mb-2" style={{ color: 'var(--text)' }}>{formData.name || "Nome do Torneio"}</h4>
+                <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
                   {formData.location || "Local não informado"} • {formData.city || "Cidade"}, {formData.state || "UF"}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
                   {formData.startDate ? new Date(formData.startDate).toLocaleDateString("pt-BR") : "Data não definida"}
                   {formData.endDate && ` - ${new Date(formData.endDate).toLocaleDateString("pt-BR")}`}
                 </p>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Regras</h4>
-                <p className="text-sm text-gray-600">
+              <div className="p-4 rounded-lg" style={{ background: 'var(--neutral-50)' }}>
+                <h4 className="font-medium mb-2" style={{ color: 'var(--text)' }}>Regras</h4>
+                <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
                   Melhor de {formData.setsPerMatch} sets • {formData.setsToWin} sets para vencer
                 </p>
                 {formData.hasTiebreak && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
                     Tiebreak em {formData.tiebreakScore} a {formData.tiebreakScore}
                   </p>
                 )}
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Pontuação</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+              <div className="p-4 rounded-lg" style={{ background: 'var(--neutral-50)' }}>
+                <h4 className="font-medium mb-2" style={{ color: 'var(--text)' }}>Pontuação</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm" style={{ color: 'var(--neutral-500)' }}>
                   <p>Vitória sem perder sets: {formData.scoringConfig.winWithoutLosingSet} pts</p>
                   <p>Vitória perdendo set: {formData.scoringConfig.winLosingOneSet} pts</p>
                   <p>Derrota vencendo set: {formData.scoringConfig.lossWinningOneSet} pts</p>
@@ -880,9 +883,9 @@ export default function NewTournamentPage() {
               </div>
 
               {courts.length > 0 && (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Quadras ({courts.length})</h4>
-                  <p className="text-sm text-gray-600">
+                <div className="p-4 rounded-lg" style={{ background: 'var(--neutral-50)' }}>
+                  <h4 className="font-medium mb-2" style={{ color: 'var(--text)' }}>Quadras ({courts.length})</h4>
+                  <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
                     {courts.map(c => c.name).join(", ")}
                   </p>
                 </div>

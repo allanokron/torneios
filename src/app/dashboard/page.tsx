@@ -114,30 +114,30 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-600 border-t-transparent"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       <Header user={user} />
       
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         <div className="mb-6">
-          <h1 className="text-xl font-semibold text-gray-900">
+          <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>
             Olá, {user.name.split(" ")[0]}
           </h1>
-          <p className="text-sm text-gray-500">Bem-vindo ao TennisPro</p>
+          <p className="text-sm" style={{ color: 'var(--neutral-400)' }}>Bem-vindo ao Torneio+</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-medium text-gray-900">Meus Torneios</h2>
-                <Link href="/tournaments" className="text-sm text-green-600 hover:text-green-700">
+                <h2 className="font-medium" style={{ color: 'var(--text)' }}>Meus Torneios</h2>
+                <Link href="/tournaments" className="text-sm" style={{ color: 'var(--accent-dark)' }}>
                   Ver todos
                 </Link>
               </div>
@@ -145,17 +145,17 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="animate-pulse flex gap-3">
-                      <div className="h-10 w-10 bg-gray-100 rounded-lg"></div>
+                      <div className="h-10 w-10 rounded-lg" style={{ background: 'rgba(184, 224, 0, 0.12)' }}></div>
                       <div className="flex-1">
-                        <div className="h-3 bg-gray-100 rounded w-1/3 mb-2"></div>
-                        <div className="h-3 bg-gray-100 rounded w-1/4"></div>
+                        <div className="h-3 rounded w-1/3 mb-2" style={{ background: 'var(--neutral-200)' }}></div>
+                        <div className="h-3 rounded w-1/4" style={{ background: 'var(--neutral-200)' }}></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : tournaments.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-sm text-gray-500 mb-3">Você ainda não participa de nenhum torneio</p>
+                  <p className="text-sm mb-3" style={{ color: 'var(--neutral-400)' }}>Você ainda não participa de nenhum torneio</p>
                   <Link href="/tournaments/new" className="btn-primary text-sm">
                     Criar Primeiro Torneio
                   </Link>
@@ -166,16 +166,19 @@ export default function DashboardPage() {
                     <Link
                       key={tournament.id}
                       href={`/tournaments/${tournament.id}`}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 p-3 rounded-lg transition-colors"
+                      style={{ color: 'var(--text)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--neutral-100)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(184, 224, 0, 0.12)' }}>
+                        <svg className="w-5 h-5" style={{ color: 'var(--accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4V4zm0 8h16M9 4v16M15 4v16" />
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{tournament.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{tournament.name}</p>
+                        <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
                           {tournament.status === "in_progress" ? "Em andamento" :
                            tournament.status === "registration_open" ? "Inscrições abertas" :
                            tournament.status === "registration_closed" ? "Inscrições encerradas" :
@@ -183,7 +186,7 @@ export default function DashboardPage() {
                           {tournament._count ? ` · ${tournament._count.members} jogadores` : ""}
                         </p>
                       </div>
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" style={{ color: 'var(--neutral-300)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </Link>
@@ -192,24 +195,24 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-medium text-gray-900">Próximas Partidas</h2>
+                <h2 className="font-medium" style={{ color: 'var(--text)' }}>Próximas Partidas</h2>
               </div>
               {loading ? (
                 <div className="space-y-3">
                   {[1, 2].map(i => (
                     <div key={i} className="animate-pulse flex gap-3">
-                      <div className="h-10 w-12 bg-gray-100 rounded"></div>
+                      <div className="h-10 w-12 rounded" style={{ background: 'var(--neutral-200)' }}></div>
                       <div className="flex-1">
-                        <div className="h-3 bg-gray-100 rounded w-1/2 mb-2"></div>
-                        <div className="h-3 bg-gray-100 rounded w-1/3"></div>
+                        <div className="h-3 rounded w-1/2 mb-2" style={{ background: 'var(--neutral-200)' }}></div>
+                        <div className="h-3 rounded w-1/3" style={{ background: 'var(--neutral-200)' }}></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : upcomingMatches.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-6">Nenhuma partida agendada</p>
+                <p className="text-sm text-center py-6" style={{ color: 'var(--neutral-400)' }}>Nenhuma partida agendada</p>
               ) : (
                 <div className="space-y-2">
                   {upcomingMatches.map(match => {
@@ -219,24 +222,27 @@ export default function DashboardPage() {
                       <Link
                         key={match.id}
                         href={`/tournaments/${match.tournament.id}?tab=matches`}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-lg transition-colors"
+                        style={{ color: 'var(--text)' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--neutral-100)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div className="text-center min-w-[55px]">
-                          <div className="text-xs font-medium text-gray-900">
+                          <div className="text-xs font-medium" style={{ color: 'var(--text)' }}>
                             {new Date(match.scheduledAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs" style={{ color: 'var(--neutral-400)' }}>
                             {new Date(match.scheduledAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
                             vs {opponent.name}
                           </p>
-                          <p className="text-xs text-gray-500 truncate">{match.tournament.name}</p>
+                          <p className="text-xs truncate" style={{ color: 'var(--neutral-400)' }}>{match.tournament.name}</p>
                         </div>
                         {match.court && (
-                          <span className="text-xs text-gray-400 hidden sm:block">{match.court.name}</span>
+                          <span className="text-xs hidden sm:block" style={{ color: 'var(--neutral-300)' }}>{match.court.name}</span>
                         )}
                       </Link>
                     )
@@ -247,8 +253,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-medium text-gray-900 mb-3">Ações Rápidas</h3>
+            <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <h3 className="font-medium mb-3" style={{ color: 'var(--text)' }}>Ações Rápidas</h3>
               <div className="space-y-2">
                 <Link href="/tournaments/new" className="btn-primary w-full justify-center text-sm">
                   Criar Torneio
@@ -259,16 +265,16 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-medium text-gray-900 mb-3">Resumo</h3>
+            <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <h3 className="font-medium mb-3" style={{ color: 'var(--text)' }}>Resumo</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Torneios</span>
-                  <span className="text-sm font-medium text-gray-900">{tournaments.length}</span>
+                  <span className="text-sm" style={{ color: 'var(--neutral-400)' }}>Torneios</span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{tournaments.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Próximas partidas</span>
-                  <span className="text-sm font-medium text-gray-900">{upcomingMatches.length}</span>
+                  <span className="text-sm" style={{ color: 'var(--neutral-400)' }}>Próximas partidas</span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{upcomingMatches.length}</span>
                 </div>
               </div>
             </div>

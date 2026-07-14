@@ -25,8 +25,13 @@ export default function TournamentSidebar({ tournamentId, activeTab, isOwner = f
 
   return (
     <aside className="w-full lg:w-56 flex-shrink-0">
-      {/* Navigation */}
-      <nav className="bg-white rounded-xl border border-gray-200 p-2">
+      <nav
+        className="rounded-2xl p-2"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+        }}
+      >
         <ul className="space-y-0.5">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id
@@ -34,13 +39,33 @@ export default function TournamentSidebar({ tournamentId, activeTab, isOwner = f
               <li key={tab.id}>
                 <Link
                   href={`/tournaments/${tournamentId}?tab=${tab.id}`}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    isActive
-                      ? "bg-green-50 text-green-700 font-medium"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                  style={isActive ? {
+                    background: 'rgba(184, 224, 0, 0.1)',
+                    color: 'var(--accent-dark)',
+                  } : {
+                    color: 'var(--neutral-500)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'var(--neutral-50)';
+                      e.currentTarget.style.color = 'var(--neutral-700)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = '';
+                      e.currentTarget.style.color = 'var(--neutral-500)';
+                    }
+                  }}
                 >
-                  <svg className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-green-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-4 h-4 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style={{ color: isActive ? 'var(--accent)' : 'var(--neutral-400)' }}
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={tab.icon} />
                   </svg>
                   <span>{tab.label}</span>

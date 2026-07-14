@@ -35,14 +35,14 @@ export default function ScoreDisplay({
       {/* Main Score */}
       <div className="flex items-center gap-3">
         <span className={`font-bold ${sizeClasses[size]} ${
-          homeScore > awayScore ? "text-[var(--court-green)]" : "text-gray-400"
-        }`}>
+          homeScore > awayScore ? "" : ""
+        }`} style={{ color: homeScore > awayScore ? 'var(--accent)' : 'var(--neutral-400)' }}>
           {homeScore}
         </span>
-        <span className="text-gray-300 text-lg">×</span>
+        <span style={{ color: 'var(--neutral-300)' }} className="text-lg">×</span>
         <span className={`font-bold ${sizeClasses[size]} ${
-          awayScore > homeScore ? "text-[var(--court-green)]" : "text-gray-400"
-        }`}>
+          awayScore > homeScore ? "" : ""
+        }`} style={{ color: awayScore > homeScore ? 'var(--accent)' : 'var(--neutral-400)' }}>
           {awayScore}
         </span>
       </div>
@@ -52,21 +52,37 @@ export default function ScoreDisplay({
         <div className="flex gap-1">
           {sets.map((set, index) => (
             <div key={index} className="flex flex-col items-center gap-0.5">
-              <span className={`score-set ${setClasses[size]} ${
-                set.homeGames > set.awayGames ? "score-won" : "score-lost"
-              }`}>
+              <span className={`score-set ${setClasses[size]}`}
+                style={{
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: set.homeGames > set.awayGames ? 'rgba(184, 224, 0, 0.15)' : 'var(--neutral-100)',
+                  color: set.homeGames > set.awayGames ? 'var(--accent-dark)' : 'var(--neutral-500)',
+                  fontWeight: set.homeGames > set.awayGames ? 700 : 500,
+                }}
+              >
                 {set.homeGames}
               </span>
-              <span className={`score-set ${setClasses[size]} ${
-                set.awayGames > set.homeGames ? "score-won" : "score-lost"
-              }`}>
+              <span className={`score-set ${setClasses[size]}`}
+                style={{
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: set.awayGames > set.homeGames ? 'rgba(184, 224, 0, 0.15)' : 'var(--neutral-100)',
+                  color: set.awayGames > set.homeGames ? 'var(--accent-dark)' : 'var(--neutral-500)',
+                  fontWeight: set.awayGames > set.homeGames ? 700 : 500,
+                }}
+              >
                 {set.awayGames}
               </span>
               {set.isTiebreak && (
-                <span className="text-[8px] text-gray-400">TB</span>
+                <span className="text-[8px]" style={{ color: 'var(--neutral-400)' }}>TB</span>
               )}
               {set.isSuperTiebreak && (
-                <span className="text-[8px] text-gray-400">STB</span>
+                <span className="text-[8px]" style={{ color: 'var(--neutral-400)' }}>STB</span>
               )}
             </div>
           ))}

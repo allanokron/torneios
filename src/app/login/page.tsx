@@ -41,24 +41,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       <Header />
       
       <main className="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 className="text-center text-2xl font-semibold text-gray-900">
+          <h2 className="text-center text-2xl font-semibold" style={{ color: 'var(--text)' }}>
             Entrar
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-500">
+          <p className="mt-2 text-center text-sm" style={{ color: 'var(--neutral-400)' }}>
             ou{" "}
-            <Link href="/register" className="text-green-600 hover:text-green-700 font-medium">
+            <Link href="/register" className="font-medium" style={{ color: 'var(--accent-dark)' }}>
               criar uma conta
             </Link>
           </p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
-          <div className="bg-white py-8 px-6 shadow-sm rounded-xl border border-gray-200">
+          <div className="py-8 px-6 shadow-sm rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <form className="space-y-5" onSubmit={handleSubmit}>
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
@@ -104,11 +104,12 @@ export default function LoginPage() {
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                    className="w-4 h-4 border rounded focus:ring-2"
+                    style={{ accentColor: 'var(--accent)' }}
                   />
-                  <span className="text-sm text-gray-600">Lembrar de mim</span>
+                  <span className="text-sm" style={{ color: 'var(--neutral-500)' }}>Lembrar de mim</span>
                 </label>
-                <a href="#" className="text-sm text-green-600 hover:text-green-700">
+                <a href="#" className="text-sm" style={{ color: 'var(--accent-dark)' }}>
                   Esqueceu a senha?
                 </a>
               </div>

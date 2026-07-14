@@ -208,12 +208,12 @@ export default function MatchResultForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">
+      <div style={{ background: 'var(--surface)', borderRadius: 20 }} className="shadow-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div style={{ borderColor: 'var(--border)' }} className="flex items-center justify-between p-5 border-b">
+          <h3 style={{ color: 'var(--text)' }} className="text-lg font-semibold">
             {isEditing ? "Editar Resultado" : step === "wo" ? "Walkover (W.O.)" : step === "forfeit" ? "Desistência" : step === "start" ? "Iniciar Jogo" : "Registrar Placar"}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} style={{ color: 'var(--neutral-400)' }} className="hover:text-gray-600">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -223,9 +223,9 @@ export default function MatchResultForm({
         <div className="p-5 space-y-5">
           {/* Players header */}
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-gray-900">{homePlayer.name}</span>
-            <span className="text-gray-400">vs</span>
-            <span className="font-medium text-gray-900">{awayPlayer.name}</span>
+            <span style={{ color: 'var(--text)' }} className="font-medium">{homePlayer.name}</span>
+            <span style={{ color: 'var(--neutral-400)' }}>vs</span>
+            <span style={{ color: 'var(--text)' }} className="font-medium">{awayPlayer.name}</span>
           </div>
 
           {/* STEP: Start match */}
@@ -233,7 +233,7 @@ export default function MatchResultForm({
             <>
               {!isOwner && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Início do Jogo *</label>
+                  <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-2">Foto do Início do Jogo *</label>
                   <input ref={startInputRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoUpload(e, "start")} />
                   {startPhoto ? (
                     <div className="relative">
@@ -241,26 +241,26 @@ export default function MatchResultForm({
                       <button onClick={() => setStartPhoto(null)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">X</button>
                     </div>
                   ) : (
-                    <button onClick={() => startInputRef.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors">
-                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onClick={() => startInputRef.current?.click()} style={{ borderColor: 'var(--border)' }} className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center hover:border-[var(--accent)] transition-colors" onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--neutral-400)')}>
+                      <svg className="w-8 h-8 mb-2" style={{ color: 'var(--neutral-400)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <span className="text-sm">Tirar foto do início</span>
+                      <span className="text-sm" style={{ color: 'var(--neutral-400)' }}>Tirar foto do início</span>
                     </button>
                   )}
                 </div>
               )}
 
               {isOwner && (
-                <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                <p className="text-sm rounded-lg p-3" style={{ color: 'var(--neutral-400)', background: 'var(--neutral-50)' }}>
                   Como organizador, a foto do início não é obrigatória.
                 </p>
               )}
 
               {error && <p className="text-sm text-red-600">{error}</p>}
 
-              <button onClick={handleStartMatch} disabled={loading || (!isOwner && !startPhoto)} className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+              <button onClick={handleStartMatch} disabled={loading || (!isOwner && !startPhoto)} style={{ background: 'var(--accent)', color: 'var(--primary)' }} className="w-full py-2.5 rounded-lg font-medium disabled:opacity-50 transition-colors hover:bg-[var(--accent-hover)]">
                 {loading ? "Iniciando..." : "Iniciar Jogo"}
               </button>
 
@@ -281,30 +281,30 @@ export default function MatchResultForm({
           {/* STEP: W.O. */}
           {step === "wo" && (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm" style={{ color: 'var(--neutral-400)' }}>
                 Registre uma vitória por walkover. Selecione quem venceu e informe o motivo.
               </p>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Vencedor *</label>
+                <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-2">Vencedor *</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setWoWinner(homePlayer.id)}
-                    className={`py-2.5 rounded-lg border text-sm font-medium transition-colors ${
-                      woWinner === homePlayer.id
-                        ? "border-green-500 bg-green-50 text-green-700"
-                        : "border-gray-200 text-gray-700 hover:border-gray-300"
-                    }`}
+                    style={woWinner === homePlayer.id
+                      ? { borderColor: 'var(--accent)', background: 'rgba(184, 224, 0, 0.1)', color: 'var(--accent-dark)' }
+                      : { borderColor: 'var(--border)', color: 'var(--text)' }
+                    }
+                    className="py-2.5 rounded-lg border text-sm font-medium transition-colors hover:border-gray-300"
                   >
                     {homePlayer.name}
                   </button>
                   <button
                     onClick={() => setWoWinner(awayPlayer.id)}
-                    className={`py-2.5 rounded-lg border text-sm font-medium transition-colors ${
-                      woWinner === awayPlayer.id
-                        ? "border-green-500 bg-green-50 text-green-700"
-                        : "border-gray-200 text-gray-700 hover:border-gray-300"
-                    }`}
+                    style={woWinner === awayPlayer.id
+                      ? { borderColor: 'var(--accent)', background: 'rgba(184, 224, 0, 0.1)', color: 'var(--accent-dark)' }
+                      : { borderColor: 'var(--border)', color: 'var(--text)' }
+                    }
+                    className="py-2.5 rounded-lg border text-sm font-medium transition-colors hover:border-gray-300"
                   >
                     {awayPlayer.name}
                   </button>
@@ -312,7 +312,7 @@ export default function MatchResultForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Motivo do W.O. *</label>
+                <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-2">Motivo do W.O. *</label>
                 <textarea
                   value={woReason}
                   onChange={e => setWoReason(e.target.value)}
@@ -321,13 +321,13 @@ export default function MatchResultForm({
                   placeholder="Descreva o motivo do walkover..."
                   className="input min-h-[80px]"
                 />
-                <p className="text-xs text-gray-400 mt-1">{woReason.length}/200</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--neutral-400)' }}>{woReason.length}/200</p>
               </div>
 
               {error && <p className="text-sm text-red-600">{error}</p>}
 
               <div className="flex gap-2">
-                <button onClick={() => { setStep("start"); setError("") }} className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
+                <button onClick={() => { setStep("start"); setError("") }} style={{ background: 'var(--neutral-100)', borderColor: 'var(--border)', color: 'var(--text)' }} className="flex-1 py-2.5 border rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
                   Voltar
                 </button>
                 <button onClick={handleWOFallback} disabled={loading} className="flex-1 py-2.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors">
@@ -350,15 +350,16 @@ export default function MatchResultForm({
               </div>
 
               <div className="space-y-4">
-                <label className="block text-sm font-medium text-gray-700">Quem desistiu? *</label>
+                <label style={{ color: 'var(--text)' }} className="block text-sm font-medium">Quem desistiu? *</label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setForfeitById(homePlayer.id); setError("") }}
                     className={`flex-1 p-3 rounded-lg border-2 text-center font-medium transition-colors text-sm ${
                       forfeitById === homePlayer.id
                         ? "border-red-500 bg-red-50 text-red-700"
-                        : "border-gray-200 text-gray-700 hover:border-gray-300"
+                        : "hover:border-gray-300"
                     }`}
+                    style={forfeitById !== homePlayer.id ? { borderColor: 'var(--border)', color: 'var(--text)' } : undefined}
                   >
                     {homePlayer.name}
                   </button>
@@ -367,25 +368,26 @@ export default function MatchResultForm({
                     className={`flex-1 p-3 rounded-lg border-2 text-center font-medium transition-colors text-sm ${
                       forfeitById === awayPlayer.id
                         ? "border-red-500 bg-red-50 text-red-700"
-                        : "border-gray-200 text-gray-700 hover:border-gray-300"
+                        : "hover:border-gray-300"
                     }`}
+                    style={forfeitById !== awayPlayer.id ? { borderColor: 'var(--border)', color: 'var(--text)' } : undefined}
                   >
                     {awayPlayer.name}
                   </button>
                 </div>
 
                 {forfeitById && (
-                  <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
-                    <strong>{forfeitById === homePlayer.id ? homePlayer.name : awayPlayer.name}</strong> desiste.
+                  <div className="rounded-lg p-3 text-sm" style={{ background: 'var(--surface)', color: 'var(--neutral-400)' }}>
+                    <strong style={{ color: 'var(--text)' }}>{forfeitById === homePlayer.id ? homePlayer.name : awayPlayer.name}</strong> desiste.
                     <br />
-                    Vencedor: <strong className="text-green-700">{forfeitById === homePlayer.id ? awayPlayer.name : homePlayer.name}</strong>
+                    Vencedor: <strong style={{ color: 'var(--accent-dark)' }}>{forfeitById === homePlayer.id ? awayPlayer.name : homePlayer.name}</strong>
                   </div>
                 )}
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
 
                 <div className="flex gap-2">
-                  <button onClick={() => { setStep("score"); setError("") }} className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
+                  <button onClick={() => { setStep("score"); setError("") }} style={{ background: 'var(--neutral-100)', borderColor: 'var(--border)', color: 'var(--text)' }} className="flex-1 py-2.5 border rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
                     Voltar
                   </button>
                   <button onClick={handleForfeit} disabled={loading} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
@@ -402,40 +404,44 @@ export default function MatchResultForm({
               {/* Sets */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-gray-700">Placar (games por set)</label>
+                  <label style={{ color: 'var(--text)' }} className="text-sm font-medium">Placar (games por set)</label>
                   {sets.length < setsPerMatch && !isEditing && (
-                    <button onClick={addSet} className="text-xs text-green-600 hover:text-green-700">+ Adicionar set</button>
+                    <button onClick={addSet} className="text-xs hover:underline" style={{ color: 'var(--accent-dark)' }}>+ Adicionar set</button>
                   )}
                 </div>
                 <div className="space-y-2">
                   {sets.map((set, i) => {
                     const setWon = set.homeGames > set.awayGames ? "home" : set.awayGames > set.homeGames ? "away" : null
                     return (
-                      <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50">
-                        <span className="text-xs font-medium text-gray-500 w-8">Set {i + 1}</span>
+                      <div key={i} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--neutral-50)' }}>
+                        <span className="text-xs font-medium w-8" style={{ color: 'var(--neutral-400)' }}>Set {i + 1}</span>
                         <input
                           type="number"
                           min={0}
                           value={set.homeGames || ""}
                           onChange={e => updateSet(i, "homeGames", parseInt(e.target.value) || 0)}
-                          className={`w-16 text-center text-sm font-medium rounded-lg border px-2 py-1.5 focus:outline-none focus:ring-2 ${
-                            setWon === "home" ? "border-green-300 bg-green-50 text-green-700 ring-green-200" : "border-gray-200 focus:ring-green-200"
-                          }`}
+                          style={setWon === "home"
+                            ? { borderColor: 'var(--accent)', background: 'rgba(184, 224, 0, 0.1)', color: 'var(--accent-dark)' }
+                            : { borderColor: 'var(--border)' }
+                          }
+                          className="w-16 text-center text-sm font-medium rounded-lg border px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                           placeholder="0"
                         />
-                        <span className="text-xs text-gray-400">x</span>
+                        <span className="text-xs" style={{ color: 'var(--neutral-400)' }}>x</span>
                         <input
                           type="number"
                           min={0}
                           value={set.awayGames || ""}
                           onChange={e => updateSet(i, "awayGames", parseInt(e.target.value) || 0)}
-                          className={`w-16 text-center text-sm font-medium rounded-lg border px-2 py-1.5 focus:outline-none focus:ring-2 ${
-                            setWon === "away" ? "border-green-300 bg-green-50 text-green-700 ring-green-200" : "border-gray-200 focus:ring-green-200"
-                          }`}
+                          style={setWon === "away"
+                            ? { borderColor: 'var(--accent)', background: 'rgba(184, 224, 0, 0.1)', color: 'var(--accent-dark)' }
+                            : { borderColor: 'var(--border)' }
+                          }
+                          className="w-16 text-center text-sm font-medium rounded-lg border px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                           placeholder="0"
                         />
                         {sets.length > 1 && !isEditing && (
-                          <button onClick={() => removeSet(i)} className="text-gray-400 hover:text-red-500 ml-1">
+                          <button onClick={() => removeSet(i)} className="hover:text-red-500 ml-1" style={{ color: 'var(--neutral-400)' }}>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -448,11 +454,11 @@ export default function MatchResultForm({
 
                 {/* Sets summary */}
                 <div className="mt-3 flex items-center justify-center gap-4 text-sm">
-                  <span className={`font-bold text-lg ${homeSetsWon > awaySetsWon ? "text-green-600" : "text-gray-900"}`}>
+                  <span className="font-bold text-lg" style={{ color: homeSetsWon > awaySetsWon ? 'var(--accent-dark)' : 'var(--text)' }}>
                     {homeSetsWon}
                   </span>
-                  <span className="text-gray-400">sets</span>
-                  <span className={`font-bold text-lg ${awaySetsWon > homeSetsWon ? "text-green-600" : "text-gray-900"}`}>
+                  <span style={{ color: 'var(--neutral-400)' }}>sets</span>
+                  <span className="font-bold text-lg" style={{ color: awaySetsWon > homeSetsWon ? 'var(--accent-dark)' : 'var(--text)' }}>
                     {awaySetsWon}
                   </span>
                 </div>
@@ -461,7 +467,7 @@ export default function MatchResultForm({
               {/* End photo */}
               {!isOwner && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Final do Jogo *</label>
+                  <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-2">Foto do Final do Jogo *</label>
                   <input ref={endInputRef} type="file" accept="image/*" className="hidden" onChange={e => handlePhotoUpload(e, "end")} />
                   {endPhoto ? (
                     <div className="relative">
@@ -469,19 +475,19 @@ export default function MatchResultForm({
                       <button onClick={() => setEndPhoto(null)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">X</button>
                     </div>
                   ) : (
-                    <button onClick={() => endInputRef.current?.click()} className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors">
-                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onClick={() => endInputRef.current?.click()} style={{ borderColor: 'var(--border)' }} className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center hover:border-[var(--accent)] transition-colors" onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--neutral-400)')}>
+                      <svg className="w-8 h-8 mb-2" style={{ color: 'var(--neutral-400)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <span className="text-sm">Tirar foto do final</span>
+                      <span className="text-sm" style={{ color: 'var(--neutral-400)' }}>Tirar foto do final</span>
                     </button>
                   )}
                 </div>
               )}
 
               {isOwner && (
-                <p className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                <p className="text-sm rounded-lg p-3" style={{ color: 'var(--neutral-400)', background: 'var(--neutral-50)' }}>
                   Como organizador, a foto do final não é obrigatória.
                 </p>
               )}
@@ -491,7 +497,8 @@ export default function MatchResultForm({
               <button
                 onClick={isEditing ? handleEditResult : handleSubmitResult}
                 disabled={loading}
-                className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+                style={{ background: 'var(--accent)', color: 'var(--primary)' }}
+                className="w-full py-2.5 rounded-lg font-medium disabled:opacity-50 transition-colors hover:bg-[var(--accent-hover)]"
               >
                 {loading ? "Salvando..." : isEditing ? "Salvar Alterações" : "Enviar Resultado"}
               </button>

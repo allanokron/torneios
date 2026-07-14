@@ -101,10 +101,10 @@ export default function MatchEditForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">Editar Partida</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+      <div style={{ background: 'var(--surface)', borderRadius: 20 }} className="shadow-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div style={{ borderColor: 'var(--border)' }} className="flex items-center justify-between p-5 border-b">
+          <h3 style={{ color: 'var(--text)' }} className="text-lg font-semibold">Editar Partida</h3>
+          <button onClick={onClose} style={{ color: 'var(--neutral-400)' }} className="hover:text-gray-600">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -115,7 +115,7 @@ export default function MatchEditForm({
           {/* Players */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Jogador Casa</label>
+              <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Jogador Casa</label>
               <select
                 value={editHomePlayerId}
                 onChange={e => setEditHomePlayerId(e.target.value)}
@@ -127,7 +127,7 @@ export default function MatchEditForm({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Jogador Fora</label>
+              <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Jogador Fora</label>
               <select
                 value={editAwayPlayerId}
                 onChange={e => setEditAwayPlayerId(e.target.value)}
@@ -143,7 +143,7 @@ export default function MatchEditForm({
           {/* Date & Time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
+              <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Data</label>
               <input
                 type="date"
                 value={editDate}
@@ -152,7 +152,7 @@ export default function MatchEditForm({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Horário</label>
+              <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Horário</label>
               <input
                 type="time"
                 value={editTime}
@@ -164,7 +164,7 @@ export default function MatchEditForm({
 
           {/* Court */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quadra</label>
+            <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Quadra</label>
             <select
               value={editCourtId}
               onChange={e => setEditCourtId(e.target.value)}
@@ -179,7 +179,7 @@ export default function MatchEditForm({
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Status</label>
             <select
               value={editStatus}
               onChange={e => setEditStatus(e.target.value)}
@@ -193,7 +193,7 @@ export default function MatchEditForm({
 
           {/* Duration */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duração (minutos)</label>
+            <label style={{ color: 'var(--text)' }} className="block text-sm font-medium mb-1">Duração (minutos)</label>
             <input
               type="number"
               min={30}
@@ -209,14 +209,16 @@ export default function MatchEditForm({
           <div className="flex gap-2 pt-2">
             <button
               onClick={onClose}
-              className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
+              style={{ background: 'var(--neutral-100)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              className="flex-1 py-2.5 border rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex-1 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors text-sm"
+              style={{ background: 'var(--accent)', color: 'var(--primary)' }}
+              className="flex-1 py-2.5 rounded-lg font-medium disabled:opacity-50 transition-colors text-sm hover:bg-[var(--accent-hover)]"
             >
               {loading ? "Salvando..." : "Salvar"}
             </button>
