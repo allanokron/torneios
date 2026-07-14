@@ -5,7 +5,11 @@ export const metadata: Metadata = {
   title: "Torneio+ | Gestão de Torneios",
   description: "Plataforma completa para gestão de torneios e campeonatos esportivos",
   icons: {
-    icon: "/images/logo.png",
+    icon: [
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/images/logo-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/images/apple-touch-icon.png",
   },
 };
 
