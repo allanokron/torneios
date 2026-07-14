@@ -16,6 +16,9 @@ export default function RegisterPage() {
     city: "",
     state: ""
   })
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
+  const [marketingConsent, setMarketingConsent] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -37,6 +40,11 @@ export default function RegisterPage() {
       return
     }
 
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setError("Você deve aceitar os Termos de Uso e a Política de Privacidade")
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -49,7 +57,10 @@ export default function RegisterPage() {
           password: formData.password,
           phone: formData.phone || undefined,
           city: formData.city || undefined,
-          state: formData.state || undefined
+          state: formData.state || undefined,
+          acceptedTerms,
+          acceptedPrivacy,
+          marketingConsent
         })
       })
 
@@ -201,6 +212,52 @@ export default function RegisterPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="border-t pt-4 mt-4 space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[var(--accent-dark)] focus:ring-[var(--accent-dark)]"
+                  />
+                  <span className="text-xs" style={{ color: 'var(--neutral-400)' }}>
+                    Aceito os{" "}
+                    <a href="/legal/terms-of-use" target="_blank" className="underline" style={{ color: 'var(--accent-dark)' }}>
+                      Termos de Uso
+                    </a>
+                    {" "}e estou ciente das regras da plataforma *
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedPrivacy}
+                    onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[var(--accent-dark)] focus:ring-[var(--accent-dark)]"
+                  />
+                  <span className="text-xs" style={{ color: 'var(--neutral-400)' }}>
+                    Aceito a{" "}
+                    <a href="/legal/privacy-policy" target="_blank" className="underline" style={{ color: 'var(--accent-dark)' }}>
+                      Política de Privacidade
+                    </a>
+                    {" "}e autorizo o tratamento dos meus dados conforme a LGPD *
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={marketingConsent}
+                    onChange={(e) => setMarketingConsent(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[var(--accent-dark)] focus:ring-[var(--accent-dark)]"
+                  />
+                  <span className="text-xs" style={{ color: 'var(--neutral-400)' }}>
+                    Quero receber novidades e comunicações de marketing por e-mail (opcional)
+                  </span>
+                </label>
               </div>
 
               <button

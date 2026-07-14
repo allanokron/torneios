@@ -48,6 +48,9 @@ model User {
   notifications              Notification[]
   auditLogs                  AuditLog[]
   announcements              Announcement[]
+  consents                   Consent[]
+  lgpdRequests               LGPDRequest[]
+  accountDeletions           AccountDeletion[]
 }
 
 model Profile {
@@ -587,4 +590,66 @@ model AuditLog {
 
   ipAddress String?
   createdAt DateTime @default(now())
+}
+
+// ==================== LGPD / JURÍDICO ====================
+
+model LegalDocument {
+  id        String   @id @default(cuid())
+  slug      String   @unique // privacy-policy, terms-of-use, cookies, payments, cancellation, security, lgpd
+  title     String
+  content   String   @db.Text
+  version   String   @default("1.0")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  consents Consent[]
+}
+
+model Consent {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId   String
+  document     LegalDocument @relation(fields: [documentId], references: [id])
+  documentSlug String
+  documentTitle String
+  documentVersion String
+  accepted     Boolean  @default(true)
+  ipAddress    String?
+  userAgent    String?
+  os           String?
+  device       String?
+  language     String?
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, documentSlug, documentVersion])
+}
+
+model LGPDRequest {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  email     String
+  cpf       String?
+  type      String   // access, correction, deletion, portability, revocation, information, other
+  message   String   @db.Text
+  status    String   @default("pending") // pending, in_progress, completed, rejected
+  response  String?  @db.Text
+  resolvedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AccountDeletion {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason    String?
+  status    String   @default("pending") // pending, completed, rejected
+  ipAddress String?
+  createdAt DateTime @default(now())
+  completedAt DateTime?
 }

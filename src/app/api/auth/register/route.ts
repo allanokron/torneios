@@ -5,11 +5,18 @@ import { hashPassword, generateToken } from "@/lib/auth"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, email, password, phone, city, state, birthDate, bio, gameLevel, dominantHand } = body
+    const { name, email, password, phone, city, state, birthDate, bio, gameLevel, dominantHand, acceptedTerms, acceptedPrivacy, marketingConsent } = body
 
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Nome, e-mail e senha são obrigatórios" },
+        { status: 400 }
+      )
+    }
+
+    if (!acceptedTerms || !acceptedPrivacy) {
+      return NextResponse.json(
+        { error: "Você deve aceitar os Termos de Uso e a Política de Privacidade" },
         { status: 400 }
       )
     }
@@ -59,6 +66,40 @@ export async function POST(request: Request) {
     })
 
     const token = generateToken(user.id)
+
+    // Record consent records
+    try {
+      const userAgent = request.headers.get("user-agent") || null
+      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || null
+
+      const consents = [
+        { documentSlug: "terms-of-use", accepted: true, documentTitle: "Termos de Uso" },
+        { documentSlug: "privacy-policy", accepted: true, documentTitle: "Política de Privacidade" },
+        { documentSlug: "cookies", accepted: !!marketingConsent, documentTitle: "Política de Cookies" },
+      ]
+
+      for (const c of consents) {
+        const doc = await prisma.legalDocument.findFirst({
+          where: { slug: c.documentSlug, isActive: true },
+        })
+        if (doc) {
+          await prisma.consent.create({
+            data: {
+              userId: user.id,
+              documentId: doc.id,
+              documentSlug: c.documentSlug,
+              documentTitle: doc.title,
+              documentVersion: doc.version,
+              accepted: c.accepted,
+              ipAddress: ip,
+              userAgent,
+            },
+          })
+        }
+      }
+    } catch (consentError) {
+      console.error("Erro ao registrar consentimentos:", consentError)
+    }
 
     return NextResponse.json({
       user,

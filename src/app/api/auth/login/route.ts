@@ -36,13 +36,24 @@ export async function POST(request: Request) {
 
     const token = generateToken(user.id)
 
+    // Check if user has accepted required consents
+    const termsConsent = await prisma.consent.findFirst({
+      where: { userId: user.id, documentSlug: "terms-of-use", accepted: true },
+    })
+    const privacyConsent = await prisma.consent.findFirst({
+      where: { userId: user.id, documentSlug: "privacy-policy", accepted: true },
+    })
+
+    const needsConsent = !termsConsent || !privacyConsent
+
     return NextResponse.json({
       user: {
         id: user.id,
         name: user.name,
         email: user.email
       },
-      token
+      token,
+      needsConsent
     })
   } catch (error) {
     console.error("Erro ao fazer login:", error)

@@ -148,6 +148,12 @@ export default function Header({ user }: HeaderProps) {
                     <Link href="/profile" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
                       Meu Perfil
                     </Link>
+                    <Link href="/settings" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
+                      Configurações
+                    </Link>
+                    <Link href="/legal" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
+                      Central Jurídica
+                    </Link>
                     <hr className="my-1" style={{ borderColor: 'var(--border)' }} />
                     <button
                       onClick={() => {

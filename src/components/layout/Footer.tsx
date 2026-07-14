@@ -60,15 +60,47 @@ export default function Footer() {
         </div>
 
         <div
-          className="mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4"
+          className="mt-8 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-6"
           style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
         >
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            © {new Date().getFullYear()} Torneio+. Todos os direitos reservados.
-          </p>
-          <div className="flex items-center gap-4 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            <a href="#" className="hover:text-white transition-colors">Termos</a>
-            <a href="#" className="hover:text-white transition-colors">Privacidade</a>
+          <div>
+            <h4 className="text-sm text-white/60 mb-3">Documentos Legais</h4>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/legal/privacy-policy" className="text-sm transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  Política de Privacidade
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/terms-of-use" className="text-sm transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  Termos de Uso
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/lgpd" className="text-sm transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  LGPD
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/cookies" className="text-sm transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  Cookies
+                </Link>
+              </li>
+              <li>
+                <a href="mailto:contato@okron.com.br" className="text-sm transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  contato@okron.com.br
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex flex-col justify-end sm:items-end">
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              © {new Date().getFullYear()} Torneio+. Todos os direitos reservados.
+            </p>
+            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Versão 1.0
+            </p>
           </div>
         </div>
       </div>
