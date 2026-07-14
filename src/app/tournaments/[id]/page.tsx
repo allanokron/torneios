@@ -79,6 +79,20 @@ interface Tournament {
     withdrawalPenalty: number
     delayPenalty: number
   }
+  challengeConfig?: {
+    enabled: boolean
+    rankingReference: string
+    maxPositionsAhead: number
+    pointsPerPosition: number
+    challengerWinMultiplier: number
+    challengerLossMultiplier: number
+    challengedWinMultiplier: number
+    challengedLossMultiplier: number
+    countWins: boolean
+    countSets: boolean
+    countGames: boolean
+    showChallengeColumn: boolean
+  }
   _count: {
     matches: number
     announcements: number
@@ -103,6 +117,8 @@ interface Match {
   startPhotoUrl?: string | null
   endPhotoUrl?: string | null
   endReason?: string | null
+  isChallenge?: boolean
+  challengePoints?: number | null
   scheduleProposals: Array<{
     id: string
     proposedDate: string
@@ -127,6 +143,11 @@ interface Ranking {
   gamesLost: number
   setBalance: number
   gamesBalance: number
+  lossesByWO: number
+  challengePoints: number
+  challengeMatches: number
+  challengeWins: number
+  challengeLosses: number
   user: { id: string; name: string; avatarUrl?: string }
 }
 
@@ -188,6 +209,7 @@ export default function TournamentPage() {
   const [filterDateTo, setFilterDateTo] = useState("")
   const [filterCourtId, setFilterCourtId] = useState("")
   const [filterPlayerId, setFilterPlayerId] = useState("")
+  const [filterChallenge, setFilterChallenge] = useState<"all" | "challenge" | "normal">("all")
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [matchSubTab, setMatchSubTab] = useState<"upcoming" | "completed">("upcoming")
   const [drawnSubTab, setDrawnSubTab] = useState<"month" | "future">("month")
@@ -1139,6 +1161,8 @@ export default function TournamentPage() {
                   }
                   if (filterCourtId && m.court?.id !== filterCourtId) return false
                   if (filterPlayerId && m.homePlayer.id !== filterPlayerId && m.awayPlayer.id !== filterPlayerId) return false
+                  if (filterChallenge === "challenge" && !m.isChallenge) return false
+                  if (filterChallenge === "normal" && m.isChallenge) return false
                   return true
                 })
               }
@@ -1174,7 +1198,7 @@ export default function TournamentPage() {
                       </svg>
                       <span className="text-sm font-medium text-gray-700">Filtros</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">Data início</label>
                         <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="input w-full text-sm" />
@@ -1201,9 +1225,17 @@ export default function TournamentPage() {
                           ))}
                         </select>
                       </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+                        <select value={filterChallenge} onChange={(e) => setFilterChallenge(e.target.value as "all" | "challenge" | "normal")} className="input w-full text-sm">
+                          <option value="all">Todos</option>
+                          <option value="challenge">Desafios</option>
+                          <option value="normal">Normais</option>
+                        </select>
+                      </div>
                     </div>
-                    {(filterDateFrom || filterDateTo || filterCourtId || filterPlayerId) && (
-                      <button onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); setFilterCourtId(""); setFilterPlayerId("") }} className="text-xs text-gray-500 hover:text-gray-700 mt-2">
+                    {(filterDateFrom || filterDateTo || filterCourtId || filterPlayerId || filterChallenge !== "all") && (
+                      <button onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); setFilterCourtId(""); setFilterPlayerId(""); setFilterChallenge("all") }} className="text-xs text-gray-500 hover:text-gray-700 mt-2">
                         Limpar filtros
                       </button>
                     )}
@@ -1262,6 +1294,11 @@ export default function TournamentPage() {
                                       <span className="text-sm font-medium text-gray-900">{match.homePlayer.name}</span>
                                       <span className="text-xs text-gray-400">vs</span>
                                       <span className="text-sm font-medium text-gray-900">{match.awayPlayer.name}</span>
+                                      {match.isChallenge && (
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                                          DESAFIO
+                                        </span>
+                                      )}
                                     </div>
                                     {match.court && (
                                       <p className="text-xs text-gray-500 mt-0.5">{match.court.name}</p>
@@ -1371,6 +1408,11 @@ export default function TournamentPage() {
                                         </span>
                                       )}
                                       <span className="text-sm font-medium text-gray-900">{match.awayPlayer.name}</span>
+                                      {match.isChallenge && (
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                                          DESAFIO
+                                        </span>
+                                      )}
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5">
                                       {match.court && <p className="text-xs text-gray-500">{match.court.name}</p>}
@@ -1680,8 +1722,14 @@ export default function TournamentPage() {
                                     <div className="text-xs text-gray-400">Sem data</div>
                                   )}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-900">vs {opponent.name}</p>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900">vs {opponent.name}
+                                  {match.isChallenge && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 ml-1.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                                      DESAFIO
+                                    </span>
+                                  )}
+                                </p>
                                   {match.court && <p className="text-xs text-gray-500">{match.court.name}</p>}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -1955,16 +2003,20 @@ export default function TournamentPage() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-gray-100">
+                           <tr className="border-b border-gray-100">
                             <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">#</th>
                             <th className="text-left py-2 px-2 text-xs font-medium text-gray-500">Jogador</th>
                             <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Pts</th>
                             <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">V</th>
                             <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">D</th>
+                            <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">W.O.</th>
                             <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Sets</th>
                             <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Saldo Sets</th>
                             <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Games</th>
                             <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Saldo Games</th>
+                            {tournament.challengeConfig?.showChallengeColumn && (
+                              <th className="text-center py-2 px-2 text-xs font-medium text-gray-500">Desafios</th>
+                            )}
                           </tr>
                         </thead>
                         <tbody>
@@ -1986,10 +2038,21 @@ export default function TournamentPage() {
                               <td className="py-2 px-2 text-center font-semibold text-gray-900">{r.points}</td>
                               <td className="py-2 px-2 text-center text-green-600">{r.wins}</td>
                               <td className="py-2 px-2 text-center text-red-500">{r.losses}</td>
+                              <td className="py-2 px-2 text-center text-orange-500">{r.lossesByWO > 0 ? r.lossesByWO : '-'}</td>
                               <td className="py-2 px-2 text-center text-gray-600">{r.setsWon}-{r.setsLost}</td>
                               <td className="py-2 px-2 text-center text-gray-600">{r.setBalance}</td>
                               <td className="py-2 px-2 text-center text-gray-600">{r.gamesWon}-{r.gamesLost}</td>
                               <td className="py-2 px-2 text-center text-gray-600">{r.gamesBalance}</td>
+                              {tournament.challengeConfig?.showChallengeColumn && (
+                                <td className="py-2 px-2 text-center text-gray-600">
+                                  {r.challengeMatches > 0 ? (
+                                    <div className="text-xs">
+                                      <span className="text-purple-600 font-medium">{r.challengeWins}V {r.challengeLosses}D</span>
+                                      <span className="text-gray-400 block">{r.challengePoints > 0 ? '+' : ''}{r.challengePoints} pts</span>
+                                    </div>
+                                  ) : '-'}
+                                </td>
+                              )}
                             </tr>
                           ))}
                         </tbody>
