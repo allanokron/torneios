@@ -208,7 +208,10 @@ export async function PATCH(
         cancellationRules: body.cancellationRules,
         autoFinishOnFirstSubmission: body.autoFinishOnFirstSubmission,
         maxPostponements: body.maxPostponements,
-        postponementScope: body.postponementScope
+        postponementScope: body.postponementScope,
+        registrationFee: body.registrationFee,
+        paymentMethod: body.paymentMethod,
+        pixExpirationMinutes: body.pixExpirationMinutes,
       },
       include: {
         owner: {

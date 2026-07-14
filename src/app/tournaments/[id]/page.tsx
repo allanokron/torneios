@@ -11,6 +11,7 @@ import ScheduleProposalForm from "@/components/tournament/ScheduleProposalForm"
 import ProposalCard from "@/components/tournament/ProposalCard"
 import MatchResultForm from "@/components/tournament/MatchResultForm"
 import MatchEditForm from "@/components/tournament/MatchEditForm"
+import PixPaymentScreen from "@/components/tournament/PixPaymentScreen"
 
 interface Tournament {
   id: string
@@ -93,6 +94,9 @@ interface Tournament {
     countGames: boolean
     showChallengeColumn: boolean
   }
+  registrationFee?: number | null
+  paymentMethod?: string | null
+  pixExpirationMinutes?: number
   _count: {
     matches: number
     announcements: number
@@ -224,6 +228,14 @@ export default function TournamentPage() {
   const [newMatchError, setNewMatchError] = useState("")
   const [requestingJoin, setRequestingJoin] = useState(false)
   const [joinMessage, setJoinMessage] = useState("")
+  const [showPixPayment, setShowPixPayment] = useState(false)
+  const [pixPaymentData, setPixPaymentData] = useState<{
+    paymentId: string
+    qrCode: string
+    pixPayload: string
+    expiresAt: string
+    value: number
+  } | null>(null)
 
   // My Matches filters
   const [myFilterDateFrom, setMyFilterDateFrom] = useState("")
@@ -518,8 +530,48 @@ export default function TournamentPage() {
     if (!user) return
     setRequestingJoin(true)
     setJoinMessage("")
+
     try {
       const token = localStorage.getItem("token")
+
+      // Se torneio tem inscrição paga, criar pagamento PIX
+      if (tournament.registrationFee && tournament.registrationFee > 0) {
+        const res = await fetch(`/api/tournaments/${tournament.id}/payments`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          }
+        })
+        const data = await res.json()
+
+        if (!res.ok) {
+          setJoinMessage(data.error || "Erro ao criar pagamento")
+          setRequestingJoin(false)
+          return
+        }
+
+        // Se já tem pagamento existente
+        if (data.paymentId && !data.qrCode) {
+          setJoinMessage("Você já possui um pagamento pendente para este torneio")
+          setRequestingJoin(false)
+          return
+        }
+
+        // Mostrar tela de pagamento PIX
+        setPixPaymentData({
+          paymentId: data.paymentId,
+          qrCode: data.qrCode,
+          pixPayload: data.pixPayload,
+          expiresAt: data.expiresAt,
+          value: data.value,
+        })
+        setShowPixPayment(true)
+        setRequestingJoin(false)
+        return
+      }
+
+      // Fluxo normal (torneio gratuito)
       const res = await fetch(`/api/tournaments/${tournament.id}/members`, {
         method: "POST",
         headers: {
@@ -606,7 +658,7 @@ export default function TournamentPage() {
                     disabled={requestingJoin}
                     className="btn-primary text-sm disabled:opacity-50"
                   >
-                    {requestingJoin ? "Enviando..." : "Solicitar Participação"}
+                    {requestingJoin ? "Enviando..." : tournament.registrationFee ? `Inscrever-se - R$ ${(tournament.registrationFee / 100).toFixed(2)}` : "Solicitar Participação"}
                   </button>
                   {joinMessage && (
                     <p className="text-xs mt-1" style={{ color: joinMessage.includes("Erro") || joinMessage.includes("não") ? "#ef4444" : 'var(--accent)' }}>
@@ -2364,6 +2416,32 @@ export default function TournamentPage() {
           </div>
         </div>
       </main>
+
+      {/* PIX Payment Modal */}
+      {showPixPayment && pixPaymentData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="w-full max-w-md">
+            <PixPaymentScreen
+              tournamentId={tournament.id}
+              tournamentName={tournament.name}
+              paymentId={pixPaymentData.paymentId}
+              qrCodeImage={pixPaymentData.qrCode}
+              pixPayload={pixPaymentData.pixPayload}
+              expiresAt={pixPaymentData.expiresAt}
+              value={pixPaymentData.value}
+              onPaymentConfirmed={() => {
+                setShowPixPayment(false)
+                setPixPaymentData(null)
+                fetchTournament()
+              }}
+              onCancel={() => {
+                setShowPixPayment(false)
+                setPixPaymentData(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

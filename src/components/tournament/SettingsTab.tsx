@@ -70,6 +70,9 @@ interface Tournament {
     countGames: boolean
     showChallengeColumn: boolean
   }
+  registrationFee?: number | null
+  paymentMethod?: string | null
+  pixExpirationMinutes?: number
 }
 
 interface SettingsTabProps {
@@ -83,7 +86,7 @@ const normalizeTournamentFormat = (format?: string) =>
     : "points_ranking"
 
 export default function SettingsTab({ tournament, onTournamentUpdated }: SettingsTabProps) {
-  const [activeSection, setActiveSection] = useState<"general" | "rules" | "scoring" | "tiebreaker" | "challenge" | "courts">("general")
+  const [activeSection, setActiveSection] = useState<"general" | "rules" | "scoring" | "tiebreaker" | "challenge" | "courts" | "payment">("general")
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState("")
   const [error, setError] = useState("")
@@ -174,6 +177,10 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
   const [editingCourt, setEditingCourt] = useState<string | null>(null)
   const [editCourtName, setEditCourtName] = useState("")
   const [editCourtSurface, setEditCourtSurface] = useState("")
+
+  // Payment form
+  const [registrationFee, setRegistrationFee] = useState(tournament.registrationFee?.toString() || "")
+  const [pixExpirationMinutes, setPixExpirationMinutes] = useState(tournament.pixExpirationMinutes || 30)
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
@@ -489,6 +496,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
     { id: "tiebreaker" as const, label: "Desempate" },
     { id: "challenge" as const, label: "Desafio" },
     { id: "courts" as const, label: "Quadras" },
+    { id: "payment" as const, label: "Pagamento" },
   ]
 
   return (
@@ -1165,6 +1173,123 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ===== PAYMENT ===== */}
+        {activeSection === "payment" && (
+          <div className="space-y-4 max-w-xl">
+            <div>
+              <label className="label">Tipo de inscrição</label>
+              <div className="flex gap-4 mt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="registrationType"
+                    checked={!registrationFee}
+                    onChange={() => setRegistrationFee("")}
+                    className="w-4 h-4"
+                    style={{ accentColor: "var(--accent)" }}
+                  />
+                  <span className="text-sm" style={{ color: "var(--text)" }}>Gratuita</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="registrationType"
+                    checked={!!registrationFee}
+                    onChange={() => setRegistrationFee("1000")}
+                    className="w-4 h-4"
+                    style={{ accentColor: "var(--accent)" }}
+                  />
+                  <span className="text-sm" style={{ color: "var(--text)" }}>Paga (PIX)</span>
+                </label>
+              </div>
+            </div>
+
+            {registrationFee && (
+              <>
+                <div>
+                  <label className="label">Valor da inscrição (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={registrationFee ? (parseInt(registrationFee) / 100).toFixed(2) : ""}
+                    onChange={e => {
+                      const value = Math.round(parseFloat(e.target.value) * 100)
+                      setRegistrationFee(isNaN(value) ? "" : value.toString())
+                    }}
+                    className="input"
+                    placeholder="0,00"
+                  />
+                  <p className="text-xs mt-1" style={{ color: "var(--neutral-400)" }}>
+                    Valor em reais. Forma de pagamento: PIX (fixo)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="label">Prazo para pagamento do PIX</label>
+                  <select
+                    value={pixExpirationMinutes}
+                    onChange={e => setPixExpirationMinutes(parseInt(e.target.value))}
+                    className="input"
+                  >
+                    <option value={15}>15 minutos</option>
+                    <option value={30}>30 minutos</option>
+                    <option value={60}>1 hora</option>
+                    <option value={120}>2 horas</option>
+                    <option value={360}>6 horas</option>
+                    <option value={720}>12 horas</option>
+                    <option value={1440}>24 horas</option>
+                  </select>
+                </div>
+
+                <div className="p-4 rounded-xl" style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+                  <p className="text-sm" style={{ color: "var(--text)" }}>
+                    As inscrições deste torneio serão pagas exclusivamente por PIX.
+                  </p>
+                  <p className="text-sm mt-2" style={{ color: "var(--neutral-400)" }}>
+                    Cada participante receberá um QR Code e um código PIX Copia e Cola individual. A vaga será confirmada somente após a identificação do pagamento.
+                  </p>
+                </div>
+              </>
+            )}
+
+            <button
+              onClick={async () => {
+                setSaving(true)
+                setError("")
+                setSuccess("")
+                try {
+                  const token = localStorage.getItem("token")
+                  const res = await fetch(`/api/tournaments/${tournament.id}`, {
+                    method: "PATCH",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      registrationFee: registrationFee ? parseInt(registrationFee) : null,
+                      paymentMethod: "PIX",
+                      pixExpirationMinutes,
+                    }),
+                  })
+                  if (!res.ok) throw new Error("Erro ao salvar")
+                  const updated = await res.json()
+                  onTournamentUpdated(updated.tournament)
+                  setSuccess("Configurações de pagamento salvas!")
+                } catch {
+                  setError("Erro ao salvar configurações de pagamento")
+                } finally {
+                  setSaving(false)
+                }
+              }}
+              disabled={saving}
+              className="btn-primary disabled:opacity-50"
+            >
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
           </div>
         )}
       </div>

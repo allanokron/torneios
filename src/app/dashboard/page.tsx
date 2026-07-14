@@ -278,6 +278,22 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+
+            <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <h3 className="font-medium mb-3" style={{ color: 'var(--text)' }}>Assinatura</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm" style={{ color: 'var(--neutral-400)' }}>Status</span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--neutral-400)' }}>Gratuito</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
+                  Assine para criar torneios e ter acesso a todos os recursos.
+                </p>
+                <Link href="/settings" className="btn-secondary w-full justify-center text-sm">
+                  Ver planos
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </main>

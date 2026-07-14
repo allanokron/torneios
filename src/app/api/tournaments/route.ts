@@ -130,7 +130,10 @@ export async function POST(request: Request) {
       cancellationRules,
       autoFinishOnFirstSubmission,
       scoringConfig,
-      tiebreakerConfig
+      tiebreakerConfig,
+      registrationFee,
+      paymentMethod,
+      pixExpirationMinutes,
     } = body
 
     if (!name || !startDate) {
@@ -189,6 +192,9 @@ export async function POST(request: Request) {
         termsOfResponsibility: termsOfResponsibility || null,
         cancellationRules: cancellationRules || null,
         autoFinishOnFirstSubmission: autoFinishOnFirstSubmission || false,
+        registrationFee: registrationFee || null,
+        paymentMethod: paymentMethod || "PIX",
+        pixExpirationMinutes: pixExpirationMinutes || 30,
         members: {
           create: {
             userId: decoded.userId,
