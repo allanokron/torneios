@@ -142,9 +142,13 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
   const [tiebreakerCriteria, setTiebreakerCriteria] = useState<string[]>(
     tournament.tiebreakerConfig?.criteriaOrder ?? [
       "points",
-      "sets_won",
+      "set_balance",
       "games_balance",
-      "direct_confrontation"
+      "direct_confrontation",
+      "wins",
+      "games_won",
+      "fewer_wo",
+      "draw"
     ]
   )
   const [tiebreakerChanged, setTiebreakerChanged] = useState(false)
@@ -893,14 +897,22 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                       <p className="text-sm font-medium text-gray-900">
                         {criteria === "points" && "Soma de Pontos"}
                         {criteria === "sets_won" && "Sets Vencidos"}
+                        {criteria === "set_balance" && "Saldo de Sets"}
                         {criteria === "games_balance" && "Saldo de Games"}
                         {criteria === "direct_confrontation" && "Confronto Direto"}
+                        {criteria === "wins" && "Vitórias"}
+                        {criteria === "games_won" && "Games Ganhos"}
+                        {criteria === "fewer_wo" && "Menos W.O."}
                       </p>
                       <p className="text-xs text-gray-500">
                         {criteria === "points" && "Maior pontuação total"}
                         {criteria === "sets_won" && "Maior quantidade de sets vencidos"}
+                        {criteria === "set_balance" && "Maior saldo de sets (ganhos - perdidos)"}
                         {criteria === "games_balance" && "Maior saldo de games (ganhos - perdidos)"}
                         {criteria === "direct_confrontation" && "Resultado do confronto direto entre os jogadores"}
+                        {criteria === "wins" && "Maior quantidade de vitórias"}
+                        {criteria === "games_won" && "Maior quantidade de games vencidos"}
+                        {criteria === "fewer_wo" && "Menor quantidade de derrotas por W.O."}
                       </p>
                     </div>
                     <div className="flex gap-1">

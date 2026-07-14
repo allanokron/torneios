@@ -17,11 +17,10 @@ const DEFAULT_SCORING = {
 
 const DEFAULT_TIEBREAKER_ORDER = [
   "points",
-  "wins",
-  "direct_confrontation",
   "set_balance",
-  "sets_won",
   "games_balance",
+  "direct_confrontation",
+  "wins",
   "games_won",
   "fewer_wo",
   "draw",
