@@ -855,7 +855,7 @@ export default function TournamentPage() {
                         <select
                           value={drawnFilterPlayer}
                           onChange={e => setDrawnFilterPlayer(e.target.value)}
-                          className="w-full sm:w-64 text-sm rounded-lg px-3 py-2"
+                          className="w-full sm:w-64 text-sm rounded-xl px-3 py-2"
                           style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
                         >
                           <option value="">Todos os jogadores</option>
@@ -894,7 +894,7 @@ export default function TournamentPage() {
                     {drawnSubTab === "month" && (
                       <>
                         {/* Month block notice */}
-                        <div className="rounded-lg p-3 mb-4" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+                        <div className="rounded-xl p-3 mb-4" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
                           <div className="flex gap-2">
                             <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -957,7 +957,7 @@ export default function TournamentPage() {
                                   {isOwner && (
                                     <button
                                       onClick={() => setEditingMatch(m)}
-                                      className="p-1.5 rounded-lg transition-colors"
+                                      className="p-1.5 rounded-xl transition-colors"
                                       style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)' }}
                                       title="Editar partida"
                                     >
@@ -1059,7 +1059,7 @@ export default function TournamentPage() {
                               {isOwner && (
                                 <button
                                   onClick={() => handleUnlockMatches(drawnPendingFuture.map(m => m.id))}
-                                  className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                                  className="px-3 py-1.5 text-xs font-medium rounded-xl transition-colors"
                                   style={{ background: 'var(--accent)', color: 'var(--primary)' }}
                                 >
                                   Liberar Todos para Agendamento
@@ -1188,10 +1188,10 @@ export default function TournamentPage() {
                 <div className="space-y-4">
                   {/* Sub-tabs */}
                   <div className="rounded-2xl p-1 flex gap-1" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                    <button onClick={() => setMatchSubTab("upcoming")} className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors" style={matchSubTab === "upcoming" ? { background: 'rgba(184, 224, 0, 0.1)', color: 'var(--accent-dark)' } : { color: 'var(--neutral-400)' }}>
+                    <button onClick={() => setMatchSubTab("upcoming")} className="flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-colors" style={matchSubTab === "upcoming" ? { background: 'rgba(184, 224, 0, 0.1)', color: 'var(--accent-dark)' } : { color: 'var(--neutral-400)' }}>
                       Próximos Jogos ({upcoming.length})
                     </button>
-                    <button onClick={() => setMatchSubTab("completed")} className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors" style={matchSubTab === "completed" ? { background: 'rgba(184, 224, 0, 0.1)', color: 'var(--accent-dark)' } : { color: 'var(--neutral-400)' }}>
+                    <button onClick={() => setMatchSubTab("completed")} className="flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-colors" style={matchSubTab === "completed" ? { background: 'rgba(184, 224, 0, 0.1)', color: 'var(--accent-dark)' } : { color: 'var(--neutral-400)' }}>
                       Jogos Realizados ({completed.length})
                     </button>
                   </div>
@@ -1315,24 +1315,24 @@ export default function TournamentPage() {
                                       {getMatchStatusLabel(match.status)}
                                     </span>
                                     {canSchedule && !hasPendingProposal && (
-                                      <button onClick={() => setSchedulingMatch(match)} className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap" style={{ background: 'var(--accent)', color: 'var(--primary)' }}>
+                                      <button onClick={() => setSchedulingMatch(match)} className="px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap" style={{ background: 'var(--accent)', color: 'var(--primary)' }}>
                                         Agendar
                                       </button>
                                     )}
                                     {canStart && (
-                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors whitespace-nowrap" style={{ background: '#2563eb' }}>
+                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white rounded-xl transition-colors whitespace-nowrap" style={{ background: '#2563eb' }}>
                                         Iniciar
                                       </button>
                                     )}
                                     {canResult && (
-                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors whitespace-nowrap" style={{ background: '#d97706' }}>
+                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white rounded-xl transition-colors whitespace-nowrap" style={{ background: '#d97706' }}>
                                         Placar
                                       </button>
                                     )}
                                     {isOwner && (
                                       <button
                                         onClick={() => setEditingMatch(match)}
-                                        className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                                        className="px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap"
                                         style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)' }}
                                       >
                                         Editar
@@ -1342,7 +1342,7 @@ export default function TournamentPage() {
                                       <button
                                         onClick={() => handleDeleteMatch(match.id)}
                                         disabled={deletingMatchId === match.id}
-                                        className="px-3 py-1.5 text-xs font-medium hover:bg-red-50 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                                        className="px-3 py-1.5 text-xs font-medium hover:bg-red-50 rounded-xl transition-colors whitespace-nowrap disabled:opacity-50"
                                         style={{ color: '#ef4444' }}
                                       >
                                         Apagar
@@ -1438,7 +1438,7 @@ export default function TournamentPage() {
                                       </svg>
                                     )}
                                     {canEdit && (
-                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap" style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)' }}>
+                                      <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap" style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)' }}>
                                         Editar
                                       </button>
                                     )}
@@ -1446,7 +1446,7 @@ export default function TournamentPage() {
                                       <button
                                         onClick={() => handleDeleteMatch(match.id)}
                                         disabled={deletingMatchId === match.id}
-                                        className="px-2 py-1.5 text-xs font-medium hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                        className="px-2 py-1.5 text-xs font-medium hover:bg-red-50 rounded-xl transition-colors disabled:opacity-50"
                                         style={{ color: '#ef4444' }}
                                         title="Apagar partida"
                                       >
@@ -1633,8 +1633,8 @@ export default function TournamentPage() {
                         </select>
                         {newMatchError && <p className="text-sm mb-3" style={{ color: '#ef4444' }}>{newMatchError}</p>}
                         <div className="flex gap-2">
-                          <button onClick={() => setShowNewMatch(false)} className="flex-1 py-2.5 text-sm font-medium rounded-lg" style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)', border: '1px solid var(--border)' }}>Cancelar</button>
-                          <button onClick={handleCreateMatch} disabled={creatingMatch || !newMatchOpponent} className="flex-1 py-2.5 text-sm font-medium rounded-lg disabled:opacity-50" style={{ background: 'var(--accent)', color: 'var(--primary)' }}>
+                          <button onClick={() => setShowNewMatch(false)} className="flex-1 py-2.5 text-sm font-medium rounded-xl" style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)', border: '1px solid var(--border)' }}>Cancelar</button>
+                          <button onClick={handleCreateMatch} disabled={creatingMatch || !newMatchOpponent} className="flex-1 py-2.5 text-sm font-medium rounded-xl disabled:opacity-50" style={{ background: 'var(--accent)', color: 'var(--primary)' }}>
                             {creatingMatch ? "Criando..." : "Criar Partida"}
                           </button>
                         </div>
@@ -1746,24 +1746,24 @@ export default function TournamentPage() {
                                     {getMatchStatusLabel(match.status)}
                                   </span>
                                   {canSchedule && !hasPendingProposal && (
-                                    <button onClick={() => setSchedulingMatch(match)} className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap" style={{ background: 'var(--accent)', color: 'var(--primary)' }}>
+                                    <button onClick={() => setSchedulingMatch(match)} className="px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap" style={{ background: 'var(--accent)', color: 'var(--primary)' }}>
                                       Agendar
                                     </button>
                                   )}
                                   {canStart && (
-                                    <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors whitespace-nowrap" style={{ background: '#2563eb' }}>
+                                    <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white rounded-xl transition-colors whitespace-nowrap" style={{ background: '#2563eb' }}>
                                       Iniciar
                                     </button>
                                   )}
                                   {canResult && (
-                                    <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors whitespace-nowrap" style={{ background: '#d97706' }}>
+                                    <button onClick={() => setResultMatch(match)} className="px-3 py-1.5 text-xs font-medium text-white rounded-xl transition-colors whitespace-nowrap" style={{ background: '#d97706' }}>
                                       Placar
                                     </button>
                                   )}
                                   {isOwner && (
                                     <button
                                       onClick={() => setEditingMatch(match)}
-                                      className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                                      className="px-3 py-1.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap"
                                       style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)' }}
                                     >
                                       Editar
@@ -1773,7 +1773,7 @@ export default function TournamentPage() {
                                     <button
                                       onClick={() => handleDeleteMatch(match.id)}
                                       disabled={deletingMatchId === match.id}
-                                      className="px-3 py-1.5 text-xs font-medium hover:bg-red-50 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                                      className="px-3 py-1.5 text-xs font-medium hover:bg-red-50 rounded-xl transition-colors whitespace-nowrap disabled:opacity-50"
                                       style={{ color: '#ef4444' }}
                                     >
                                       Apagar
@@ -1808,7 +1808,7 @@ export default function TournamentPage() {
                   {pendingFuture.length > 0 && (
                     <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                       <h3 className="font-medium mb-2" style={{ color: 'var(--text)' }}>Jogos Futuros ({pendingFuture.length})</h3>
-                      <p className="text-xs rounded-lg px-3 py-2 mb-3" style={{ color: '#d97706', background: '#fffbeb', border: '1px solid #fde68a' }}>
+                      <p className="text-xs rounded-xl px-3 py-2 mb-3" style={{ color: '#d97706', background: '#fffbeb', border: '1px solid #fde68a' }}>
                         Estes jogos ficarão disponíveis para agendamento a partir do dia 1º do respectivo mês.
                       </p>
                       <div className="space-y-2">
@@ -1891,7 +1891,7 @@ export default function TournamentPage() {
                               {isOwner && (
                                 <button
                                   onClick={() => setEditingMatch(match)}
-                                  className="flex-shrink-0 px-2 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                                  className="flex-shrink-0 px-2 py-1.5 text-xs font-medium rounded-xl transition-colors"
                                   style={{ color: 'var(--neutral-600)', background: 'var(--neutral-100)' }}
                                   title="Editar partida"
                                 >
@@ -1904,7 +1904,7 @@ export default function TournamentPage() {
                                 <button
                                   onClick={() => handleDeleteMatch(match.id)}
                                   disabled={deletingMatchId === match.id}
-                                  className="flex-shrink-0 px-2 py-1.5 text-xs font-medium hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                  className="flex-shrink-0 px-2 py-1.5 text-xs font-medium hover:bg-red-50 rounded-xl transition-colors disabled:opacity-50"
                                   style={{ color: '#ef4444' }}
                                   title="Apagar partida"
                                 >
@@ -1997,7 +1997,7 @@ export default function TournamentPage() {
                     <select
                       value={rankingMonth}
                       onChange={e => handleMonthChange(e.target.value)}
-                      className="text-sm rounded-lg px-3 py-2"
+                      className="text-sm rounded-xl px-3 py-2"
                       style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
                     >
                       <option value="">Geral (todos os meses)</option>
@@ -2106,20 +2106,20 @@ export default function TournamentPage() {
                   ) : (
                     <>
                       {!knockout.isRankingComplete && !knockout.locked && (
-                        <div className="mb-4 rounded-lg p-3 text-sm" style={{ border: '1px solid #fde68a', background: '#fffbeb', color: '#92400e' }}>
+                        <div className="mb-4 rounded-xl p-3 text-sm" style={{ border: '1px solid #fde68a', background: '#fffbeb', color: '#92400e' }}>
                           O chaveamento ainda é uma projeção. O agendamento será liberado depois que todos os jogos do ranking forem finalizados e o organizador travar o mata-mata.
                         </div>
                       )}
                       <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="rounded-lg p-3" style={{ border: '1px solid var(--border)' }}>
+                        <div className="rounded-xl p-3" style={{ border: '1px solid var(--border)' }}>
                           <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>Classificados</p>
                           <p className="text-lg font-semibold" style={{ color: 'var(--text)' }}>{knockout.qualifiers}</p>
                         </div>
-                        <div className="rounded-lg p-3" style={{ border: '1px solid var(--border)' }}>
+                        <div className="rounded-xl p-3" style={{ border: '1px solid var(--border)' }}>
                           <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>Status ranking</p>
                           <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{knockout.isRankingComplete ? "Encerrado" : "Em andamento"}</p>
                         </div>
-                        <div className="rounded-lg p-3" style={{ border: '1px solid var(--border)' }}>
+                        <div className="rounded-xl p-3" style={{ border: '1px solid var(--border)' }}>
                           <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>Chave</p>
                           <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{knockout.locked ? "Travada" : "Projetada"}</p>
                         </div>
@@ -2262,7 +2262,7 @@ export default function TournamentPage() {
                                 : { border: '1px solid var(--border)' }
                               }
                             >
-                              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={isSelected ? { background: '#dbeafe' } : { background: '#eff6ff' }}>
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={isSelected ? { background: '#dbeafe' } : { background: '#eff6ff' }}>
                                 <svg className="w-5 h-5" style={{ color: isSelected ? '#1d4ed8' : '#2563eb' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4V4zm0 8h16M9 4v16M15 4v16" />
                                 </svg>
@@ -2407,14 +2407,14 @@ function KnockoutBracketView({
 
   if (layout.items.length === 0) {
     return (
-      <div className="rounded-lg p-6 text-center" style={{ border: '1px solid var(--border)', background: 'var(--neutral-50)' }}>
+      <div className="rounded-xl p-6 text-center" style={{ border: '1px solid var(--border)', background: 'var(--neutral-50)' }}>
         <p className="text-sm" style={{ color: 'var(--neutral-400)' }}>Nenhum jogo de mata-mata disponível.</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg" style={{ border: '1px solid var(--border)', background: 'var(--neutral-50)' }}>
+    <div className="rounded-xl" style={{ border: '1px solid var(--border)', background: 'var(--neutral-50)' }}>
       <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
         <div>
           <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Chaveamento</p>
