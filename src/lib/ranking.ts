@@ -164,6 +164,7 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
         homePlayerId: true,
         awayPlayerId: true,
         challengePoints: true,
+        challengePointsChallenged: true,
       },
     }),
   ])
@@ -263,7 +264,7 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
   }
 
   // Accumulate challenge stats
-  // challengePoints on match = challenger's points (positive = challenger won, negative = challenger lost)
+  // challengePoints on match = challenger's points, challengePointsChallenged = challenged's points
   // Challenger is always the home player (set at match creation via PATCH)
   for (const match of challengeMatches) {
     if (match.challengePoints === null) continue
@@ -280,9 +281,10 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
     homeCs.challengeMatches++
     awayCs.challengeMatches++
 
-    // Home player is the challenger, challengePoints is from challenger's perspective
+    // Home player is the challenger
     homeCs.challengePoints += match.challengePoints
-    awayCs.challengePoints -= match.challengePoints
+    // Challenged player gets their configured points (may differ from negation of challenger's)
+    awayCs.challengePoints += match.challengePointsChallenged ?? 0
 
     const challengerWon = match.challengePoints > 0
     if (challengerWon) {

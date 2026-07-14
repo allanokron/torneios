@@ -249,6 +249,7 @@ model Match {
   challengePositionHome    Int?
   challengePositionAway    Int?
   challengePoints          Int?
+  challengePointsChallenged Int?
   challengeReferenceMonth  String?
 
   createdAt DateTime @default(now())

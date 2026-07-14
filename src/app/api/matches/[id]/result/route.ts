@@ -290,7 +290,7 @@ export async function POST(
 
           await prisma.match.update({
             where: { id },
-            data: { challengePoints: result.challengerPoints },
+            data: { challengePoints: result.challengerPoints, challengePointsChallenged: result.challengedPoints },
           })
 
           // Update challenger ranking
@@ -504,7 +504,7 @@ export async function POST(
 
           await prisma.match.update({
             where: { id },
-            data: { challengePoints: result.challengerPoints },
+            data: { challengePoints: result.challengerPoints, challengePointsChallenged: result.challengedPoints },
           })
 
           // Update challenger ranking
@@ -677,7 +677,7 @@ export async function POST(
 
           await prisma.match.update({
             where: { id },
-            data: { challengePoints: result.challengerPoints },
+            data: { challengePoints: result.challengerPoints, challengePointsChallenged: result.challengedPoints },
           })
 
           // Update challenger ranking
