@@ -144,13 +144,14 @@ interface Ranking {
   points: number
   wins: number
   losses: number
+  winsByWO: number
+  lossesByWO: number
   setsWon: number
   setsLost: number
   gamesWon: number
   gamesLost: number
   setBalance: number
   gamesBalance: number
-  lossesByWO: number
   challengePoints: number
   challengeMatches: number
   challengeWins: number
@@ -2248,17 +2249,13 @@ export default function TournamentPage() {
                               <td className="py-2 px-2 text-center" style={{ color: 'var(--accent)' }}>{r.wins}</td>
                               <td className="py-2 px-2 text-center" style={{ color: '#ef4444' }}>{r.losses}</td>
                               <td className="py-2 px-2 text-center" style={{ color: '#f97316' }}>
-                                {(r.lossesByWO > 0 || (r.woPointsWon ?? 0) > 0) ? (
+                                {(r.winsByWO ?? 0) > 0 || (r.lossesByWO ?? 0) > 0 ? (
                                   <div className="text-xs">
                                     <span style={{ color: '#f97316' }} className="font-medium">
-                                      {(r.woPointsWon ?? 0) > 0 ? `${r.woPointsWon} pts ganhos` : ''}
-                                      {(r.woPointsWon ?? 0) > 0 && (r.woPointsLost ?? 0) > 0 ? ' / ' : ''}
-                                      {(r.woPointsLost ?? 0) > 0 ? `${r.woPointsLost} pts perdidos` : ''}
+                                      {r.winsByWO ?? 0}V {r.lossesByWO ?? 0}D
                                     </span>
                                     <span className="block" style={{ color: 'var(--neutral-300)' }}>
-                                      {(r.woSetsWon ?? 0) > 0 || (r.woSetsLost ?? 0) > 0 ? `${r.woSetsWon ?? 0}S ${r.woSetsLost ?? 0}S` : ''}
-                                      {(r.woSetsWon ?? 0) > 0 || (r.woSetsLost ?? 0) > 0 ? ' · ' : ''}
-                                      {(r.woGamesWon ?? 0) > 0 || (r.woGamesLost ?? 0) > 0 ? `${r.woGamesWon ?? 0}G ${r.woGamesLost ?? 0}G` : ''}
+                                      {((r.woPointsWon ?? 0) - (r.woPointsLost ?? 0)) > 0 ? '+' : ''}{(r.woPointsWon ?? 0) - (r.woPointsLost ?? 0)} pts
                                     </span>
                                   </div>
                                 ) : '-'}
