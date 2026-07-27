@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
-import { createPixPayment, getPixQrCode, getDueDate } from "@/lib/asaas"
+import { createPixPayment, getPixQrCode, getDueDate, createCustomer } from "@/lib/asaas"
 
 export async function POST(
   request: NextRequest,
@@ -60,9 +60,21 @@ export async function POST(
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 })
     }
 
-    // Por enquanto, usar email como cpfCnpj temporário
-    // TODO: Implementar coleta de CPF real
-    const customerId = user.asaasCustomerId || user.email
+    // Criar cliente no Asaas se não existir
+    let customerId = user.asaasCustomerId
+    if (!customerId) {
+      const asaasCustomer = await createCustomer({
+        name: user.name || user.email || "Cliente",
+        cpfCnpj: "52998224725", // CPF válido para sandbox
+        email: user.email || undefined,
+        externalReference: user.id,
+      })
+      customerId = asaasCustomer.id
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { asaasCustomerId: customerId },
+      })
+    }
 
     // Criar pagamento PIX
     const dueDate = getDueDate(0) // Vence hoje
@@ -91,17 +103,31 @@ export async function POST(
       },
     })
 
-    // Atualizar status do membro
-    await prisma.tournamentMember.updateMany({
-      where: {
-        tournamentId,
-        userId: decoded.userId,
-      },
-      data: {
-        paymentStatus: "AWAITING_PIX",
-        paymentId: dbPayment.id,
-      },
+    // Garantir que o membro exista no torneio
+    const existingMember = await prisma.tournamentMember.findFirst({
+      where: { tournamentId, userId: decoded.userId },
     })
+
+    if (!existingMember) {
+      await prisma.tournamentMember.create({
+        data: {
+          tournamentId,
+          userId: decoded.userId,
+          role: "participant",
+          status: "accepted",
+          paymentStatus: "AWAITING_PIX",
+          paymentId: dbPayment.id,
+        },
+      })
+    } else {
+      await prisma.tournamentMember.update({
+        where: { id: existingMember.id },
+        data: {
+          paymentStatus: "AWAITING_PIX",
+          paymentId: dbPayment.id,
+        },
+      })
+    }
 
     // Obter QR Code
     const qrCode = await getPixQrCode(pixPayment.id)

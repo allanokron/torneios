@@ -134,6 +134,9 @@ export async function POST(request: Request) {
       registrationFee,
       paymentMethod,
       pixExpirationMinutes,
+      isOrganizerPlayer,
+      rankingPhaseDays,
+      knockoutPhaseDays,
     } = body
 
     if (!name || !startDate) {
@@ -195,13 +198,16 @@ export async function POST(request: Request) {
         registrationFee: registrationFee || null,
         paymentMethod: paymentMethod || "PIX",
         pixExpirationMinutes: pixExpirationMinutes || 30,
+        isOrganizerPlayer: isOrganizerPlayer !== false,
+        rankingPhaseDays: rankingPhaseDays || null,
+        knockoutPhaseDays: knockoutPhaseDays || null,
         members: {
-          create: {
+          create: isOrganizerPlayer !== false ? {
             userId: decoded.userId,
             role: "organizer",
             status: "accepted",
             joinedAt: new Date()
-          }
+          } : undefined
         },
         scoringConfig: scoringConfig ? {
           create: {

@@ -82,10 +82,20 @@ export default function PixPaymentScreen({
   }, [pixPayload])
 
   // Check payment status
-  const checkPaymentStatus = useCallback(async () => {
+  const checkPaymentStatus = useCallback(async (trySandboxConfirm = false) => {
     setChecking(true)
     try {
       const token = localStorage.getItem("token")
+
+      // Em sandbox, tentar confirmar automaticamente (apenas no clique do botão)
+      if (trySandboxConfirm) {
+        await fetch(`/api/sandbox/confirm-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ paymentId }),
+        }).catch(() => {})
+      }
+
       const res = await fetch(`/api/tournaments/${tournamentId}/payments/${paymentId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -220,7 +230,7 @@ export default function PixPaymentScreen({
       <div className="space-y-2">
         {!isExpired && (
           <button
-            onClick={checkPaymentStatus}
+            onClick={() => checkPaymentStatus(true)}
             disabled={checking}
             className="w-full btn-primary disabled:opacity-50"
           >

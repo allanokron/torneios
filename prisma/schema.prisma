@@ -118,6 +118,13 @@ model Tournament {
   pixExpirationMinutes   Int      @default(30)
   subscriptionRequired   Boolean  @default(true)
 
+  // Fases do torneio
+  rankingPhaseDays   Int?  // dias para a fase de ranking (round-robin)
+  knockoutPhaseDays  Int?  // dias para a fase de mata-mata
+
+  // Organizador
+  isOrganizerPlayer Boolean @default(true) // se o organizador vai jogar
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

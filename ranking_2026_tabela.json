@@ -1,0 +1,2085 @@
+{
+  "torneio": "Ranking 2026",
+  "aba": "Tabela",
+  "total_jogos": 50,
+  "total_participantes": 25,
+  "participantes_ordenados": [
+    "&nbsp;&nbsp;",
+    "ALINE",
+    "ALÊ",
+    "BONA",
+    "CARLOS",
+    "CHINA",
+    "CHRISTIAN",
+    "CID",
+    "DU",
+    "EDSON",
+    "EVERTON",
+    "EZEQUIAS",
+    "GIULIA",
+    "GUILHERME",
+    "GUSTAVO",
+    "JANICE",
+    "JOAO GABRIEL",
+    "LUIZ",
+    "LUKINHA",
+    "MURILO",
+    "NICELIO",
+    "SAMUEL",
+    "STEFAN",
+    "THIAGO",
+    "ULYSSES"
+  ],
+  "rodadas_detectadas": [
+    "Rodada 01",
+    "Rodada 02",
+    "Rodada 03",
+    "Rodada 04",
+    "Rodada 05"
+  ],
+  "regras_detectadas": {
+    "formato_jogo": "Melhor de 3 sets (primeiro a vencer 2 sets)",
+    "sistema_pontuacao": {
+      "vitoria_2x0": "200 pontos",
+      "vitoria_2x1": "170 pontos",
+      "derrota_1x2": "100 pontos",
+      "derrota_0x2": "30 pontos"
+    },
+    "colunas": {
+      "Tabela": "Indica jogo oficial do torneio (1 = jogo de tabela, presente em todos os registros)",
+      "Desafio": "Indica jogo de desafio (coluna presente mas sem valores nos dados extraídos)",
+      "WO_Venc": "Walkover vencido (coluna presente mas sem valores nos dados extraídos)",
+      "WO_Perd": "Walkover perdido (coluna presente mas sem valores nos dados extraídos)",
+      "Adiamento": "Indica se houve adiamento do jogo (1 = sim)"
+    },
+    "observacoes": [
+      "Todos os jogos marcados com \"Tabela=1\" (jogos oficiais do campeonato)",
+      "Coluna \"Desafio\" existe na planilha mas está vazia - nenhum desafio registrado nestes dados",
+      "Jogos com data \"ADIAMENTO\" foram adiados e tiveram prazo para reagendamento",
+      "Jogos com data \"CHUVA\" foram adiados por motivo de chuva",
+      "A planilha possui 5 abas: Tabela, Planilha2, Classificação, PlayOff, PlayOff (2)",
+      "Dados extraídos apenas da aba \"Tabela\" (gid=1433282057)"
+    ]
+  },
+  "jogos": [
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "MURILO",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 0,
+        "saldo_games": 12
+      },
+      "data": "6-fev.",
+      "hora": "17:30",
+      "player2": {
+        "nome": "JOAO GABRIEL",
+        "sets": [
+          0,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 0,
+        "games_perdidos": 12,
+        "saldo_games": -12
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "JANICE",
+        "sets": [
+          3,
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 170,
+        "sets_ganhos": 2,
+        "sets_perdidos": 1,
+        "saldo_sets": 1,
+        "games_ganhos": 15,
+        "games_perdidos": 13,
+        "saldo_games": 2
+      },
+      "data": "10-fev.",
+      "hora": "8:30",
+      "player2": {
+        "nome": "ULYSSES",
+        "sets": [
+          6,
+          4,
+          3
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 100,
+        "sets_ganhos": 1,
+        "sets_perdidos": 2,
+        "saldo_sets": -1,
+        "games_ganhos": 13,
+        "games_perdidos": 15,
+        "saldo_games": -2
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "GUSTAVO",
+        "sets": [
+          6,
+          7
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 8,
+        "saldo_games": 5
+      },
+      "data": "2-fev.",
+      "hora": "18:00",
+      "player2": {
+        "nome": "LUIZ",
+        "sets": [
+          3,
+          5
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 8,
+        "games_perdidos": 13,
+        "saldo_games": -5
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "GIULIA",
+        "sets": [
+          7,
+          3,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 100,
+        "sets_ganhos": 1,
+        "sets_perdidos": 2,
+        "saldo_sets": -1,
+        "games_ganhos": 12,
+        "games_perdidos": 17,
+        "saldo_games": -5
+      },
+      "data": "6-mar.",
+      "hora": "20:00",
+      "player2": {
+        "nome": "CHINA",
+        "sets": [
+          5,
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 170,
+        "sets_ganhos": 2,
+        "sets_perdidos": 1,
+        "saldo_sets": 1,
+        "games_ganhos": 17,
+        "games_perdidos": 12,
+        "saldo_games": 5
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "EZEQUIAS",
+        "sets": [
+          2,
+          3
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 5,
+        "games_perdidos": 12,
+        "saldo_games": -7
+      },
+      "data": "11-fev.",
+      "hora": "18:00",
+      "player2": {
+        "nome": "CHRISTIAN",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 5,
+        "saldo_games": 7
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "NICELIO",
+        "sets": [
+          0,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 2,
+        "games_perdidos": 12,
+        "saldo_games": -10
+      },
+      "data": "14-fev.",
+      "hora": "8:30",
+      "player2": {
+        "nome": "EVERTON",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 2,
+        "saldo_games": 10
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "STEFAN",
+        "sets": [
+          3,
+          1
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 4,
+        "games_perdidos": 12,
+        "saldo_games": -8
+      },
+      "data": "4-fev.",
+      "hora": "20:00",
+      "player2": {
+        "nome": "CID",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 4,
+        "saldo_games": 8
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "THIAGO",
+        "sets": [
+          2,
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 170,
+        "sets_ganhos": 2,
+        "sets_perdidos": 1,
+        "saldo_sets": 1,
+        "games_ganhos": 14,
+        "games_perdidos": 7,
+        "saldo_games": 7
+      },
+      "data": "28-fev.",
+      "hora": "16:00",
+      "player2": {
+        "nome": "EDSON",
+        "sets": [
+          6,
+          0,
+          1
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 100,
+        "sets_ganhos": 1,
+        "sets_perdidos": 2,
+        "saldo_sets": -1,
+        "games_ganhos": 7,
+        "games_perdidos": 14,
+        "saldo_games": -7
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "GUILHERME",
+        "sets": [
+          0,
+          1
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 1,
+        "games_perdidos": 12,
+        "saldo_games": -11
+      },
+      "data": "6-fev.",
+      "hora": "16:00",
+      "player2": {
+        "nome": "ALÊ",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 1,
+        "saldo_games": 11
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "BONA",
+        "sets": [
+          5,
+          3
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 8,
+        "games_perdidos": 13,
+        "saldo_games": -5
+      },
+      "data": "6-fev.",
+      "hora": "18:30",
+      "player2": {
+        "nome": "ALINE",
+        "sets": [
+          7,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 8,
+        "saldo_games": 5
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "SAMUEL",
+        "sets": [
+          2,
+          6,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 100,
+        "sets_ganhos": 1,
+        "sets_perdidos": 2,
+        "saldo_sets": -1,
+        "games_ganhos": 10,
+        "games_perdidos": 15,
+        "saldo_games": -5
+      },
+      "data": "17-fev.",
+      "hora": "17:00",
+      "player2": {
+        "nome": "DU",
+        "sets": [
+          6,
+          3,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 170,
+        "sets_ganhos": 2,
+        "sets_perdidos": 1,
+        "saldo_sets": 1,
+        "games_ganhos": 15,
+        "games_perdidos": 10,
+        "saldo_games": 5
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 01",
+      "player1": {
+        "nome": "CARLOS",
+        "sets": [
+          7,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 7,
+        "saldo_games": 6
+      },
+      "data": "8-fev.",
+      "hora": "16:30",
+      "player2": {
+        "nome": "LUKINHA",
+        "sets": [
+          6,
+          1
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 7,
+        "games_perdidos": 13,
+        "saldo_games": -6
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "MURILO",
+        "sets": [
+          7,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 7,
+        "saldo_games": 6
+      },
+      "data": "24-mar.",
+      "hora": "18:30",
+      "player2": {
+        "nome": "CID",
+        "sets": [
+          5,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 7,
+        "games_perdidos": 13,
+        "saldo_games": -6
+      },
+      "houve_adiamento": true
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "STEFAN",
+        "sets": [
+          2,
+          4
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 6,
+        "games_perdidos": 12,
+        "saldo_games": -6
+      },
+      "data": "7-fev.",
+      "hora": "8:00",
+      "player2": {
+        "nome": "EDSON",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 6,
+        "saldo_games": 6
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "THIAGO",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 4,
+        "saldo_games": 8
+      },
+      "data": "16-fev.",
+      "hora": "18:00",
+      "player2": {
+        "nome": "ALÊ",
+        "sets": [
+          2,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 4,
+        "games_perdidos": 12,
+        "saldo_games": -8
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "GUILHERME",
+        "sets": [
+          1,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 1,
+        "games_perdidos": 12,
+        "saldo_games": -11
+      },
+      "data": "20-fev.",
+      "hora": "18:30",
+      "player2": {
+        "nome": "ALINE",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 1,
+        "saldo_games": 11
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "BONA",
+        "sets": [
+          4,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 6,
+        "games_perdidos": 12,
+        "saldo_games": -6
+      },
+      "data": "ADIAMENTO",
+      "hora": "",
+      "status_original": "ADIAMENTO",
+      "houve_adiamento": true,
+      "player2": {
+        "nome": "DU",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 6,
+        "saldo_games": 6
+      },
+      "prazo_final": "31/03",
+      "status": "adiado"
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "SAMUEL",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 2,
+        "saldo_games": 10
+      },
+      "data": "5-fev.",
+      "hora": "18:30",
+      "player2": {
+        "nome": "LUKINHA",
+        "sets": [
+          1,
+          1
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 2,
+        "games_perdidos": 12,
+        "saldo_games": -10
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "JOAO GABRIEL",
+        "sets": [
+          0,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 2,
+        "games_perdidos": 12,
+        "saldo_games": -10
+      },
+      "data": "5-fev.",
+      "hora": "8:30",
+      "player2": {
+        "nome": "ULYSSES",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 2,
+        "saldo_games": 10
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "JANICE",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 1,
+        "saldo_games": 11
+      },
+      "data": "13-fev.",
+      "hora": "9:00",
+      "player2": {
+        "nome": "LUIZ",
+        "sets": [
+          1,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 1,
+        "games_perdidos": 12,
+        "saldo_games": -11
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "GUSTAVO",
+        "sets": [
+          7,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 8,
+        "saldo_games": 5
+      },
+      "data": "20-mar.",
+      "hora": "19:00",
+      "player2": {
+        "nome": "CHINA",
+        "sets": [
+          5,
+          3
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 8,
+        "games_perdidos": 13,
+        "saldo_games": -5
+      },
+      "houve_adiamento": true
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "GIULIA",
+        "sets": [
+          0,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 2,
+        "games_perdidos": 12,
+        "saldo_games": -10
+      },
+      "data": "28-fev.",
+      "hora": "7:00",
+      "player2": {
+        "nome": "CHRISTIAN",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 2,
+        "saldo_games": 10
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "EZEQUIAS",
+        "sets": [
+          3,
+          4
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 7,
+        "games_perdidos": 12,
+        "saldo_games": -5
+      },
+      "data": "21-fev.",
+      "hora": "7:30",
+      "player2": {
+        "nome": "EVERTON",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 7,
+        "saldo_games": 5
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 02",
+      "player1": {
+        "nome": "NICELIO",
+        "sets": [
+          0,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 0,
+        "games_perdidos": 12,
+        "saldo_games": -12
+      },
+      "data": "15-fev.",
+      "hora": "15:30",
+      "player2": {
+        "nome": "CARLOS",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 0,
+        "saldo_games": 12
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "MURILO",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 4,
+        "saldo_games": 8
+      },
+      "data": "21-fev.",
+      "hora": "7:30",
+      "player2": {
+        "nome": "ULYSSES",
+        "sets": [
+          3,
+          1
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 4,
+        "games_perdidos": 12,
+        "saldo_games": -8
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "JOAO GABRIEL",
+        "sets": [
+          1,
+          1
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 2,
+        "games_perdidos": 12,
+        "saldo_games": -10
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "LUIZ",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 2,
+        "saldo_games": 10
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "JANICE",
+        "sets": [
+          6,
+          7
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 6,
+        "saldo_games": 7
+      },
+      "data": "31-mar.",
+      "hora": "19:30",
+      "player2": {
+        "nome": "CHINA",
+        "sets": [
+          1,
+          5
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 6,
+        "games_perdidos": 13,
+        "saldo_games": -7
+      },
+      "houve_adiamento": true
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "GUSTAVO",
+        "sets": [
+          2,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 2,
+        "games_perdidos": 12,
+        "saldo_games": -10
+      },
+      "data": "18-fev.",
+      "hora": "18:30",
+      "player2": {
+        "nome": "CHRISTIAN",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 2,
+        "saldo_games": 10
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "GIULIA",
+        "sets": [
+          5,
+          4
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 9,
+        "games_perdidos": 13,
+        "saldo_games": -4
+      },
+      "data": "28-fev.",
+      "hora": "16:00",
+      "player2": {
+        "nome": "EVERTON",
+        "sets": [
+          7,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 9,
+        "saldo_games": 4
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "EZEQUIAS",
+        "sets": [
+          3,
+          3
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 6,
+        "games_perdidos": 12,
+        "saldo_games": -6
+      },
+      "data": "13-fev.",
+      "hora": "7:00",
+      "player2": {
+        "nome": "CARLOS",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 6,
+        "saldo_games": 6
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "CID",
+        "sets": [
+          3,
+          5
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 8,
+        "games_perdidos": 13,
+        "saldo_games": -5
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "EDSON",
+        "sets": [
+          6,
+          7
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 8,
+        "saldo_games": 5
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "STEFAN",
+        "sets": [
+          2,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 4,
+        "games_perdidos": 12,
+        "saldo_games": -8
+      },
+      "data": "21-fev.",
+      "hora": "7:00",
+      "player2": {
+        "nome": "ALÊ",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 4,
+        "saldo_games": 8
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "THIAGO",
+        "sets": [
+          6,
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 170,
+        "sets_ganhos": 2,
+        "sets_perdidos": 1,
+        "saldo_sets": 1,
+        "games_ganhos": 18,
+        "games_perdidos": 10,
+        "saldo_games": 8
+      },
+      "data": "CHUVA",
+      "hora": "",
+      "status_original": "CHUVA",
+      "player2": {
+        "nome": "ALINE",
+        "sets": [
+          7,
+          0,
+          3
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 100,
+        "sets_ganhos": 1,
+        "sets_perdidos": 2,
+        "saldo_sets": -1,
+        "games_ganhos": 10,
+        "games_perdidos": 18,
+        "saldo_games": -8
+      },
+      "prazo_final": "24/03",
+      "status": "adiado"
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "GUILHERME",
+        "sets": [
+          4,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 6,
+        "games_perdidos": 12,
+        "saldo_games": -6
+      },
+      "data": "13-fev.",
+      "hora": "18:30",
+      "player2": {
+        "nome": "DU",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 6,
+        "saldo_games": 6
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "BONA",
+        "sets": [
+          0,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 0,
+        "games_perdidos": 12,
+        "saldo_games": -12
+      },
+      "data": "26-fev.",
+      "hora": "19:00",
+      "player2": {
+        "nome": "LUKINHA",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 0,
+        "saldo_games": 12
+      }
+    },
+    {
+      "mes": "02/2026",
+      "rodada": "Rodada 03",
+      "player1": {
+        "nome": "SAMUEL",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 1,
+        "saldo_games": 11
+      },
+      "data": "7-fev.",
+      "hora": "16:30",
+      "player2": {
+        "nome": "NICELIO",
+        "sets": [
+          1,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 1,
+        "games_perdidos": 12,
+        "saldo_games": -11
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "MURILO",
+        "sets": [
+          6,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 8,
+        "games_perdidos": 13,
+        "saldo_games": -5
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "EDSON",
+        "sets": [
+          7,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 8,
+        "saldo_games": 5
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "CID",
+        "sets": [
+          2,
+          4
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 6,
+        "games_perdidos": 12,
+        "saldo_games": -6
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "ALÊ",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 6,
+        "saldo_games": 6
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "STEFAN",
+        "sets": [
+          7,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 13,
+        "games_perdidos": 10,
+        "saldo_games": 3
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "ALINE",
+        "sets": [
+          6,
+          4
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 10,
+        "games_perdidos": 13,
+        "saldo_games": -3
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "THIAGO",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 8,
+        "saldo_games": 4
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "DU",
+        "sets": [
+          4,
+          4
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 8,
+        "games_perdidos": 12,
+        "saldo_games": -4
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "GUILHERME",
+        "sets": [
+          4,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 6,
+        "games_perdidos": 12,
+        "saldo_games": -6
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "LUKINHA",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 6,
+        "saldo_games": 6
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "BONA",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 3,
+        "saldo_games": 9
+      },
+      "data": "22-mar.",
+      "hora": "10:00",
+      "player2": {
+        "nome": "NICELIO",
+        "sets": [
+          3,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 3,
+        "games_perdidos": 12,
+        "saldo_games": -9
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "ULYSSES",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 4,
+        "saldo_games": 8
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "LUIZ",
+        "sets": [
+          2,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 4,
+        "games_perdidos": 12,
+        "saldo_games": -8
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "JOAO GABRIEL",
+        "sets": [
+          1,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 1,
+        "games_perdidos": 12,
+        "saldo_games": -11
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "CHINA",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 1,
+        "saldo_games": 11
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "JANICE",
+        "sets": [
+          5,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 11,
+        "games_perdidos": 14,
+        "saldo_games": -3
+      },
+      "data": "18-mar.",
+      "hora": "18:00",
+      "player2": {
+        "nome": "CHRISTIAN",
+        "sets": [
+          7,
+          7
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 14,
+        "games_perdidos": 11,
+        "saldo_games": 3
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "GUSTAVO",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 8,
+        "saldo_games": 4
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "EVERTON",
+        "sets": [
+          4,
+          4
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 8,
+        "games_perdidos": 12,
+        "saldo_games": -4
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "GIULIA",
+        "sets": [
+          0,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 0,
+        "games_perdidos": 12,
+        "saldo_games": -12
+      },
+      "data": "27-mar.",
+      "hora": "6:30",
+      "player2": {
+        "nome": "CARLOS",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 0,
+        "saldo_games": 12
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 04",
+      "player1": {
+        "nome": "EZEQUIAS",
+        "sets": [
+          2,
+          7,
+          2
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 100,
+        "sets_ganhos": 1,
+        "sets_perdidos": 2,
+        "saldo_sets": -1,
+        "games_ganhos": 11,
+        "games_perdidos": 18,
+        "saldo_games": -7
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "SAMUEL",
+        "sets": [
+          6,
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 170,
+        "sets_ganhos": 2,
+        "sets_perdidos": 1,
+        "saldo_sets": 1,
+        "games_ganhos": 18,
+        "games_perdidos": 11,
+        "saldo_games": 7
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 05",
+      "player1": {
+        "nome": "MURILO",
+        "sets": [
+          6,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": true,
+        "pontos": 200,
+        "sets_ganhos": 2,
+        "sets_perdidos": 0,
+        "saldo_sets": 2,
+        "games_ganhos": 12,
+        "games_perdidos": 0,
+        "saldo_games": 12
+      },
+      "data": "",
+      "hora": "",
+      "player2": {
+        "nome": "LUIZ",
+        "sets": [
+          0,
+          0
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 0,
+        "games_perdidos": 12,
+        "saldo_games": -12
+      }
+    },
+    {
+      "mes": "03/2026",
+      "rodada": "Rodada 05",
+      "player1": {
+        "nome": "ULYSSES",
+        "sets": [
+          4,
+          6
+        ],
+        "tabela": true,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 30,
+        "sets_ganhos": 0,
+        "sets_perdidos": 2,
+        "saldo_sets": -2,
+        "games_ganhos": 10,
+        "games_perdidos": 13,
+        "saldo_games": -3
+      },
+      "data": "26-abr.",
+      "hora": "",
+      "player2": {
+        "nome": "&nbsp;&nbsp;",
+        "sets": [],
+        "tabela": false,
+        "desafio": false,
+        "vitoria": false,
+        "pontos": 0,
+        "sets_ganhos": 0,
+        "sets_perdidos": 0,
+        "saldo_sets": 0,
+        "games_ganhos": 0,
+        "games_perdidos": 0,
+        "saldo_games": 0
+      }
+    }
+  ]
+}

@@ -40,23 +40,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { documentSlug, accepted } = body
+    const { documentSlug, accepted, consents } = body
 
-    if (!documentSlug || typeof accepted !== "boolean") {
+    // Suportar formato single e batch
+    const consentsList = consents || (documentSlug && typeof accepted === "boolean"
+      ? [{ documentSlug, accepted }]
+      : null)
+
+    if (!consentsList || !Array.isArray(consentsList) || consentsList.length === 0) {
       return NextResponse.json(
-        { error: "documentSlug e accepted são obrigatórios" },
+        { error: "consents ou documentSlug+accepted são obrigatórios" },
         { status: 400 }
-      )
-    }
-
-    const document = await prisma.legalDocument.findFirst({
-      where: { slug: documentSlug, isActive: true },
-    })
-
-    if (!document) {
-      return NextResponse.json(
-        { error: "Documento não encontrado" },
-        { status: 404 }
       )
     }
 
@@ -67,38 +61,65 @@ export async function POST(request: Request) {
       null
     const { os, device, language } = parseUserAgent(userAgent)
 
-    const consent = await prisma.consent.create({
-      data: {
-        userId: decoded.userId,
-        documentId: document.id,
-        documentSlug: document.slug,
-        documentTitle: document.title,
-        documentVersion: document.version,
-        accepted,
-        ipAddress: ip,
-        userAgent,
-        os,
-        device,
-        language,
-      },
-    })
+    const results = []
 
-    await prisma.auditLog.create({
-      data: {
-        userId: decoded.userId,
-        action: accepted ? "consent_given" : "consent_revoked",
-        entityType: "Consent",
-        entityId: consent.id,
-        newValue: {
-          documentSlug,
-          documentVersion: document.version,
-          accepted,
+    for (const c of consentsList) {
+      const document = await prisma.legalDocument.findFirst({
+        where: { slug: c.documentSlug, isActive: true },
+      })
+
+      if (!document) continue
+
+      const consent = await prisma.consent.upsert({
+        where: {
+          userId_documentSlug_documentVersion: {
+            userId: decoded.userId,
+            documentSlug: document.slug,
+            documentVersion: document.version,
+          },
         },
-        ipAddress: ip,
-      },
-    })
+        update: {
+          accepted: c.accepted,
+          ipAddress: ip,
+          userAgent,
+          os,
+          device,
+          language,
+        },
+        create: {
+          userId: decoded.userId,
+          documentId: document.id,
+          documentSlug: document.slug,
+          documentTitle: document.title,
+          documentVersion: document.version,
+          accepted: c.accepted,
+          ipAddress: ip,
+          userAgent,
+          os,
+          device,
+          language,
+        },
+      })
 
-    return NextResponse.json({ success: true, consent })
+      await prisma.auditLog.create({
+        data: {
+          userId: decoded.userId,
+          action: c.accepted ? "consent_given" : "consent_revoked",
+          entityType: "Consent",
+          entityId: consent.id,
+          newValue: {
+            documentSlug: c.documentSlug,
+            documentVersion: document.version,
+            accepted: c.accepted,
+          },
+          ipAddress: ip,
+        },
+      })
+
+      results.push(consent)
+    }
+
+    return NextResponse.json({ success: true, consents: results })
   } catch (error) {
     console.error("Erro ao registrar consentimento:", error)
     return NextResponse.json(

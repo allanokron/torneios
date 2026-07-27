@@ -352,3 +352,89 @@ export async function PATCH(
     )
   }
 }
+
+// DELETE — Remove participant from tournament (organizer only)
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const authHeader = request.headers.get("authorization")
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Token não fornecido" },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.split(" ")[1]
+    const decoded = verifyToken(token)
+
+    if (!decoded) {
+      return NextResponse.json(
+        { error: "Token inválido" },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { memberId } = body
+
+    const member = await prisma.tournamentMember.findUnique({
+      where: { id: memberId },
+      include: {
+        tournament: true
+      }
+    })
+
+    if (!member) {
+      return NextResponse.json(
+        { error: "Membro não encontrado" },
+        { status: 404 }
+      )
+    }
+
+    // Only organizer can remove participants
+    if (member.tournament.ownerId !== decoded.userId) {
+      return NextResponse.json(
+        { error: "Apenas o organizador pode remover participantes" },
+        { status: 403 }
+      )
+    }
+
+    // Cannot remove the organizer themselves
+    if (member.userId === decoded.userId) {
+      return NextResponse.json(
+        { error: "O organizador não pode se remover" },
+        { status: 400 }
+      )
+    }
+
+    // Delete the member
+    await prisma.tournamentMember.delete({
+      where: { id: memberId }
+    })
+
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        tournamentId: id,
+        userId: decoded.userId,
+        action: "member_removed",
+        entityType: "member",
+        entityId: memberId,
+        oldValue: { userId: member.userId, status: member.status }
+      }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Erro ao remover membro:", error)
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    )
+  }
+}

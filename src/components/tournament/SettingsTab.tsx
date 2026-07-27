@@ -73,6 +73,9 @@ interface Tournament {
   registrationFee?: number | null
   paymentMethod?: string | null
   pixExpirationMinutes?: number
+  rankingPhaseDays?: number | null
+  knockoutPhaseDays?: number | null
+  isOrganizerPlayer?: boolean
 }
 
 interface SettingsTabProps {
@@ -182,6 +185,11 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
   const [registrationFee, setRegistrationFee] = useState(tournament.registrationFee?.toString() || "")
   const [pixExpirationMinutes, setPixExpirationMinutes] = useState(tournament.pixExpirationMinutes || 30)
 
+  // Phase configuration
+  const [rankingPhaseDays, setRankingPhaseDays] = useState(tournament.rankingPhaseDays?.toString() || "")
+  const [knockoutPhaseDays, setKnockoutPhaseDays] = useState(tournament.knockoutPhaseDays?.toString() || "")
+  const [isOrganizerPlayer, setIsOrganizerPlayer] = useState(tournament.isOrganizerPlayer ?? true)
+
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
   const clearMessages = () => {
@@ -236,7 +244,10 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
           maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
           isPublic,
           maxPostponements,
-          postponementScope
+          postponementScope,
+          rankingPhaseDays: rankingPhaseDays ? parseInt(rankingPhaseDays) : null,
+          knockoutPhaseDays: knockoutPhaseDays ? parseInt(knockoutPhaseDays) : null,
+          isOrganizerPlayer,
         })
       })
       const data = await res.json()
@@ -537,6 +548,29 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
         {/* ===== GENERAL ===== */}
         {activeSection === "general" && (
           <div className="space-y-4 max-w-xl">
+            {/* Opção do organizador jogar */}
+            <div className="p-4 rounded-xl" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isOrganizerPlayer}
+                  onChange={e => setIsOrganizerPlayer(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent)' }}
+                />
+                <div>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                    Vou participar do torneio como jogador
+                  </span>
+                  <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
+                    {isOrganizerPlayer 
+                      ? "Você aparecerá na lista de jogadores e precisará pagar a inscrição (se aplicável)."
+                      : "Você será apenas o organizador. Não aparecerá na lista de jogadores."}
+                  </p>
+                </div>
+              </label>
+            </div>
+
             <div>
               <label className="label">Nome do Torneio</label>
               <input value={name} onChange={e => setName(e.target.value)} className="input" />
@@ -670,6 +704,47 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                   : "O jogador pode adiar até " + maxPostponements + " vezes no total durante o torneio."}
               </p>
             </div>
+
+            {/* Configuração das fases do torneio */}
+            {format === "ranking_elimination" && (
+              <div className="border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+                <h4 className="font-medium mb-3" style={{ color: 'var(--text)' }}>Fases do Torneio</h4>
+                <p className="text-xs mb-4" style={{ color: 'var(--neutral-400)' }}>
+                  Defina a duração de cada fase. Os jogos do ranking serão distribuídos igualmente durante o período informado.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Dias da fase de Ranking</label>
+                    <input 
+                      type="number" 
+                      min={1} 
+                      value={rankingPhaseDays} 
+                      onChange={e => setRankingPhaseDays(e.target.value)} 
+                      placeholder="Ex: 60"
+                      className="input" 
+                    />
+                    <p className="text-xs mt-1" style={{ color: 'var(--neutral-400)' }}>
+                      Período para jogos round-robin (todos contra todos)
+                    </p>
+                  </div>
+                  <div>
+                    <label className="label">Dias da fase de Mata-Mata</label>
+                    <input 
+                      type="number" 
+                      min={1} 
+                      value={knockoutPhaseDays} 
+                      onChange={e => setKnockoutPhaseDays(e.target.value)} 
+                      placeholder="Ex: 30"
+                      className="input" 
+                    />
+                    <p className="text-xs mt-1" style={{ color: 'var(--neutral-400)' }}>
+                      Período reservado paraeliminação direta
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="pt-2">
               <button onClick={saveGeneral} disabled={saving} className="btn-primary disabled:opacity-50">
                 {saving ? "Salvando..." : "Salvar"}

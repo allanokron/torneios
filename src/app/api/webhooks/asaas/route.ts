@@ -105,6 +105,8 @@ async function handlePaymentReceived(payment: { id: string; value: number; exter
       data: {
         paymentStatus: "CONFIRMED",
         amountPaid: dbPayment.value,
+        status: "accepted",
+        joinedAt: new Date(),
       },
     })
   }

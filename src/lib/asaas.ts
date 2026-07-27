@@ -3,9 +3,11 @@ const ASAAS_BASE_URL = process.env.ASAAS_BASE_URL || "https://api-sandbox.asaas.
 const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN!
 const APP_BASE_URL = process.env.APP_BASE_URL || "http://localhost:3001"
 
-const headers: Record<string, string> = {
-  "Content-Type": "application/json",
-  access_token: ASAAS_API_KEY,
+function getHeaders(): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    access_token: process.env.ASAAS_API_KEY!,
+  }
 }
 
 // ==================== CUSTOMER ====================
@@ -28,7 +30,7 @@ export async function createCustomer(data: {
 }): Promise<AsaasCustomer> {
   const res = await fetch(`${ASAAS_BASE_URL}/customers`, {
     method: "POST",
-    headers,
+    headers: getHeaders(),
     body: JSON.stringify({
       name: data.name,
       cpfCnpj: data.cpfCnpj,
@@ -49,7 +51,7 @@ export async function createCustomer(data: {
 
 export async function getCustomer(customerId: string): Promise<AsaasCustomer> {
   const res = await fetch(`${ASAAS_BASE_URL}/customers/${customerId}`, {
-    headers,
+    headers: getHeaders(),
   })
 
   if (!res.ok) {
@@ -82,7 +84,7 @@ export async function createPixPayment(data: {
 }): Promise<AsaasPayment> {
   const res = await fetch(`${ASAAS_BASE_URL}/payments`, {
     method: "POST",
-    headers,
+    headers: getHeaders(),
     body: JSON.stringify({
       customer: data.customerId,
       billingType: "PIX",
@@ -110,7 +112,7 @@ export interface AsaasPixQrCode {
 export async function getPixQrCode(paymentId: string): Promise<AsaasPixQrCode> {
   const res = await fetch(`${ASAAS_BASE_URL}/payments/${paymentId}/pixQrCode`, {
     method: "GET",
-    headers,
+    headers: getHeaders(),
   })
 
   if (!res.ok) {
@@ -122,7 +124,7 @@ export async function getPixQrCode(paymentId: string): Promise<AsaasPixQrCode> {
 
 export async function getPaymentStatus(paymentId: string): Promise<AsaasPayment> {
   const res = await fetch(`${ASAAS_BASE_URL}/payments/${paymentId}`, {
-    headers,
+    headers: getHeaders(),
   })
 
   if (!res.ok) {
@@ -135,7 +137,7 @@ export async function getPaymentStatus(paymentId: string): Promise<AsaasPayment>
 export async function cancelPayment(paymentId: string): Promise<void> {
   const res = await fetch(`${ASAAS_BASE_URL}/payments/${paymentId}`, {
     method: "DELETE",
-    headers,
+    headers: getHeaders(),
   })
 
   if (!res.ok) {
@@ -163,7 +165,7 @@ export async function createSubscriptionCheckout(data: {
 }): Promise<AsaasCheckout> {
   const res = await fetch(`${ASAAS_BASE_URL}/checkouts`, {
     method: "POST",
-    headers,
+    headers: getHeaders(),
     body: JSON.stringify({
       billingTypes: ["CREDIT_CARD"],
       chargeTypes: ["RECURRENT"],

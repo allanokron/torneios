@@ -28,6 +28,22 @@ interface Tournament {
   }
 }
 
+interface PendingInvitation {
+  id: string
+  tournament: {
+    id: string
+    name: string
+    status: string
+    startDate: string
+    registrationFee: number | null
+    owner: {
+      id: string
+      name: string
+    }
+  }
+  joinedAt: string
+}
+
 interface UpcomingMatch {
   id: string
   scheduledAt: string
@@ -43,6 +59,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [upcomingMatches, setUpcomingMatches] = useState<UpcomingMatch[]>([])
+  const [invitations, setInvitations] = useState<PendingInvitation[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -102,6 +119,12 @@ export default function DashboardPage() {
 
         allMatches.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
         setUpcomingMatches(allMatches.slice(0, 10))
+
+        const invitationsRes = await fetch("/api/invitations", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const invitationsData = await invitationsRes.json()
+        setInvitations(invitationsData.invitations || [])
       } catch {
         router.push("/login")
       } finally {
@@ -120,6 +143,53 @@ export default function DashboardPage() {
     )
   }
 
+  const handleInvitation = async (invitationId: string, action: "accepted" | "rejected", tournamentId: string, hasFee: boolean) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    if (action === "rejected") {
+      try {
+        const res = await fetch(`/api/tournaments/${tournamentId}/members`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ memberId: invitationId, status: "rejected" }),
+        })
+        if (res.ok) {
+          setInvitations(prev => prev.filter(inv => inv.id !== invitationId))
+        }
+      } catch (error) {
+        console.error("Erro ao recusar convite:", error)
+      }
+      return
+    }
+
+    // Aceitar convite de torneio pago → ir para pagamento
+    if (hasFee) {
+      router.push(`/tournaments/${tournamentId}?pay Invitation=${invitationId}`)
+      return
+    }
+
+    // Torneio gratuito → aceitar direto
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/members`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ memberId: invitationId, status: "accepted" }),
+      })
+      if (res.ok) {
+        setInvitations(prev => prev.filter(inv => inv.id !== invitationId))
+      }
+    } catch (error) {
+      console.error("Erro ao aceitar convite:", error)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       <Header user={user} />
@@ -131,6 +201,63 @@ export default function DashboardPage() {
           </h1>
           <p className="text-sm" style={{ color: 'var(--neutral-400)' }}>Bem-vindo ao Torneio+</p>
         </div>
+
+        {invitations.length > 0 && (
+          <div className="mb-6 rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--accent)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <svg className="w-5 h-5" style={{ color: 'var(--accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <h2 className="font-medium" style={{ color: 'var(--text)' }}>
+                Convites Pendentes ({invitations.length})
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {invitations.map(invitation => (
+                <div
+                  key={invitation.id}
+                  className="flex items-center gap-3 p-3 rounded-xl"
+                  style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+                >
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(184, 224, 0, 0.12)' }}>
+                    <svg className="w-5 h-5" style={{ color: 'var(--accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4V4zm0 8h16M9 4v16M15 4v16" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                      {invitation.tournament.name}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
+                      Convite de {invitation.tournament.owner.name}
+                      {invitation.tournament.registrationFee && (
+                        <span className="ml-1" style={{ color: 'var(--accent-dark)' }}>
+                          · R$ {(invitation.tournament.registrationFee / 100).toFixed(2)}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleInvitation(invitation.id, "accepted", invitation.tournament.id, !!invitation.tournament.registrationFee)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                      style={{ background: 'var(--accent)', color: 'var(--accent-dark)' }}
+                    >
+                      Aceitar
+                    </button>
+                    <button
+                      onClick={() => handleInvitation(invitation.id, "rejected", invitation.tournament.id, false)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                      style={{ background: 'var(--neutral-100)', color: 'var(--neutral-400)' }}
+                    >
+                      Recusar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">

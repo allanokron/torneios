@@ -71,6 +71,8 @@ export async function GET(
               data: {
                 paymentStatus: "CONFIRMED",
                 amountPaid: payment.value,
+                status: "accepted",
+                joinedAt: new Date(),
               },
             })
           }

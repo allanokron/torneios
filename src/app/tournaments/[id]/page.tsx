@@ -28,6 +28,8 @@ interface Tournament {
   knockoutQualifiers?: number | null
   rankingPhaseStatus?: string
   knockoutLockedAt?: string | null
+  rankingPhaseDays?: number | null
+  knockoutPhaseDays?: number | null
   setsPerMatch: number
   setsToWin: number
   hasTiebreak: boolean
@@ -49,6 +51,7 @@ interface Tournament {
     id: string
     status: string
     role: string
+    paymentStatus?: string
     user: {
       id: string
       name: string
@@ -214,10 +217,12 @@ export default function TournamentPage() {
   const [filterCourtId, setFilterCourtId] = useState("")
   const [filterPlayerId, setFilterPlayerId] = useState("")
   const [filterChallenge, setFilterChallenge] = useState<"all" | "challenge" | "normal">("all")
+  const [filterMonth, setFilterMonth] = useState("")
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null)
   const [matchSubTab, setMatchSubTab] = useState<"upcoming" | "completed">("upcoming")
   const [drawnSubTab, setDrawnSubTab] = useState<"month" | "future">("month")
   const [drawnFilterPlayer, setDrawnFilterPlayer] = useState("")
+  const [drawnMonthFilter, setDrawnMonthFilter] = useState("")
   const [rankingMonth, setRankingMonth] = useState("")
   const [resultMatch, setResultMatch] = useState<Match | null>(null)
   const [editingMatch, setEditingMatch] = useState<Match | null>(null)
@@ -273,6 +278,49 @@ export default function TournamentPage() {
   useEffect(() => {
     fetchTournament()
   }, [fetchTournament])
+
+  // Auto-trigger payment for pending members of paid tournaments
+  useEffect(() => {
+    if (!tournament || !user || loading) return
+    if (showPixPayment) return
+
+    const currentUserMember = tournament.members.find(m => m.user.id === user.id)
+    const isPendingMember = currentUserMember && currentUserMember.status === "pending"
+    const hasFee = tournament.registrationFee && tournament.registrationFee > 0
+
+    if (isPendingMember && hasFee && !currentUserMember.paymentStatus) {
+      const triggerPayment = async () => {
+        setRequestingJoin(true)
+        try {
+          const token = localStorage.getItem("token")
+          const res = await fetch(`/api/tournaments/${tournament.id}/payments`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            }
+          })
+          const data = await res.json()
+
+          if (res.ok && data.qrCode) {
+            setPixPaymentData({
+              paymentId: data.paymentId,
+              qrCode: data.qrCode,
+              pixPayload: data.pixPayload,
+              expiresAt: data.expiresAt,
+              value: data.value,
+            })
+            setShowPixPayment(true)
+          }
+        } catch (error) {
+          console.error("Erro ao criar pagamento:", error)
+        } finally {
+          setRequestingJoin(false)
+        }
+      }
+      triggerPayment()
+    }
+  }, [tournament, user, loading])
 
   // Fetch matches with filters
   const fetchMatches = useCallback(async () => {
@@ -447,7 +495,7 @@ export default function TournamentPage() {
     setDrawing(true)
     const token = localStorage.getItem("token")
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/elimination`, {
+      const res = await fetch(`/api/tournaments/${tournament.id}/draw`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -459,10 +507,10 @@ export default function TournamentPage() {
         alert(data.error)
         return
       }
-      alert("Chaveamento gerado com sucesso!")
+      alert(data.message || "Jogos sorteados com sucesso!")
       fetchTournament()
     } catch {
-      alert("Erro ao gerar chaveamento")
+      alert("Erro ao sortear jogos")
     } finally {
       setDrawing(false)
     }
@@ -523,6 +571,8 @@ export default function TournamentPage() {
   const pendingMembers = tournament.members.filter(m => m.status === "pending")
   const isOwner = user?.id === tournament.owner.id
   const isMember = user ? tournament.members.some(m => m.user.id === user.id) : false
+  const currentUserMember = user ? tournament.members.find(m => m.user.id === user.id) : null
+  const hasPaid = currentUserMember?.paymentStatus === "CONFIRMED"
   const canRequestJoin = user && !isMember && !isOwner && tournament.isPublic && 
     (tournament.status === "registration_open" || tournament.status === "draft")
 
@@ -651,6 +701,22 @@ export default function TournamentPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {hasPaid && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: "rgba(34, 197, 94, 0.1)", color: "#16a34a", border: "1px solid rgba(34, 197, 94, 0.2)" }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Inscrição confirmada
+                </div>
+              )}
+              {currentUserMember?.paymentStatus === "AWAITING_PIX" && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: "rgba(251, 191, 36, 0.1)", color: "#d97706", border: "1px solid rgba(251, 191, 36, 0.2)" }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Pagamento pendente
+                </div>
+              )}
               {canRequestJoin && (
                 <div>
                   <button
@@ -740,15 +806,20 @@ export default function TournamentPage() {
                   <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                     <h3 className="font-medium mb-3" style={{ color: 'var(--text)' }}>Ações do Organizador</h3>
                     <p className="text-sm mb-4" style={{ color: 'var(--neutral-400)' }}>
-                      As inscrições estão encerradas. Gere o chaveamento de eliminação quando estiver pronto.
+                      As inscrições estão encerradas. Clique abaixo para sortear os jogos do ranking.
                     </p>
                     <button
                       onClick={handleDrawMatches}
                       disabled={drawing}
                       className="btn-primary disabled:opacity-50"
                     >
-                      {drawing ? "Gerando chaveamento..." : "Gerar Chaveamento (Top 12)"}
+                      {drawing ? "Sorteando jogos..." : "Sortear Jogos do Ranking"}
                     </button>
+                    {tournament.rankingPhaseDays && (
+                      <p className="text-xs mt-2" style={{ color: 'var(--neutral-400)' }}>
+                        Os jogos serão distribuídos ao longo de {tournament.rankingPhaseDays} dias.
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -1100,95 +1171,133 @@ export default function TournamentPage() {
                     )}
 
                     {/* FUTURE sub-tab */}
-                    {drawnSubTab === "future" && (
-                      <>
-                        {drawnPendingFuture.length > 0 ? (
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="text-sm font-medium" style={{ color: 'var(--neutral-600)' }}>
-                                Jogos Futuros ({drawnPendingFuture.length})
-                              </h4>
-                              {isOwner && (
-                                <button
-                                  onClick={() => handleUnlockMatches(drawnPendingFuture.map(m => m.id))}
-                                  className="px-3 py-1.5 text-xs font-medium rounded-xl transition-colors"
-                                  style={{ background: 'var(--accent)', color: 'var(--primary)' }}
-                                >
-                                  Liberar Todos para Agendamento
-                                </button>
-                              )}
+                    {drawnSubTab === "future" && (() => {
+                      const futureMonthLabels: Record<string, string> = {
+                        '01/2026': 'Janeiro 2026', '02/2026': 'Fevereiro 2026', '03/2026': 'Março 2026',
+                        '04/2026': 'Abril 2026', '05/2026': 'Maio 2026', '06/2026': 'Junho 2026',
+                        '07/2026': 'Julho 2026', '08/2026': 'Agosto 2026', '09/2026': 'Setembro 2026',
+                        '10/2026': 'Outubro 2026', '11/2026': 'Novembro 2026', '12/2026': 'Dezembro 2026',
+                      }
+                      const availableFutureMonths = Array.from(new Set(
+                        drawnPendingFuture.map(m => m.month).filter((v): v is string => Boolean(v))
+                      )).sort()
+
+                      const filteredFuture = drawnMonthFilter
+                        ? drawnPendingFuture.filter(m => m.month === drawnMonthFilter)
+                        : drawnPendingFuture
+
+                      const sortedFuture = [...filteredFuture].sort((a, b) => {
+                        const ma = a.month || 'zz'
+                        const mb = b.month || 'zz'
+                        if (ma !== mb) return ma.localeCompare(mb)
+                        const ra = parseInt((a.round || '').replace(/\D/g, '')) || 0
+                        const rb = parseInt((b.round || '').replace(/\D/g, '')) || 0
+                        return ra - rb
+                      })
+
+                      return (
+                        <>
+                          {availableFutureMonths.length > 0 && (
+                            <div className="mb-4">
+                              <label className="block text-xs mb-1" style={{ color: 'var(--neutral-400)' }}>Mês/Ano</label>
+                              <select
+                                value={drawnMonthFilter}
+                                onChange={(e) => setDrawnMonthFilter(e.target.value)}
+                                className="text-sm rounded-xl px-3 py-2"
+                                style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
+                              >
+                                <option value="">Todos</option>
+                                {availableFutureMonths.map(m => (
+                                  <option key={m} value={m}>{futureMonthLabels[m] || m}</option>
+                                ))}
+                              </select>
                             </div>
-                            <div className="space-y-2">
-                              {drawnPendingFuture.map(m => {
-                                const fm = (m.month || "").split("/")[0]
-                                const monthNames: Record<string, string> = {
-                                  "08": "Agosto", "09": "Setembro", "10": "Outubro"
-                                }
-                                const monthLabel = monthNames[fm] || m.month
-                                const isPostponed = m.round?.startsWith("Adiado")
-                                return (
-                                  <div key={m.id} className="flex items-center justify-between p-3 rounded-2xl" style={isPostponed ? { background: '#fff7ed', border: '1px solid #fdba74' } : { background: 'var(--neutral-50)', border: '1px solid var(--border)', opacity: 0.7 }}>
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex -space-x-2">
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium overflow-hidden" style={isPostponed ? { background: '#ffedd5', border: '2px solid #fdba74', color: '#c2410c' } : { background: 'var(--neutral-100)', border: '2px solid var(--surface)', color: 'var(--neutral-500)' }}>
-                                          {m.homePlayer.avatarUrl ? (
-                                            <img src={m.homePlayer.avatarUrl} alt={m.homePlayer.name} className="w-full h-full object-cover" />
-                                          ) : (
-                                            m.homePlayer.name.charAt(0)
-                                          )}
+                          )}
+                          {sortedFuture.length > 0 ? (
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium" style={{ color: 'var(--neutral-600)' }}>
+                                  Jogos Futuros ({filteredFuture.length})
+                                </h4>
+                                {isOwner && (
+                                  <button
+                                    onClick={() => handleUnlockMatches(filteredFuture.map(m => m.id))}
+                                    className="px-3 py-1.5 text-xs font-medium rounded-xl transition-colors"
+                                    style={{ background: 'var(--accent)', color: 'var(--primary)' }}
+                                  >
+                                    Liberar Todos para Agendamento
+                                  </button>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {sortedFuture.map(m => {
+                                  const fm = (m.month || "").split("/")[0]
+                                  const monthLabel = futureMonthLabels[m.month || ""] || m.month
+                                  const isPostponed = m.round?.startsWith("Adiado")
+                                  return (
+                                    <div key={m.id} className="flex items-center justify-between p-3 rounded-2xl" style={isPostponed ? { background: '#fff7ed', border: '1px solid #fdba74' } : { background: 'var(--neutral-50)', border: '1px solid var(--border)', opacity: 0.7 }}>
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex -space-x-2">
+                                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium overflow-hidden" style={isPostponed ? { background: '#ffedd5', border: '2px solid #fdba74', color: '#c2410c' } : { background: 'var(--neutral-100)', border: '2px solid var(--surface)', color: 'var(--neutral-500)' }}>
+                                            {m.homePlayer.avatarUrl ? (
+                                              <img src={m.homePlayer.avatarUrl} alt={m.homePlayer.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                              m.homePlayer.name.charAt(0)
+                                            )}
+                                          </div>
+                                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium overflow-hidden" style={isPostponed ? { background: '#ffedd5', border: '2px solid #fdba74', color: '#c2410c' } : { background: 'var(--neutral-100)', border: '2px solid var(--surface)', color: 'var(--neutral-500)' }}>
+                                            {m.awayPlayer.avatarUrl ? (
+                                              <img src={m.awayPlayer.avatarUrl} alt={m.awayPlayer.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                              m.awayPlayer.name.charAt(0)
+                                            )}
+                                          </div>
                                         </div>
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium overflow-hidden" style={isPostponed ? { background: '#ffedd5', border: '2px solid #fdba74', color: '#c2410c' } : { background: 'var(--neutral-100)', border: '2px solid var(--surface)', color: 'var(--neutral-500)' }}>
-                                          {m.awayPlayer.avatarUrl ? (
-                                            <img src={m.awayPlayer.avatarUrl} alt={m.awayPlayer.name} className="w-full h-full object-cover" />
-                                          ) : (
-                                            m.awayPlayer.name.charAt(0)
-                                          )}
+                                        <div>
+                                          <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                                            {m.homePlayer.name} vs {m.awayPlayer.name}
+                                          </p>
+                                          <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
+                                            {monthLabel} • {m.round || 'Aguardando liberação'}
+                                          </p>
                                         </div>
                                       </div>
-                                      <div>
-                                        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                                          {m.homePlayer.name} vs {m.awayPlayer.name}
-                                        </p>
-                                        <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
-                                          {monthLabel} • Aguardando liberação
-                                        </p>
+                                      <div className="flex items-center gap-2">
+                                        {isPostponed && (
+                                          <span className="inline-flex items-center gap-1 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm" style={{ background: '#f97316' }}>
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                            </svg>
+                                            ADIADO
+                                          </span>
+                                        )}
+                                        {isOwner ? (
+                                          <button
+                                            onClick={() => handleUnlockMatches([m.id])}
+                                            className="px-2 py-1 text-xs font-medium rounded transition-colors"
+                                            style={{ background: 'var(--accent)', color: 'var(--primary)' }}
+                                          >
+                                            Liberar
+                                          </button>
+                                        ) : (
+                                          <span className="text-xs px-2 py-1 rounded" style={{ color: '#d97706', background: '#fffbeb' }}>
+                                            Bloqueado até dia 1º
+                                          </span>
+                                        )}
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      {isPostponed && (
-                                        <span className="inline-flex items-center gap-1 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm" style={{ background: '#f97316' }}>
-                                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                          </svg>
-                                          ADIADO
-                                        </span>
-                                      )}
-                                      {isOwner ? (
-                                        <button
-                                          onClick={() => handleUnlockMatches([m.id])}
-                                          className="px-2 py-1 text-xs font-medium rounded transition-colors"
-                                          style={{ background: 'var(--accent)', color: 'var(--primary)' }}
-                                        >
-                                          Liberar
-                                        </button>
-                                      ) : (
-                                        <span className="text-xs px-2 py-1 rounded" style={{ color: '#d97706', background: '#fffbeb' }}>
-                                          Bloqueado até dia 1º
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                )
-                              })}
+                                  )
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-center py-8" style={{ color: 'var(--neutral-400)' }}>
-                            {drawnFilterPlayer ? "Nenhum jogo futuro deste jogador encontrado." : "Nenhum jogo futuro encontrado."}
-                          </p>
-                        )}
-                      </>
-                    )}
+                          ) : (
+                            <p className="text-sm text-center py-8" style={{ color: 'var(--neutral-400)' }}>
+                              {drawnFilterPlayer ? "Nenhum jogo futuro deste jogador encontrado." : drawnMonthFilter ? "Nenhum jogo futuro neste mês." : "Nenhum jogo futuro encontrado."}
+                            </p>
+                          )}
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
               )
@@ -1221,6 +1330,7 @@ export default function TournamentPage() {
                   if (filterPlayerId && m.homePlayer.id !== filterPlayerId && m.awayPlayer.id !== filterPlayerId) return false
                   if (filterChallenge === "challenge" && !m.isChallenge) return false
                   if (filterChallenge === "normal" && m.isChallenge) return false
+                  if (filterMonth && m.month !== filterMonth) return false
                   return true
                 })
               }
@@ -1228,13 +1338,26 @@ export default function TournamentPage() {
               const filteredUpcoming = applyFilters(upcoming)
               const filteredCompleted = applyFilters(completed)
 
-              const sortNewest = (a: Match, b: Match) => {
+              const sortOldestFirst = (a: Match, b: Match) => {
+                const da = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0
+                const db = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0
+                return da - db
+              }
+              const sortNewestFirst = (a: Match, b: Match) => {
                 const da = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0
                 const db = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0
                 return db - da
               }
-              filteredUpcoming.sort(sortNewest)
-              filteredCompleted.sort(sortNewest)
+              filteredUpcoming.sort(sortOldestFirst)
+              filteredCompleted.sort(sortNewestFirst)
+
+              const availableMonths = Array.from(new Set(matches.map(m => m.month).filter((v): v is string => Boolean(v)))).sort()
+              const monthLabels: Record<string, string> = {
+                '01/2026': 'Janeiro 2026', '02/2026': 'Fevereiro 2026', '03/2026': 'Março 2026',
+                '04/2026': 'Abril 2026', '05/2026': 'Maio 2026', '06/2026': 'Junho 2026',
+                '07/2026': 'Julho 2026', '08/2026': 'Agosto 2026', '09/2026': 'Setembro 2026',
+                '10/2026': 'Outubro 2026', '11/2026': 'Novembro 2026', '12/2026': 'Dezembro 2026',
+              }
 
               return (
                 <div className="space-y-4">
@@ -1256,7 +1379,16 @@ export default function TournamentPage() {
                       </svg>
                       <span className="text-sm font-medium" style={{ color: 'var(--neutral-600)' }}>Filtros</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
+                      <div>
+                        <label className="block text-xs mb-1" style={{ color: 'var(--neutral-400)' }}>Mês/Ano</label>
+                        <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="input w-full text-sm">
+                          <option value="">Todos</option>
+                          {availableMonths.map(m => (
+                            <option key={m} value={m}>{monthLabels[m] || m}</option>
+                          ))}
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-xs mb-1" style={{ color: 'var(--neutral-400)' }}>Data início</label>
                         <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="input w-full text-sm" />
@@ -1292,8 +1424,8 @@ export default function TournamentPage() {
                         </select>
                       </div>
                     </div>
-                    {(filterDateFrom || filterDateTo || filterCourtId || filterPlayerId || filterChallenge !== "all") && (
-                      <button onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); setFilterCourtId(""); setFilterPlayerId(""); setFilterChallenge("all") }} className="text-xs mt-2" style={{ color: 'var(--neutral-400)' }}>
+                    {(filterDateFrom || filterDateTo || filterCourtId || filterPlayerId || filterChallenge !== "all" || filterMonth) && (
+                      <button onClick={() => { setFilterDateFrom(""); setFilterDateTo(""); setFilterCourtId(""); setFilterPlayerId(""); setFilterChallenge("all"); setFilterMonth("") }} className="text-xs mt-2" style={{ color: 'var(--neutral-400)' }}>
                         Limpar filtros
                       </button>
                     )}
@@ -1592,14 +1724,19 @@ export default function TournamentPage() {
                 return fy > currentYear || (fy === currentYear && fm > currentMonth)
               })
 
-              const sortNewest = (a: Match, b: Match) => {
+              const sortOldestFirst = (a: Match, b: Match) => {
+                const da = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0
+                const db = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0
+                return da - db
+              }
+              const sortNewestFirst = (a: Match, b: Match) => {
                 const da = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0
                 const db = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0
                 return db - da
               }
 
-              scheduledUpcoming.sort(sortNewest)
-              completed.sort(sortNewest)
+              scheduledUpcoming.sort(sortOldestFirst)
+              completed.sort(sortNewestFirst)
 
               const isWin = (m: Match) => {
                 if (m.status === "wo") return m.winnerId === user.id
@@ -2209,6 +2346,35 @@ export default function TournamentPage() {
                     </div>
                     {inviteError && <p className="text-sm mt-2" style={{ color: '#ef4444' }}>{inviteError}</p>}
                     {inviteSuccess && <p className="text-sm mt-2" style={{ color: 'var(--accent)' }}>{inviteSuccess}</p>}
+                    
+                    {tournament.status === "registration_open" && (
+                      <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                        <button
+                          onClick={async () => {
+                            if (!confirm("Tem certeza que deseja encerrar as inscrições? Esta ação não pode ser desfeita.")) return
+                            const token = localStorage.getItem("token")
+                            const res = await fetch(`/api/tournaments/${tournament.id}`, {
+                              method: "PATCH",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ status: "registration_closed" })
+                            })
+                            if (res.ok) {
+                              fetchTournament()
+                            }
+                          }}
+                          className="btn-secondary text-sm"
+                          style={{ borderColor: '#ef4444', color: '#ef4444' }}
+                        >
+                          Encerrar Inscrições
+                        </button>
+                        <p className="text-xs mt-1" style={{ color: 'var(--neutral-400)' }}>
+                          Ao encerrar, nenhum novo participante poderá se inscrever.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -2237,6 +2403,46 @@ export default function TournamentPage() {
                         <span className={`status-badge ${member.role === "organizer" ? "bg-purple-50 text-purple-700" : "status-draft"}`}>
                           {member.role === "organizer" ? "Organizador" : "Jogador"}
                         </span>
+                        {member.paymentStatus === "CONFIRMED" && (isOwner || member.user.id === user?.id) && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(34, 197, 94, 0.1)", color: "#16a34a" }}>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Pago
+                          </span>
+                        )}
+                        {member.paymentStatus === "AWAITING_PIX" && member.user.id === user?.id && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "rgba(251, 191, 36, 0.1)", color: "#d97706" }}>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Aguardando pagamento
+                          </span>
+                        )}
+                        {/* Botão remover (apenas para organizador, não para si mesmo) */}
+                        {isOwner && member.user.id !== user?.id && member.role !== "organizer" && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Remover ${member.user.name} do torneio?`)) return
+                              const token = localStorage.getItem("token")
+                              const res = await fetch(`/api/tournaments/${tournament.id}/members`, {
+                                method: "DELETE",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ memberId: member.id })
+                              })
+                              if (res.ok) {
+                                fetchTournament()
+                              }
+                            }}
+                            className="text-xs px-2 py-1 rounded-lg transition-colors"
+                            style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }}
+                          >
+                            Remover
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
