@@ -761,7 +761,7 @@ async function main() {
     // Status
     let status: string;
     if (isWO) {
-      status = 'finished';
+      status = 'wo';
     } else if (hasAnyScore) {
       status = 'finished';
       if (!scheduledAt) {
@@ -836,8 +836,8 @@ async function main() {
           awayScore: m.awayScore,
           winnerId: m.winnerId,
           endReason: m.endReason,
-          startedAt: m.status === 'finished' ? m.scheduledAt : null,
-          finishedAt: m.status === 'finished' ? m.scheduledAt : null,
+          startedAt: (m.status === 'finished' || m.status === 'wo') ? m.scheduledAt : null,
+          finishedAt: (m.status === 'finished' || m.status === 'wo') ? m.scheduledAt : null,
           round: m.round,
           month: m.month,
           isChallenge: m.isChallenge,
