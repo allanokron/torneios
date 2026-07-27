@@ -514,6 +514,14 @@ model PlayerRanking {
   challengeWins     Int @default(0)
   challengeLosses   Int @default(0)
 
+  // Estatísticas de W.O.
+  woPointsWon   Int @default(0)
+  woPointsLost  Int @default(0)
+  woSetsWon     Int @default(0)
+  woSetsLost    Int @default(0)
+  woGamesWon    Int @default(0)
+  woGamesLost   Int @default(0)
+
   lastResults Json? // Array dos últimos resultados
 
   createdAt DateTime @default(now())

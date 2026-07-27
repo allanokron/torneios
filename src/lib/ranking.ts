@@ -37,6 +37,12 @@ type RankingStats = {
   gamesWon: number
   gamesLost: number
   matchPoints: number
+  woPointsWon: number
+  woPointsLost: number
+  woSetsWon: number
+  woSetsLost: number
+  woGamesWon: number
+  woGamesLost: number
 }
 
 type ChallengeStats = {
@@ -64,6 +70,12 @@ type RankingRow = RankingStats & {
   challengeMatches: number
   challengeWins: number
   challengeLosses: number
+  woPointsWon: number
+  woPointsLost: number
+  woSetsWon: number
+  woSetsLost: number
+  woGamesWon: number
+  woGamesLost: number
 }
 
 function emptyStats(): RankingStats {
@@ -78,6 +90,12 @@ function emptyStats(): RankingStats {
     gamesWon: 0,
     gamesLost: 0,
     matchPoints: 0,
+    woPointsWon: 0,
+    woPointsLost: 0,
+    woSetsWon: 0,
+    woSetsLost: 0,
+    woGamesWon: 0,
+    woGamesLost: 0,
   }
 }
 
@@ -219,6 +237,17 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
       loser.setsLost += winnerSets
       loser.gamesWon += loserGames
       loser.gamesLost += winnerGames
+
+      winner.woPointsWon += scoring.winByWO
+      winner.woSetsWon += winnerSets
+      winner.woSetsLost += loserSets
+      winner.woGamesWon += winnerGames
+      winner.woGamesLost += loserGames
+      loser.woPointsLost += scoring.lossByWO
+      loser.woSetsWon += loserSets
+      loser.woSetsLost += winnerSets
+      loser.woGamesWon += loserGames
+      loser.woGamesLost += winnerGames
       continue
     }
 
@@ -346,6 +375,12 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
         challengeMatches: cs.challengeMatches,
         challengeWins: cs.challengeWins,
         challengeLosses: cs.challengeLosses,
+        woPointsWon: stats.woPointsWon,
+        woPointsLost: stats.woPointsLost,
+        woSetsWon: stats.woSetsWon,
+        woSetsLost: stats.woSetsLost,
+        woGamesWon: stats.woGamesWon,
+        woGamesLost: stats.woGamesLost,
       }
 
       if (!month) {
@@ -369,6 +404,12 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
             challengeMatches: cs.challengeMatches,
             challengeWins: cs.challengeWins,
             challengeLosses: cs.challengeLosses,
+            woPointsWon: stats.woPointsWon,
+            woPointsLost: stats.woPointsLost,
+            woSetsWon: stats.woSetsWon,
+            woSetsLost: stats.woSetsLost,
+            woGamesWon: stats.woGamesWon,
+            woGamesLost: stats.woGamesLost,
           },
           create: {
             tournamentId,
@@ -391,6 +432,12 @@ export async function recalculateTournamentRanking(tournamentId: string, month?:
             challengeMatches: cs.challengeMatches,
             challengeWins: cs.challengeWins,
             challengeLosses: cs.challengeLosses,
+            woPointsWon: stats.woPointsWon,
+            woPointsLost: stats.woPointsLost,
+            woSetsWon: stats.woSetsWon,
+            woSetsLost: stats.woSetsLost,
+            woGamesWon: stats.woGamesWon,
+            woGamesLost: stats.woGamesLost,
           },
         })
       }

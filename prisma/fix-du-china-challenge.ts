@@ -81,7 +81,6 @@ async function main() {
         setsLost: 8,
         gamesWon: 210,
         gamesLost: 82,
-        matchPoints: 2360,
         setBalance: 23,
         gamesBalance: 128,
         challengePoints: 250,
