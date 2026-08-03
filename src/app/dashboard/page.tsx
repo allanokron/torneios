@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [upcomingMatches, setUpcomingMatches] = useState<UpcomingMatch[]>([])
   const [invitations, setInvitations] = useState<PendingInvitation[]>([])
+  const [canCreateTournament, setCanCreateTournament] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -81,7 +82,13 @@ export default function DashboardPage() {
         }
         setUser(authData.user)
 
-        const tournamentsRes = await fetch("/api/tournaments", {
+        const organizerRes = await fetch("/api/organizer/status", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const organizerData = await organizerRes.json()
+        setCanCreateTournament(Boolean(organizerData.canCreateTournament))
+
+        const tournamentsRes = await fetch("/api/tournaments?mine=1", {
           headers: { Authorization: `Bearer ${token}` }
         })
         const tournamentsData = await tournamentsRes.json()
@@ -283,8 +290,8 @@ export default function DashboardPage() {
               ) : tournaments.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm mb-3" style={{ color: 'var(--neutral-400)' }}>Você ainda não participa de nenhum torneio</p>
-                  <Link href="/tournaments/new" className="btn-primary text-sm">
-                    Criar Primeiro Torneio
+                  <Link href="/tournaments" className="btn-primary text-sm">
+                    Buscar torneios
                   </Link>
                 </div>
               ) : (
@@ -383,9 +390,15 @@ export default function DashboardPage() {
             <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <h3 className="font-medium mb-3" style={{ color: 'var(--text)' }}>Ações Rápidas</h3>
               <div className="space-y-2">
-                <Link href="/tournaments/new" className="btn-primary w-full justify-center text-sm">
-                  Criar Torneio
-                </Link>
+                {canCreateTournament ? (
+                  <Link href="/tournaments/new" className="btn-primary w-full justify-center text-sm">
+                    Criar Torneio
+                  </Link>
+                ) : (
+                  <Link href="/organizer" className="btn-primary w-full justify-center text-sm">
+                    Virar organizador
+                  </Link>
+                )}
                 <Link href="/tournaments" className="btn-secondary w-full justify-center text-sm">
                   Buscar Torneios
                 </Link>
@@ -411,13 +424,15 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm" style={{ color: 'var(--neutral-400)' }}>Status</span>
-                  <span className="text-sm font-medium" style={{ color: 'var(--neutral-400)' }}>Gratuito</span>
+                  <span className="text-sm font-medium" style={{ color: canCreateTournament ? 'var(--accent-dark)' : 'var(--neutral-400)' }}>
+                    {canCreateTournament ? "Organizador" : "Gratuito"}
+                  </span>
                 </div>
                 <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
-                  Assine para criar torneios e ter acesso a todos os recursos.
+                  {canCreateTournament ? "Sua área de criação e gestão de torneios está liberada." : "Assine ou compre uma abertura avulsa para criar torneios."}
                 </p>
-                <Link href="/settings" className="btn-secondary w-full justify-center text-sm">
-                  Ver planos
+                <Link href="/organizer" className="btn-secondary w-full justify-center text-sm">
+                  {canCreateTournament ? "Abrir área do organizador" : "Ver opções"}
                 </Link>
               </div>
             </div>

@@ -38,6 +38,13 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    if (payment.type === "TOURNAMENT_EXTRA") {
+      await prisma.organizerTournamentCredit.updateMany({
+        where: { paymentId: payment.id },
+        data: { status: "AVAILABLE" },
+      })
+    }
+
     await prisma.auditLog.create({
       data: {
         userId: payment.userId,

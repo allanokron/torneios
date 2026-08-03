@@ -30,6 +30,7 @@ export default function TournamentsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<{ id: string; name: string } | null>(null)
+  const [canCreateTournament, setCanCreateTournament] = useState(false)
   const [filter, setFilter] = useState("all")
   const [searchState, setSearchState] = useState("")
   const [searchCity, setSearchCity] = useState("")
@@ -45,6 +46,12 @@ export default function TournamentsPage() {
           if (data.user) setUser(data.user)
         })
         .catch(() => {})
+      fetch("/api/organizer/status", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => setCanCreateTournament(Boolean(data.canCreateTournament)))
+        .catch(() => setCanCreateTournament(false))
     }
 
     fetch("/api/tournaments")
@@ -91,8 +98,8 @@ export default function TournamentsPage() {
             <p className="text-sm mt-1" style={{ color: 'var(--neutral-400)' }}>Encontre ou crie um torneio</p>
           </div>
           {user && (
-            <Link href="/tournaments/new" className="btn-primary text-sm">
-              Criar Torneio
+            <Link href={canCreateTournament ? "/tournaments/new" : "/organizer"} className="btn-primary text-sm">
+              {canCreateTournament ? "Criar Torneio" : "Virar organizador"}
             </Link>
           )}
         </div>
@@ -179,8 +186,8 @@ export default function TournamentsPage() {
           <div className="text-center py-12 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <p className="mb-4" style={{ color: 'var(--neutral-400)' }}>Nenhum torneio encontrado</p>
             {user && (
-              <Link href="/tournaments/new" className="btn-primary text-sm">
-                Criar Torneio
+              <Link href={canCreateTournament ? "/tournaments/new" : "/organizer"} className="btn-primary text-sm">
+                {canCreateTournament ? "Criar Torneio" : "Virar organizador"}
               </Link>
             )}
           </div>

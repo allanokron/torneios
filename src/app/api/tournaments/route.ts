@@ -2,12 +2,14 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { normalizeTournamentFormat, RANKING_ELIMINATION_FORMAT } from "@/lib/knockout"
+import { consumeOrganizerCreditIfNeeded, getOrganizerAccess } from "@/lib/organizer-access"
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const search = searchParams.get("search")
+    const mine = searchParams.get("mine") === "1"
 
     const where: Record<string, unknown> = {}
 
@@ -32,7 +34,12 @@ export async function GET(request: Request) {
     }
 
     // Public tournaments visible to all, private only to members/owner
-    if (currentUserId) {
+    if (mine && currentUserId) {
+      where.OR = [
+        { ownerId: currentUserId },
+        { members: { some: { userId: currentUserId, status: "accepted" } } }
+      ]
+    } else if (currentUserId) {
       where.OR = [
         { isPublic: true },
         { ownerId: currentUserId },
@@ -98,6 +105,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
+    const access = await getOrganizerAccess(decoded.userId)
+    if (!access.canCreateTournament) {
+      return NextResponse.json(
+        { error: "Para criar torneios, assine um plano de organizador ou compre uma abertura avulsa." },
+        { status: 403 }
+      )
+    }
+
     const {
       name,
       description,
@@ -252,6 +267,8 @@ export async function POST(request: Request) {
         tiebreakerConfig: true
       }
     })
+
+    await consumeOrganizerCreditIfNeeded(decoded.userId, tournament.id)
 
     // Create audit log
     await prisma.auditLog.create({

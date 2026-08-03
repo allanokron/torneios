@@ -21,6 +21,8 @@ export default function NewTournamentPage() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [checkingAccess, setCheckingAccess] = useState(true)
+  const [canCreateTournament, setCanCreateTournament] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -35,6 +37,7 @@ export default function NewTournamentPage() {
     registrationDeadline: "",
     maxParticipants: "",
     format: "points_ranking",
+    categoryFormat: "group_ranking_knockout",
     knockoutQualifiers: "",
     isPublic: true,
     inviteCode: "",
@@ -89,11 +92,55 @@ export default function NewTournamentPage() {
     return labels[sport] || sport
   }
 
+  const formatDescriptions: Record<string, { title: string; description: string; params: string }> = {
+    points_ranking: {
+      title: "Ranking Pontos Diretos",
+      description: "Todos jogam contra todos e o primeiro colocado do ranking é o campeão.",
+      params: "Configure pontuação, critérios de desempate e geração de jogos do ranking.",
+    },
+    ranking_elimination: {
+      title: "Ranking com Mata-Mata",
+      description: "A fase inicial gera ranking; depois os melhores classificados entram no mata-mata.",
+      params: "Informe quantos classificam para o mata-mata e as regras de pontuação.",
+    },
+    group_ranking_knockout: {
+      title: "Grupo + Ranking + Mata-Mata",
+      description: "Equipes são sorteadas em grupos, classificadas dentro deles e depois ranqueadas para montar a chave.",
+      params: "Informe equipes por grupo, classificados para ouro/prata e regras dos sets.",
+    },
+    group_knockout: {
+      title: "Grupo + Mata-Mata",
+      description: "Equipes jogam dentro dos grupos e os classificados cruzam com grupos sorteados.",
+      params: "Informe equipes por grupo e quantos classificam para série ouro e prata.",
+    },
+    double_elimination: {
+      title: "Dupla Eliminatória",
+      description: "A equipe só é eliminada após perder duas vezes, com chave de vencedores e perdedores.",
+      params: "Configure as equipes/categorias; o sistema separa vencedores e perdedores na chave.",
+    },
+    ranking_knockout: {
+      title: "Ranking + Mata-Mata",
+      description: "Todos formam um ranking inicial e os melhores avançam para o mata-mata.",
+      params: "Informe total de classificados e, se quiser, série ouro e prata.",
+    },
+  }
+
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
       router.push("/login")
+      return
     }
+
+    fetch("/api/organizer/status", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setCanCreateTournament(Boolean(data.canCreateTournament))
+        if (!data.canCreateTournament) setError("Para criar torneios, libere sua área de organizador.")
+      })
+      .finally(() => setCheckingAccess(false))
   }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -151,6 +198,10 @@ export default function NewTournamentPage() {
         router.push("/login")
         return
       }
+      if (!canCreateTournament) {
+        router.push("/organizer")
+        return
+      }
 
       // Create tournament
       const res = await fetch("/api/tournaments", {
@@ -191,6 +242,36 @@ export default function NewTournamentPage() {
       if (!res.ok) {
         setError(data.error || "Erro ao criar torneio")
         return
+      }
+
+      if (formData.sport === "beach_volley") {
+        await fetch(`/api/tournaments/${data.tournament.id}/categories`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            sport: "beach_volley",
+            gender: "male",
+            teamSize: "double",
+            level: "open",
+            format: formData.categoryFormat,
+            enableSilverSeries: true,
+            groupSize: "4",
+            goldQualifiersPerGroup: "2",
+            silverQualifiersPerGroup: "2",
+            goldQualifiersTotal: "",
+            silverQualifiersTotal: "",
+            oddGroupPolicy: "ranking_byes",
+            setsPerMatch: "3",
+            normalSetPoints: "21",
+            tiebreakSetPoints: "15",
+            minPointDifference: "2",
+            paymentMode: "manual",
+            registrationFee: null,
+          }),
+        })
       }
 
       // Create courts
@@ -290,6 +371,18 @@ export default function NewTournamentPage() {
           </div>
         )}
 
+        {!checkingAccess && !canCreateTournament && (
+          <div className="card mb-6">
+            <h3 className="font-semibold" style={{ color: 'var(--text)' }}>Área de organizador necessária</h3>
+            <p className="mt-2 text-sm" style={{ color: 'var(--neutral-500)' }}>
+              Jogadores podem se inscrever e acompanhar jogos. Para criar torneios, libere sua área de organizador com assinatura mensal ou abertura avulsa.
+            </p>
+            <Link href="/organizer" className="btn-primary mt-4 text-sm">
+              Ver opções de organizador
+            </Link>
+          </div>
+        )}
+
         {/* Step 1: General Information */}
         {step === 1 && (
           <div className="card space-y-6">
@@ -342,13 +435,24 @@ export default function NewTournamentPage() {
               <div>
                 <label className="label">Tipo de Torneio</label>
                 <select
-                  name="format"
-                  value={formData.format}
+                  name={formData.sport === "beach_volley" ? "categoryFormat" : "format"}
+                  value={formData.sport === "beach_volley" ? formData.categoryFormat : formData.format}
                   onChange={handleChange}
                   className="input"
                 >
-                  <option value="points_ranking">Ranking Pontos Diretos</option>
-                  <option value="ranking_elimination">Ranking com Mata-Mata</option>
+                  {formData.sport === "beach_volley" ? (
+                    <>
+                      <option value="group_ranking_knockout">Grupo + Ranking + Mata-Mata</option>
+                      <option value="group_knockout">Grupo + Mata-Mata</option>
+                      <option value="double_elimination">Dupla Eliminatória</option>
+                      <option value="ranking_knockout">Ranking + Mata-Mata</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="points_ranking">Ranking Pontos Diretos</option>
+                      <option value="ranking_elimination">Ranking com Mata-Mata</option>
+                    </>
+                  )}
                 </select>
               </div>
               {formData.format === "ranking_elimination" && (
@@ -365,6 +469,20 @@ export default function NewTournamentPage() {
                   />
                 </div>
               )}
+            </div>
+
+            <div className="rounded-xl border p-4" style={{ borderColor: 'var(--border)', background: 'var(--neutral-50)' }}>
+              {(() => {
+                const selectedFormat = formData.sport === "beach_volley" ? formData.categoryFormat : formData.format
+                const info = formatDescriptions[selectedFormat]
+                return (
+                  <>
+                    <h4 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{info.title}</h4>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--neutral-600)' }}>{info.description}</p>
+                    <p className="mt-2 text-xs" style={{ color: 'var(--neutral-500)' }}>{info.params}</p>
+                  </>
+                )
+              })()}
             </div>
 
             <div>
@@ -945,14 +1063,14 @@ export default function NewTournamentPage() {
             <button
               onClick={() => setStep(step + 1)}
               className="btn-primary"
-              disabled={step === 1 && !formData.name}
+              disabled={(step === 1 && !formData.name) || !canCreateTournament}
             >
               Próximo
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={loading || !canCreateTournament}
               className="btn-primary disabled:opacity-50"
             >
               {loading ? "Criando..." : "Criar Torneio"}

@@ -15,6 +15,7 @@ interface HeaderProps {
 export default function Header({ user }: HeaderProps) {
   const pathname = usePathname()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [canCreateTournament, setCanCreateTournament] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
   
   const isActive = (path: string) => {
@@ -45,6 +46,22 @@ export default function Header({ user }: HeaderProps) {
       document.removeEventListener("keydown", handleKeyDown)
     }
   }, [isProfileMenuOpen])
+
+  useEffect(() => {
+    if (!user) {
+      return
+    }
+
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    fetch("/api/organizer/status", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => setCanCreateTournament(Boolean(data.canCreateTournament)))
+      .catch(() => setCanCreateTournament(false))
+  }, [user])
 
   const closeProfileMenu = () => setIsProfileMenuOpen(false)
 
@@ -92,6 +109,17 @@ export default function Header({ user }: HeaderProps) {
                 >
                   Torneios
                 </Link>
+                <Link
+                  href="/organizer"
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    isActive("/organizer")
+                      ? "text-white"
+                      : "text-white/80 hover:text-white hover:bg-white/5"
+                  }`}
+                  style={isActive("/organizer") ? { background: 'rgba(184, 224, 0, 0.15)', color: 'var(--accent)' } : {}}
+                >
+                  Organizador
+                </Link>
               </>
             )}
           </nav>
@@ -99,16 +127,26 @@ export default function Header({ user }: HeaderProps) {
           <div className="flex items-center gap-2">
             {user ? (
               <div className="flex items-center gap-2">
-                <Link
-                  href="/tournaments/new"
-                  className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
-                  style={{ background: 'var(--accent)', color: 'var(--primary)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Criar Torneio
-                </Link>
+                {canCreateTournament ? (
+                  <Link
+                    href="/tournaments/new"
+                    className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
+                    style={{ background: 'var(--accent)', color: 'var(--primary)' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Criar Torneio
+                  </Link>
+                ) : (
+                  <Link
+                    href="/organizer"
+                    className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
+                    style={{ background: 'rgba(184, 224, 0, 0.15)', color: 'var(--accent)' }}
+                  >
+                    Virar organizador
+                  </Link>
+                )}
                 
                 <div ref={profileMenuRef} className="relative group">
                   <button
@@ -150,6 +188,9 @@ export default function Header({ user }: HeaderProps) {
                     </Link>
                     <Link href="/settings" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
                       Configurações
+                    </Link>
+                    <Link href="/organizer" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
+                      {canCreateTournament ? "Área do Organizador" : "Virar organizador"}
                     </Link>
                     <Link href="/legal" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
                       Central Jurídica

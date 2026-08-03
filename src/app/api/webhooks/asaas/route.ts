@@ -111,6 +111,13 @@ async function handlePaymentReceived(payment: { id: string; value: number; exter
     })
   }
 
+  if (dbPayment.type === "TOURNAMENT_EXTRA") {
+    await prisma.organizerTournamentCredit.updateMany({
+      where: { paymentId: dbPayment.id },
+      data: { status: "AVAILABLE" },
+    })
+  }
+
   // Registrar auditoria
   await prisma.auditLog.create({
     data: {
@@ -157,9 +164,15 @@ async function handleSubscriptionCreated(subscription: { id: string; customer: s
   if (!subscription) return
 
   await prisma.subscription.updateMany({
-    where: { asaasCustomerId: subscription.customer },
+    where: {
+      OR: [
+        { asaasCustomerId: subscription.customer },
+        { asaasSubscriptionId: subscription.id },
+      ],
+    },
     data: {
       asaasSubscriptionId: subscription.id,
+      asaasCustomerId: subscription.customer,
       status: "ACTIVE",
     },
   })
@@ -169,8 +182,15 @@ async function handleSubscriptionAuthorized(subscription: { id: string; customer
   if (!subscription) return
 
   await prisma.subscription.updateMany({
-    where: { asaasCustomerId: subscription.customer },
+    where: {
+      OR: [
+        { asaasCustomerId: subscription.customer },
+        { asaasSubscriptionId: subscription.id },
+      ],
+    },
     data: {
+      asaasCustomerId: subscription.customer,
+      asaasSubscriptionId: subscription.id,
       status: "ACTIVE",
       tournamentCreditsUsed: 0, // Resetar créditos ao assinar
     },

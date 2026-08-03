@@ -53,6 +53,7 @@ model User {
   lgpdRequests               LGPDRequest[]
   accountDeletions           AccountDeletion[]
   subscription               Subscription?
+  organizerCredits           OrganizerTournamentCredit[]
   payments                   Payment[]
   categoryTeamMemberships    CategoryTeamMember[]
   categoryTeamInvitesSent    CategoryTeamInvite[] @relation("CategoryTeamInviteSender")
@@ -143,6 +144,7 @@ model Tournament {
   auditLogs        AuditLog[]
   payments         Payment[]
   categories       TournamentCategory[]
+  organizerCredit OrganizerTournamentCredit? @relation("CreditTournament")
 }
 
 model TournamentMember {
@@ -947,6 +949,8 @@ model Subscription {
   id                    String   @id @default(cuid())
   userId                String   @unique
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                String?
+  plan                  OrganizerPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
   asaasCustomerId       String?
   asaasSubscriptionId   String?
   status                String   @default("INACTIVE") // INACTIVE, ACTIVE, SUSPENDED, PAST_DUE, CANCELLED
@@ -955,6 +959,37 @@ model Subscription {
   tournamentCreditsUsed Int      @default(0) // quantos dos 2 inclusos foram usados
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+model OrganizerPlan {
+  id                    String   @id @default(cuid())
+  code                  String   @unique
+  name                  String
+  description           String?
+  monthlyValue          Int
+  tournamentLimit       Int?     // null = ilimitado
+  features              Json?
+  isActive              Boolean  @default(true)
+  subscriptions         Subscription[]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model OrganizerTournamentCredit {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paymentId    String?     @unique
+  payment      Payment?    @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  tournamentId String?     @unique
+  tournament   Tournament? @relation("CreditTournament", fields: [tournamentId], references: [id], onDelete: SetNull)
+  status       String      @default("AVAILABLE") // PENDING_PAYMENT, AVAILABLE, USED, CANCELLED
+  value        Int         @default(4990)
+  usedAt       DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId, status])
 }
 
 model Payment {
@@ -981,6 +1016,7 @@ model Payment {
   paidAt            DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  organizerCredit   OrganizerTournamentCredit?
 }
 
 model WebhookEvent {
