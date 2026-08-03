@@ -25,6 +25,7 @@ export default function NewTournamentPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    sport: "tennis",
     location: "",
     address: "",
     city: "",
@@ -79,6 +80,15 @@ export default function NewTournamentPage() {
 
   const [courts, setCourts] = useState<CourtData[]>([])
   const [coverPreview, setCoverPreview] = useState("")
+
+  const getSportLabel = (sport: string) => {
+    const labels: Record<string, string> = {
+      tennis: "Tênis",
+      beach_volley: "Vôlei de Praia",
+    }
+    return labels[sport] || sport
+  }
+
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
@@ -197,7 +207,7 @@ export default function NewTournamentPage() {
         }
       }
 
-      router.push(`/tournaments/${data.tournament.id}`)
+      router.push(`/tournaments/${data.tournament.id}${formData.sport === "beach_volley" ? "?tab=categories" : ""}`)
     } catch {
       setError("Erro ao conectar com o servidor")
     } finally {
@@ -293,9 +303,27 @@ export default function NewTournamentPage() {
                 value={formData.name}
                 onChange={handleChange}
                 className="input"
-                placeholder="Ex: Liga de Tênis 2026"
+                placeholder={formData.sport === "beach_volley" ? "Ex: Circuito de Vôlei de Praia 2026" : "Ex: Liga de Tênis 2026"}
                 required
               />
+            </div>
+
+            <div>
+              <label className="label">Esporte *</label>
+              <select
+                name="sport"
+                value={formData.sport}
+                onChange={handleChange}
+                className="input"
+              >
+                <option value="tennis">Tênis</option>
+                <option value="beach_volley">Vôlei de Praia</option>
+              </select>
+              {formData.sport === "beach_volley" && (
+                <p className="mt-2 text-sm" style={{ color: 'var(--neutral-500)' }}>
+                  Depois de criar, configure as categorias do vôlei, como Masculino Open, Feminino Iniciante ou Misto Intermediário.
+                </p>
+              )}
             </div>
 
             <div>
@@ -558,6 +586,7 @@ export default function NewTournamentPage() {
                           <option value="hard">Quadra Dura</option>
                           <option value="clay">Quadra de Saibro</option>
                           <option value="grass">Quadra de Grama</option>
+                          <option value="sand">Areia</option>
                         </select>
                       </div>
 
@@ -847,6 +876,9 @@ export default function NewTournamentPage() {
             <div className="space-y-4">
               <div className="p-4 rounded-lg" style={{ background: 'var(--neutral-50)' }}>
                 <h4 className="font-medium mb-2" style={{ color: 'var(--text)' }}>{formData.name || "Nome do Torneio"}</h4>
+                <p className="text-sm font-medium" style={{ color: 'var(--neutral-600)' }}>
+                  {getSportLabel(formData.sport)}
+                </p>
                 <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
                   {formData.location || "Local não informado"} • {formData.city || "Cidade"}, {formData.state || "UF"}
                 </p>
