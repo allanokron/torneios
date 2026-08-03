@@ -1,8 +1,8 @@
 import prisma from "@/lib/prisma"
 
 export async function getPublicTournament(tournamentId: string) {
-  return prisma.tournament.findUnique({
-    where: { id: tournamentId },
+  return prisma.tournament.findFirst({
+    where: { id: tournamentId, visibilityStatus: "ACTIVE" },
     select: {
       id: true,
       name: true,
@@ -35,8 +35,8 @@ export async function getPublicTournament(tournamentId: string) {
 }
 
 export async function getPublicCategory(categoryId: string) {
-  return prisma.tournamentCategory.findUnique({
-    where: { id: categoryId },
+  return prisma.tournamentCategory.findFirst({
+    where: { id: categoryId, tournament: { visibilityStatus: "ACTIVE" } },
     include: {
       tournament: {
         select: { id: true, name: true, startDate: true, endDate: true, location: true, city: true, state: true },

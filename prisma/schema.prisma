@@ -23,6 +23,10 @@ model User {
   gameLevel    String?
   dominantHand String?
   asaasCustomerId String?  @unique // ID do cliente no Asaas
+  platformRole String @default("USER") // USER, ADMIN, OWNER
+  status       String @default("ACTIVE") // ACTIVE, DISABLED
+  disabledAt   DateTime?
+  disabledReason String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -54,6 +58,7 @@ model User {
   accountDeletions           AccountDeletion[]
   subscription               Subscription?
   organizerCredits           OrganizerTournamentCredit[]
+  manualOrganizerAccess      ManualOrganizerAccess?
   payments                   Payment[]
   categoryTeamMemberships    CategoryTeamMember[]
   categoryTeamInvitesSent    CategoryTeamInvite[] @relation("CategoryTeamInviteSender")
@@ -88,6 +93,9 @@ model Tournament {
   isPublic             Boolean   @default(true)
   inviteCode           String?   @unique
   status               String    @default("draft") // draft, registration_open, registration_closed, in_progress, finished
+  visibilityStatus     String    @default("ACTIVE") // ACTIVE, DISABLED
+  disabledAt           DateTime?
+  disabledReason       String?
   ownerId              String
   owner                User      @relation("TournamentOwner", fields: [ownerId], references: [id])
 
@@ -990,6 +998,19 @@ model OrganizerTournamentCredit {
   updatedAt    DateTime    @updatedAt
 
   @@index([userId, status])
+}
+
+model ManualOrganizerAccess {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled   Boolean  @default(false)
+  reason    String?
+  grantedBy String?
+  grantedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Payment {

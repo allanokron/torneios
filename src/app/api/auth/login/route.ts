@@ -25,6 +25,13 @@ export async function POST(request: Request) {
       )
     }
 
+    if (user.status === "DISABLED") {
+      return NextResponse.json(
+        { error: "Usuário desativado. Fale com o suporte." },
+        { status: 403 }
+      )
+    }
+
     const isValidPassword = await verifyPassword(password, user.passwordHash)
 
     if (!isValidPassword) {
@@ -50,7 +57,9 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        platformRole: user.platformRole,
+        status: user.status,
       },
       token,
       needsConsent

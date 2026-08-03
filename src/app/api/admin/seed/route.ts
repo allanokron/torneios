@@ -1,20 +1,12 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
-import { verifyToken } from "@/lib/auth"
+import { requirePlatformAdmin } from "@/lib/platform-admin"
 import { hash } from "bcryptjs"
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get("authorization")
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Token não fornecido" }, { status: 401 })
-    }
-
-    const token = authHeader.split(" ")[1]
-    const decoded = verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: "Token inválido" }, { status: 401 })
-    }
+    const { response } = await requirePlatformAdmin(request)
+    if (response) return response
 
     const body = await request.json().catch(() => ({}))
     const secret = body.secret

@@ -53,6 +53,8 @@ export async function POST(request: Request) {
         bio: bio || null,
         gameLevel: gameLevel || null,
         dominantHand: dominantHand || null,
+        platformRole: "USER",
+        status: "ACTIVE",
         profile: {
           create: {}
         }

@@ -31,10 +31,13 @@ export async function ensureDefaultOrganizerPlan() {
 }
 
 export async function getOrganizerAccess(userId: string) {
-  const [subscription, availableCredit, ownedTournaments] = await Promise.all([
+  const [subscription, manualAccess, availableCredit, ownedTournaments] = await Promise.all([
     prisma.subscription.findUnique({
       where: { userId },
       include: { plan: true },
+    }),
+    prisma.manualOrganizerAccess.findUnique({
+      where: { userId },
     }),
     prisma.organizerTournamentCredit.findFirst({
       where: { userId, status: "AVAILABLE" },
@@ -44,9 +47,12 @@ export async function getOrganizerAccess(userId: string) {
   ])
 
   const hasActiveSubscription = subscription?.status === "ACTIVE"
-  const canCreateTournament = hasActiveSubscription || Boolean(availableCredit)
+  const hasManualAccess = Boolean(manualAccess?.enabled)
+  const canCreateTournament = hasActiveSubscription || hasManualAccess || Boolean(availableCredit)
   const reason = hasActiveSubscription
     ? "active_subscription"
+    : hasManualAccess
+      ? "manual_access"
     : availableCredit
       ? "available_credit"
       : "no_access"
@@ -55,6 +61,7 @@ export async function getOrganizerAccess(userId: string) {
     canCreateTournament,
     reason,
     subscription,
+    manualAccess,
     availableCredit,
     ownedTournaments,
   }
@@ -63,6 +70,7 @@ export async function getOrganizerAccess(userId: string) {
 export async function consumeOrganizerCreditIfNeeded(userId: string, tournamentId: string) {
   const access = await getOrganizerAccess(userId)
   if (access.subscription?.status === "ACTIVE") return null
+  if (access.manualAccess?.enabled) return null
   if (!access.availableCredit) return null
 
   return prisma.organizerTournamentCredit.update({

@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const search = searchParams.get("search")
     const mine = searchParams.get("mine") === "1"
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = { visibilityStatus: "ACTIVE" }
 
     if (status) {
       where.status = status

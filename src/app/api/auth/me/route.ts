@@ -37,6 +37,8 @@ export async function GET(request: Request) {
         avatarUrl: true,
         gameLevel: true,
         dominantHand: true,
+        platformRole: true,
+        status: true,
         createdAt: true
       }
     })
@@ -45,6 +47,13 @@ export async function GET(request: Request) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
         { status: 404 }
+      )
+    }
+
+    if (user.status === "DISABLED") {
+      return NextResponse.json(
+        { error: "Usuário desativado" },
+        { status: 403 }
       )
     }
 

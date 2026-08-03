@@ -16,6 +16,7 @@ export default function Header({ user }: HeaderProps) {
   const pathname = usePathname()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [canCreateTournament, setCanCreateTournament] = useState(false)
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
   
   const isActive = (path: string) => {
@@ -61,6 +62,13 @@ export default function Header({ user }: HeaderProps) {
       .then(res => res.json())
       .then(data => setCanCreateTournament(Boolean(data.canCreateTournament)))
       .catch(() => setCanCreateTournament(false))
+
+    fetch("/api/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => setIsPlatformAdmin(["ADMIN", "OWNER"].includes(data.user?.platformRole)))
+      .catch(() => setIsPlatformAdmin(false))
   }, [user])
 
   const closeProfileMenu = () => setIsProfileMenuOpen(false)
@@ -120,6 +128,19 @@ export default function Header({ user }: HeaderProps) {
                 >
                   Organizador
                 </Link>
+                {isPlatformAdmin && (
+                  <Link
+                    href="/admin"
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      isActive("/admin")
+                        ? "text-white"
+                        : "text-white/80 hover:text-white hover:bg-white/5"
+                    }`}
+                    style={isActive("/admin") ? { background: 'rgba(184, 224, 0, 0.15)', color: 'var(--accent)' } : {}}
+                  >
+                    Admin
+                  </Link>
+                )}
               </>
             )}
           </nav>
@@ -195,6 +216,11 @@ export default function Header({ user }: HeaderProps) {
                     <Link href="/legal" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
                       Central Jurídica
                     </Link>
+                    {isPlatformAdmin && (
+                      <Link href="/admin" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
+                        Admin Torneio+
+                      </Link>
+                    )}
                     <hr className="my-1" style={{ borderColor: 'var(--border)' }} />
                     <button
                       onClick={() => {
@@ -240,12 +266,21 @@ export default function Header({ user }: HeaderProps) {
               Torneios
             </Link>
             <Link
-              href="/tournaments/new"
+              href={canCreateTournament ? "/tournaments/new" : "/organizer"}
               className="flex-1 text-center py-2.5 text-xs transition-colors"
-              style={isActive("/tournaments/new") ? { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' } : { color: 'rgba(255,255,255,0.8)' }}
+              style={(canCreateTournament ? isActive("/tournaments/new") : isActive("/organizer")) ? { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' } : { color: 'rgba(255,255,255,0.8)' }}
             >
-              Criar
+              {canCreateTournament ? "Criar" : "Organizador"}
             </Link>
+            {isPlatformAdmin && (
+              <Link
+                href="/admin"
+                className="flex-1 text-center py-2.5 text-xs transition-colors"
+                style={isActive("/admin") ? { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' } : { color: 'rgba(255,255,255,0.8)' }}
+              >
+                Admin
+              </Link>
+            )}
           </nav>
         </div>
       )}
