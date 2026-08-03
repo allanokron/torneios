@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, type CSSProperties } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Header from "@/components/layout/Header"
@@ -12,6 +12,7 @@ import ProposalCard from "@/components/tournament/ProposalCard"
 import MatchResultForm from "@/components/tournament/MatchResultForm"
 import MatchEditForm from "@/components/tournament/MatchEditForm"
 import PixPaymentScreen from "@/components/tournament/PixPaymentScreen"
+import TournamentCategoriesTab from "@/components/tournament/TournamentCategoriesTab"
 
 interface Tournament {
   id: string
@@ -283,7 +284,8 @@ export default function TournamentPage() {
   }, [params.id, router])
 
   useEffect(() => {
-    fetchTournament()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchTournament()
   }, [fetchTournament])
 
   // Auto-trigger payment for pending members of paid tournaments
@@ -869,7 +871,7 @@ export default function TournamentPage() {
                     <h3 className="font-medium mb-3" style={{ color: 'var(--text)' }}>Jogos de Amanhã</h3>
                     <div className="space-y-2">
                       {tomorrowMatches.map(match => (
-                        <div key={match.id} className="flex items-center gap-3 p-3 rounded-2xl transition-colors" style={{ '--hover-bg': 'var(--neutral-50)' } as any}>
+                        <div key={match.id} className="flex items-center gap-3 p-3 rounded-2xl transition-colors" style={{ '--hover-bg': 'var(--neutral-50)' } as CSSProperties}>
                           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium overflow-hidden flex-shrink-0" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-500)' }}>
                             {(match.homePlayer.avatarUrl || match.awayPlayer.avatarUrl) ? (
                               <img src={match.homePlayer.avatarUrl || match.awayPlayer.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -2336,6 +2338,11 @@ export default function TournamentPage() {
                   )}
                 </div>
               </div>
+            )}
+
+            {/* ===== CATEGORIES ===== */}
+            {activeTab === "categories" && (
+              <TournamentCategoriesTab tournamentId={tournament.id} isOwner={isOwner} />
             )}
 
             {/* ===== PARTICIPANTS ===== */}

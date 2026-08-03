@@ -14,6 +14,7 @@ export default function TournamentSidebar({ tournamentId, activeTab, isOwner = f
     { id: "overview", label: "Visão Geral", icon: "M4 6h16M4 10h16M4 14h16M4 18h16" },
     { id: "drawn", label: "Jogos Sorteados", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" },
     { id: "matches", label: "Confrontos", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
+    { id: "categories", label: "Categorias", icon: "M4 7h7v7H4V7zm9 0h7v7h-7V7zM4 16h7v4H4v-4zm9 0h7v4h-7v-4z" },
     { id: "my-matches", label: "Meus Jogos", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
     { id: "ranking", label: "Ranking", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
     ...(showKnockout ? [{ id: "knockout", label: "Mata-Mata", icon: "M7 7h10M7 12h6m-6 5h10M4 7h.01M4 12h.01M4 17h.01M20 7h.01M16 12h4m0 5h.01" }] : []),
