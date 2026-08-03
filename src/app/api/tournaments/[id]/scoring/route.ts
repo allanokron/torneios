@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { canManageTournament } from "@/lib/platform-admin"
 
 // PATCH — Update scoring config (owner only, resets rankings if changed)
 export async function PATCH(
@@ -28,7 +29,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
     }
 
-    if (tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
       return NextResponse.json(
         { error: "Você não tem permissão para editar este torneio" },
         { status: 403 }

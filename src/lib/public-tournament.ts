@@ -48,11 +48,16 @@ export async function getPublicCategory(categoryId: string) {
       },
       standings: { include: { team: true }, orderBy: [{ series: "asc" }, { position: "asc" }] },
       matches: {
-        include: { homeTeam: true, awayTeam: true, sets: true },
+        include: { homeTeam: true, awayTeam: true, sets: true, court: { select: { id: true, name: true, number: true } } },
         orderBy: [{ phase: "asc" }, { groupId: "asc" }, { position: "asc" }],
       },
       bracketMatches: {
-        include: { homeTeam: true, awayTeam: true, winnerTeam: true, match: true },
+        include: {
+          homeTeam: true,
+          awayTeam: true,
+          winnerTeam: true,
+          match: { include: { court: { select: { id: true, name: true, number: true } } } },
+        },
         orderBy: [{ series: "asc" }, { bracketSide: "asc" }, { round: "asc" }, { position: "asc" }],
       },
     },

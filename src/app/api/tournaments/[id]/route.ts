@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { normalizeTournamentFormat, RANKING_ELIMINATION_FORMAT } from "@/lib/knockout"
+import { canManageTournament } from "@/lib/platform-admin"
 
 export async function GET(
   request: Request,
@@ -117,7 +118,7 @@ export async function PATCH(
       )
     }
 
-    if (tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
       return NextResponse.json(
         { error: "Você não tem permissão para editar este torneio" },
         { status: 403 }
@@ -204,6 +205,7 @@ export async function PATCH(
     if (body.hasSuperTiebreak !== undefined) data.hasSuperTiebreak = body.hasSuperTiebreak
     if (body.superTiebreakScore !== undefined) data.superTiebreakScore = body.superTiebreakScore
     if (body.defaultMatchDuration !== undefined) data.defaultMatchDuration = body.defaultMatchDuration
+    if (body.courtAssignmentMode !== undefined) data.courtAssignmentMode = body.courtAssignmentMode === "automatic" ? "automatic" : "manual"
     if (body.woCriteria !== undefined) data.woCriteria = body.woCriteria
     if (body.delayTolerance !== undefined) data.delayTolerance = body.delayTolerance
     if (body.generalRules !== undefined) data.generalRules = body.generalRules

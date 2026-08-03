@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/auth"
 import { advanceKnockoutMatch } from "@/lib/knockout"
 import { recalculateTournamentRanking } from "@/lib/ranking"
 import { getChallengeConfig, calculateChallengePoints } from "@/lib/challengeCalc"
+import { canManageTournament } from "@/lib/platform-admin"
 
 export async function POST(
   request: Request,
@@ -52,7 +53,7 @@ export async function POST(
     if (match.homePlayerId !== decoded.userId && match.awayPlayerId !== decoded.userId) {
       // Check if user is tournament owner
       const tournament = await prisma.tournament.findUnique({ where: { id: match.tournamentId } })
-      if (!tournament || tournament.ownerId !== decoded.userId) {
+      if (!tournament || !(await canManageTournament(decoded.userId, tournament.ownerId))) {
         return NextResponse.json(
           { error: "Apenas os jogadores desta partida ou o organizador podem registrar o resultado" },
           { status: 403 }
@@ -60,7 +61,8 @@ export async function POST(
       }
     }
 
-    const isOwner = (await prisma.tournament.findUnique({ where: { id: match.tournamentId } }))?.ownerId === decoded.userId
+    const ownerTournament = await prisma.tournament.findUnique({ where: { id: match.tournamentId } })
+    const isOwner = ownerTournament ? await canManageTournament(decoded.userId, ownerTournament.ownerId) : false
 
     const body = await request.json()
     const { action } = body
@@ -802,7 +804,7 @@ export async function PATCH(
     }
 
     // Only owner can edit
-    if (match.tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, match.tournament.ownerId))) {
       return NextResponse.json(
         { error: "Apenas o organizador pode editar resultados" },
         { status: 403 }

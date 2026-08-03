@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { canManageTournament } from "@/lib/platform-admin"
 
 export async function GET(
   request: Request,
@@ -202,7 +203,7 @@ export async function POST(
     }
 
     // Action: generate round-robin (owner only)
-    if (tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
       return NextResponse.json(
         { error: "Apenas o organizador pode gerar confrontos" },
         { status: 403 }

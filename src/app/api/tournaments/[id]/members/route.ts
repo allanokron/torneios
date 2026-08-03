@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { canManageTournament } from "@/lib/platform-admin"
 
 export async function GET(
   request: Request,
@@ -306,7 +307,7 @@ export async function PATCH(
       )
     }
 
-    if (member.userId !== decoded.userId && member.tournament.ownerId !== decoded.userId) {
+    if (member.userId !== decoded.userId && !(await canManageTournament(decoded.userId, member.tournament.ownerId))) {
       return NextResponse.json(
         { error: "Você não tem permissão para esta ação" },
         { status: 403 }
@@ -397,7 +398,7 @@ export async function DELETE(
     }
 
     // Only organizer can remove participants
-    if (member.tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, member.tournament.ownerId))) {
       return NextResponse.json(
         { error: "Apenas o organizador pode remover participantes" },
         { status: 403 }

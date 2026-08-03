@@ -207,7 +207,7 @@ export default function TournamentPage() {
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "overview")
-  const [user, setUser] = useState<{ id: string; name: string } | null>(null)
+  const [user, setUser] = useState<{ id: string; name: string; platformRole?: string } | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [rankings, setRankings] = useState<Ranking[]>([])
   const [knockout, setKnockout] = useState<KnockoutState | null>(null)
@@ -578,7 +578,7 @@ export default function TournamentPage() {
 
   const confirmedMembers = tournament.members.filter(m => m.status === "accepted")
   const pendingMembers = tournament.members.filter(m => m.status === "pending")
-  const isOwner = user?.id === tournament.owner.id
+  const isOwner = Boolean(user && (user.id === tournament.owner.id || user.platformRole === "ADMIN" || user.platformRole === "OWNER"))
   const isMember = user ? tournament.members.some(m => m.user.id === user.id) : false
   const currentUserMember = user ? tournament.members.find(m => m.user.id === user.id) : null
   const hasPaid = currentUserMember?.paymentStatus === "CONFIRMED"
@@ -1560,7 +1560,7 @@ export default function TournamentPage() {
                       ) : (
                         <div className="space-y-3">
                            {filteredCompleted.map(match => {
-                            const canEdit = user?.id === tournament.owner.id
+                            const canEdit = isOwner
                             return (
                               <div key={match.id} className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
                                 <div className="flex items-center gap-3 p-3">
@@ -1677,7 +1677,7 @@ export default function TournamentPage() {
                       homePlayer={resultMatch.homePlayer}
                       awayPlayer={resultMatch.awayPlayer}
                       setsPerMatch={tournament.setsPerMatch}
-                      isOwner={user.id === tournament.owner.id}
+                      isOwner={isOwner}
                       existingSets={resultMatch.sets.map(s => ({ homeGames: s.homeGames, awayGames: s.awayGames }))}
                       existingStartPhoto={resultMatch.startPhotoUrl}
                       existingEndPhoto={resultMatch.endPhotoUrl}
@@ -2137,7 +2137,7 @@ export default function TournamentPage() {
                       homePlayer={resultMatch.homePlayer}
                       awayPlayer={resultMatch.awayPlayer}
                       setsPerMatch={tournament.setsPerMatch}
-                      isOwner={user.id === tournament.owner.id}
+                      isOwner={isOwner}
                       existingSets={resultMatch.sets.map(s => ({ homeGames: s.homeGames, awayGames: s.awayGames }))}
                       existingStartPhoto={resultMatch.startPhotoUrl}
                       existingEndPhoto={resultMatch.endPhotoUrl}

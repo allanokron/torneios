@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { canManageTournament } from "@/lib/platform-admin"
 
 // POST — Generate elimination bracket from round-robin rankings (owner only)
 export async function POST(
@@ -28,7 +29,7 @@ export async function POST(
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
     }
 
-    if (tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
       return NextResponse.json(
         { error: "Apenas o organizador pode sortear o chaveamento" },
         { status: 403 }

@@ -128,6 +128,17 @@ export default function Header({ user }: HeaderProps) {
                 >
                   Organizador
                 </Link>
+                <Link
+                  href="/referee"
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    isActive("/referee")
+                      ? "text-white"
+                      : "text-white/80 hover:text-white hover:bg-white/5"
+                  }`}
+                  style={isActive("/referee") ? { background: 'rgba(184, 224, 0, 0.15)', color: 'var(--accent)' } : {}}
+                >
+                  Árbitro
+                </Link>
                 {isPlatformAdmin && (
                   <Link
                     href="/admin"
@@ -212,6 +223,9 @@ export default function Header({ user }: HeaderProps) {
                     </Link>
                     <Link href="/organizer" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
                       {canCreateTournament ? "Área do Organizador" : "Virar organizador"}
+                    </Link>
+                    <Link href="/referee" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
+                      Modo árbitro
                     </Link>
                     <Link href="/legal" onClick={closeProfileMenu} className="block px-3 py-2 text-sm hover:bg-black/5" style={{ color: 'var(--neutral-600)' }}>
                       Central Jurídica

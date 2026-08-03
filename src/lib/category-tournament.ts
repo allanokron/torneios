@@ -242,6 +242,8 @@ export async function recordCategoryMatchResult(matchId: string, input: {
   winnerTeamId: string
   sets?: { homePoints: number; awayPoints: number; isTiebreak?: boolean }[]
   endReason?: string
+  endPhotoUrl?: string | null
+  refereeId?: string | null
 }) {
   const match = await prisma.categoryMatch.findUnique({
     where: { id: matchId },
@@ -280,6 +282,9 @@ export async function recordCategoryMatchResult(matchId: string, input: {
         endReason: input.endReason ?? null,
         homeScore: summary.homeSetsWon,
         awayScore: summary.awaySetsWon,
+        endPhotoUrl: input.endPhotoUrl ?? undefined,
+        refereeId: input.refereeId ?? undefined,
+        finishedAt: new Date(),
       },
     }),
   ])

@@ -31,7 +31,11 @@ export async function ensureDefaultOrganizerPlan() {
 }
 
 export async function getOrganizerAccess(userId: string) {
-  const [subscription, manualAccess, availableCredit, ownedTournaments] = await Promise.all([
+  const [user, subscription, manualAccess, availableCredit, ownedTournaments] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { platformRole: true, status: true },
+    }),
     prisma.subscription.findUnique({
       where: { userId },
       include: { plan: true },
@@ -46,10 +50,13 @@ export async function getOrganizerAccess(userId: string) {
     prisma.tournament.count({ where: { ownerId: userId } }),
   ])
 
+  const hasPlatformAdminAccess = Boolean(user?.status === "ACTIVE" && (user.platformRole === "ADMIN" || user.platformRole === "OWNER"))
   const hasActiveSubscription = subscription?.status === "ACTIVE"
   const hasManualAccess = Boolean(manualAccess?.enabled)
-  const canCreateTournament = hasActiveSubscription || hasManualAccess || Boolean(availableCredit)
-  const reason = hasActiveSubscription
+  const canCreateTournament = hasPlatformAdminAccess || hasActiveSubscription || hasManualAccess || Boolean(availableCredit)
+  const reason = hasPlatformAdminAccess
+    ? "platform_admin"
+    : hasActiveSubscription
     ? "active_subscription"
     : hasManualAccess
       ? "manual_access"

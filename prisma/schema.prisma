@@ -10,45 +10,45 @@ datasource db {
 // ==================== USUÁRIOS ====================
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  name         String
-  passwordHash String
-  phone        String?
-  city         String?
-  state        String?
-  birthDate    DateTime?
-  bio          String?
-  avatarUrl    String?
-  gameLevel    String?
-  dominantHand String?
-  asaasCustomerId String?  @unique // ID do cliente no Asaas
-  platformRole String @default("USER") // USER, ADMIN, OWNER
-  status       String @default("ACTIVE") // ACTIVE, DISABLED
-  disabledAt   DateTime?
-  disabledReason String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String
+  passwordHash    String
+  phone           String?
+  city            String?
+  state           String?
+  birthDate       DateTime?
+  bio             String?
+  avatarUrl       String?
+  gameLevel       String?
+  dominantHand    String?
+  asaasCustomerId String?   @unique // ID do cliente no Asaas
+  platformRole    String    @default("USER") // USER, ADMIN, OWNER
+  status          String    @default("ACTIVE") // ACTIVE, DISABLED
+  disabledAt      DateTime?
+  disabledReason  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   profile                    Profile?
   memberships                TournamentMember[]
-  ownedTournaments           Tournament[]        @relation("TournamentOwner")
-  courts                     Court[]             @relation("CourtOwner")
-  sentInvites                Invite[]            @relation("InviteSender")
-  matchesHome                Match[]             @relation("HomeTeamPlayer")
-  matchesAway                Match[]             @relation("AwayTeamPlayer")
+  ownedTournaments           Tournament[]                @relation("TournamentOwner")
+  courts                     Court[]                     @relation("CourtOwner")
+  sentInvites                Invite[]                    @relation("InviteSender")
+  matchesHome                Match[]                     @relation("HomeTeamPlayer")
+  matchesAway                Match[]                     @relation("AwayTeamPlayer")
   matchPhotos                MatchPhoto[]
   messages                   Message[]
-  scheduleProposalsSent      ScheduleProposal[]  @relation("ProposalSender")
-  scheduleProposalsReceived  ScheduleProposal[]  @relation("ProposalReceiver")
-  rescheduleRequestsSent     RescheduleRequest[] @relation("RescheduleSender")
-  rescheduleRequestsReceived RescheduleRequest[] @relation("RescheduleReceiver")
-  penalties                  Penalty[]           @relation("PenaltyTarget")
-  penaltiesApplied           Penalty[]           @relation("PenaltyAppliedBy")
-  woGiven                    Match[]             @relation("WOGivenBy")
-  woReceived                 Match[]             @relation("WOReceivedBy")
-  contestationsSent          Contestation[]      @relation("ContestationSender")
-  contestationsResolved      Contestation[]      @relation("ContestationResolver")
+  scheduleProposalsSent      ScheduleProposal[]          @relation("ProposalSender")
+  scheduleProposalsReceived  ScheduleProposal[]          @relation("ProposalReceiver")
+  rescheduleRequestsSent     RescheduleRequest[]         @relation("RescheduleSender")
+  rescheduleRequestsReceived RescheduleRequest[]         @relation("RescheduleReceiver")
+  penalties                  Penalty[]                   @relation("PenaltyTarget")
+  penaltiesApplied           Penalty[]                   @relation("PenaltyAppliedBy")
+  woGiven                    Match[]                     @relation("WOGivenBy")
+  woReceived                 Match[]                     @relation("WOReceivedBy")
+  contestationsSent          Contestation[]              @relation("ContestationSender")
+  contestationsResolved      Contestation[]              @relation("ContestationResolver")
   rankings                   PlayerRanking[]
   notifications              Notification[]
   auditLogs                  AuditLog[]
@@ -61,7 +61,12 @@ model User {
   manualOrganizerAccess      ManualOrganizerAccess?
   payments                   Payment[]
   categoryTeamMemberships    CategoryTeamMember[]
-  categoryTeamInvitesSent    CategoryTeamInvite[] @relation("CategoryTeamInviteSender")
+  categoryTeamInvitesSent    CategoryTeamInvite[]        @relation("CategoryTeamInviteSender")
+  refereeInvitesSent         TournamentRefereeInvite[]   @relation("RefereeInviteSender")
+  refereeInvitesReceived     TournamentRefereeInvite[]   @relation("RefereeInviteReceiver")
+  refereeAssignments         TournamentReferee[]
+  matchesRefereed            Match[]                     @relation("MatchReferee")
+  categoryMatchesRefereed    CategoryMatch[]             @relation("CategoryMatchReferee")
 }
 
 model Profile {
@@ -117,21 +122,22 @@ model Tournament {
   cancellationRules     String?
 
   // Regras de adiamento
-  maxPostponements      Int     @default(3) // máximo de adiamentos por jogador
-  postponementScope     String  @default("month") // "month" ou "tournament" - período de contagem
+  maxPostponements  Int    @default(3) // máximo de adiamentos por jogador
+  postponementScope String @default("month") // "month" ou "tournament" - período de contagem
 
   // Finalização
   autoFinishOnFirstSubmission Boolean @default(false)
 
   // Pagamento
-  registrationFee        Int?     // valor da inscrição em centavos (null = gratuita)
-  paymentMethod          String?  @default("PIX") // fixo PIX
-  pixExpirationMinutes   Int      @default(30)
-  subscriptionRequired   Boolean  @default(true)
+  registrationFee      Int? // valor da inscrição em centavos (null = gratuita)
+  paymentMethod        String? @default("PIX") // fixo PIX
+  pixExpirationMinutes Int     @default(30)
+  subscriptionRequired Boolean @default(true)
 
   // Fases do torneio
-  rankingPhaseDays   Int?  // dias para a fase de ranking (round-robin)
-  knockoutPhaseDays  Int?  // dias para a fase de mata-mata
+  rankingPhaseDays    Int? // dias para a fase de ranking (round-robin)
+  knockoutPhaseDays   Int? // dias para a fase de mata-mata
+  courtAssignmentMode String @default("manual") // manual, automatic
 
   // Organizador
   isOrganizerPlayer Boolean @default(true) // se o organizador vai jogar
@@ -152,7 +158,9 @@ model Tournament {
   auditLogs        AuditLog[]
   payments         Payment[]
   categories       TournamentCategory[]
-  organizerCredit OrganizerTournamentCredit? @relation("CreditTournament")
+  organizerCredit  OrganizerTournamentCredit? @relation("CreditTournament")
+  refereeInvites   TournamentRefereeInvite[]
+  referees         TournamentReferee[]
 }
 
 model TournamentMember {
@@ -166,9 +174,9 @@ model TournamentMember {
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Pagamento
-  paymentStatus String?   // NONE, AWAITING_PIX, PIX_GENERATED, PIX_EXPIRED, PAYMENT_CONFIRMED, CONFIRMED
+  paymentStatus String? // NONE, AWAITING_PIX, PIX_GENERATED, PIX_EXPIRED, PAYMENT_CONFIRMED, CONFIRMED
   paymentId     String?
-  amountPaid    Int?      // em centavos
+  amountPaid    Int? // em centavos
 
   @@unique([tournamentId, userId])
 }
@@ -180,24 +188,25 @@ model TournamentCategory {
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
-  name      String
-  sport     String @default("beach_volley") // tennis, beach_volley
-  gender    String // male, female, mixed
-  teamSize  String // individual, double, trio, quartet
-  level     String // estreante, iniciante, intermediario, avancado, open
-  format    String // group_ranking_knockout, group_knockout, double_elimination, ranking_knockout
-  status    String @default("draft") // draft, registration_open, registration_closed, in_progress, finished
+  name     String
+  sport    String @default("beach_volley") // tennis, beach_volley
+  gender   String // male, female, mixed
+  teamSize String // individual, double, trio, quartet
+  level    String // estreante, iniciante, intermediario, avancado, open
+  format   String // group_ranking_knockout, group_knockout, double_elimination, ranking_knockout
+  status   String @default("draft") // draft, registration_open, registration_closed, in_progress, finished
 
-  enableSilverSeries Boolean @default(false)
-  paymentMode        String  @default("manual") // manual, online
-  registrationFee    Int?    // valor por atleta em centavos
+  enableSilverSeries  Boolean @default(false)
+  paymentMode         String  @default("manual") // manual, online
+  registrationFee     Int? // valor por atleta em centavos
+  courtAssignmentMode String  @default("manual") // manual, automatic
 
-  groupSize                 Int?
-  goldQualifiersPerGroup    Int?
-  silverQualifiersPerGroup  Int?
-  goldQualifiersTotal       Int?
-  silverQualifiersTotal     Int?
-  oddGroupPolicy            String? // ranking_byes, fill_with_best_next_position
+  groupSize                Int?
+  goldQualifiersPerGroup   Int?
+  silverQualifiersPerGroup Int?
+  goldQualifiersTotal      Int?
+  silverQualifiersTotal    Int?
+  oddGroupPolicy           String? // ranking_byes, fill_with_best_next_position
 
   setsPerMatch       Int @default(3)
   normalSetPoints    Int @default(21)
@@ -224,15 +233,15 @@ model CategoryTeam {
 
   name      String
   seed      Int?
-  status    String @default("pending") // pending, complete, confirmed, rejected
+  status    String  @default("pending") // pending, complete, confirmed, rejected
   createdBy String?
 
   members        CategoryTeamMember[]
   invites        CategoryTeamInvite[]
   groupEntries   CategoryGroupEntry[]
   standings      CategoryStanding[]
-  homeMatches    CategoryMatch[] @relation("CategoryHomeTeam")
-  awayMatches    CategoryMatch[] @relation("CategoryAwayTeam")
+  homeMatches    CategoryMatch[]        @relation("CategoryHomeTeam")
+  awayMatches    CategoryMatch[]        @relation("CategoryAwayTeam")
   bracketHome    CategoryBracketMatch[] @relation("CategoryBracketHomeTeam")
   bracketAway    CategoryBracketMatch[] @relation("CategoryBracketAwayTeam")
   bracketWinners CategoryBracketMatch[] @relation("CategoryBracketWinnerTeam")
@@ -245,11 +254,11 @@ model CategoryTeam {
 }
 
 model CategoryTeamMember {
-  id      String       @id @default(cuid())
-  teamId  String
-  team    CategoryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId  String?
-  user    User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id     String       @id @default(cuid())
+  teamId String
+  team   CategoryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   name          String?
   email         String?
@@ -268,15 +277,15 @@ model CategoryTeamMember {
 }
 
 model CategoryTeamInvite {
-  id        String       @id @default(cuid())
-  teamId    String
-  team      CategoryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  senderId  String
-  sender    User         @relation("CategoryTeamInviteSender", fields: [senderId], references: [id])
+  id       String       @id @default(cuid())
+  teamId   String
+  team     CategoryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  senderId String
+  sender   User         @relation("CategoryTeamInviteSender", fields: [senderId], references: [id])
 
   email   String
   name    String?
-  status  String @default("pending") // pending, accepted, declined, cancelled
+  status  String  @default("pending") // pending, accepted, declined, cancelled
   message String?
 
   createdAt DateTime @default(now())
@@ -325,14 +334,14 @@ model CategoryStanding {
 
   position      Int
   series        String? // gold, silver
-  points        Int @default(0)
-  matchesPlayed Int @default(0)
-  wins          Int @default(0)
-  losses        Int @default(0)
-  setsWon       Int @default(0)
-  setsLost      Int @default(0)
-  pointsWon     Int @default(0)
-  pointsLost    Int @default(0)
+  points        Int     @default(0)
+  matchesPlayed Int     @default(0)
+  wins          Int     @default(0)
+  losses        Int     @default(0)
+  setsWon       Int     @default(0)
+  setsLost      Int     @default(0)
+  pointsWon     Int     @default(0)
+  pointsLost    Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -353,19 +362,27 @@ model CategoryMatch {
   groupId String?
   group   CategoryGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
-  status      String @default("pending_scheduling")
-  phase       String @default("group") // group, ranking, knockout, double_elimination
+  courtId String?
+  court   Court?  @relation(fields: [courtId], references: [id], onDelete: SetNull)
+
+  status      String  @default("pending_scheduling")
+  phase       String  @default("group") // group, ranking, knockout, double_elimination
   series      String? // gold, silver, main
   bracketSide String? // winners, losers, grand_final
   round       String?
   position    Int?
 
-  scheduledAt DateTime?
-  duration    Int @default(60)
-  homeScore   Int?
-  awayScore   Int?
+  scheduledAt  DateTime?
+  duration     Int       @default(60)
+  homeScore    Int?
+  awayScore    Int?
   winnerTeamId String?
-  endReason   String?
+  endReason    String?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  endPhotoUrl  String?
+  refereeId    String?
+  referee      User?     @relation("CategoryMatchReferee", fields: [refereeId], references: [id], onDelete: SetNull)
 
   sets         CategorySet[]
   bracketMatch CategoryBracketMatch?
@@ -377,13 +394,13 @@ model CategoryMatch {
 }
 
 model CategorySet {
-  id          String        @id @default(cuid())
-  matchId     String
-  match       CategoryMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  setNumber   Int
-  homePoints  Int
-  awayPoints  Int
-  isTiebreak  Boolean @default(false)
+  id         String        @id @default(cuid())
+  matchId    String
+  match      CategoryMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  setNumber  Int
+  homePoints Int
+  awayPoints Int
+  isTiebreak Boolean       @default(false)
 
   @@unique([matchId, setNumber])
 }
@@ -396,29 +413,29 @@ model CategoryBracketMatch {
   round       Int
   position    Int
   roundName   String
-  status      String @default("waiting")
+  status      String  @default("waiting")
   series      String? // gold, silver, main
   bracketSide String? // winners, losers, grand_final
 
-  homeSeed   Int?
-  awaySeed   Int?
-  homeTeamId String?
-  homeTeam   CategoryTeam? @relation("CategoryBracketHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
-  awayTeamId String?
-  awayTeam   CategoryTeam? @relation("CategoryBracketAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
+  homeSeed     Int?
+  awaySeed     Int?
+  homeTeamId   String?
+  homeTeam     CategoryTeam? @relation("CategoryBracketHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
+  awayTeamId   String?
+  awayTeam     CategoryTeam? @relation("CategoryBracketAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
   winnerTeamId String?
   winnerTeam   CategoryTeam? @relation("CategoryBracketWinnerTeam", fields: [winnerTeamId], references: [id], onDelete: SetNull)
 
-  homeSourceLabel String?
-  awaySourceLabel String?
-  winnerNextRound Int?
+  homeSourceLabel    String?
+  awaySourceLabel    String?
+  winnerNextRound    Int?
   winnerNextPosition Int?
-  winnerNextSlot String?
-  loserNextRound Int?
-  loserNextPosition Int?
-  loserNextSlot String?
+  winnerNextSlot     String?
+  loserNextRound     Int?
+  loserNextPosition  Int?
+  loserNextSlot      String?
 
-  matchId String? @unique
+  matchId String?        @unique
   match   CategoryMatch? @relation(fields: [matchId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
@@ -444,6 +461,39 @@ model Invite {
   @@unique([tournamentId, email])
 }
 
+model TournamentRefereeInvite {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  senderId     String
+  sender       User       @relation("RefereeInviteSender", fields: [senderId], references: [id])
+  refereeId    String
+  referee      User       @relation("RefereeInviteReceiver", fields: [refereeId], references: [id], onDelete: Cascade)
+  status       String     @default("pending") // pending, accepted, declined, cancelled
+  message      String?
+  acceptedAt   DateTime?
+  declinedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([tournamentId, refereeId])
+}
+
+model TournamentReferee {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String     @default("active") // active, removed
+  invitedById  String?
+  acceptedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([tournamentId, userId])
+}
+
 // ==================== QUADRAS ====================
 
 model Court {
@@ -464,6 +514,7 @@ model Court {
   blockedSlots      CourtBlock[]
   reservations      Reservation[]
   matches           Match[]
+  categoryMatches   CategoryMatch[]
   scheduleProposals ScheduleProposal[]
 }
 
@@ -514,6 +565,8 @@ model Match {
   homeScore Int?
   awayScore Int?
   winnerId  String?
+  refereeId String?
+  referee   User?   @relation("MatchReferee", fields: [refereeId], references: [id], onDelete: SetNull)
 
   endReason String? // normal, forfeit, wo
 
@@ -537,12 +590,12 @@ model Match {
   month String?
 
   // Jogo Desafio
-  isChallenge              Boolean @default(false)
-  challengePositionHome    Int?
-  challengePositionAway    Int?
-  challengePoints          Int?
+  isChallenge               Boolean @default(false)
+  challengePositionHome     Int?
+  challengePositionAway     Int?
+  challengePoints           Int?
   challengePointsChallenged Int?
-  challengeReferenceMonth  String?
+  challengeReferenceMonth   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -618,7 +671,7 @@ model ScheduleProposal {
   proposedDate DateTime
   proposedTime String
   courtId      String
-  court        Court  @relation(fields: [courtId], references: [id])
+  court        Court    @relation(fields: [courtId], references: [id])
   message      String?
 
   status          String  @default("pending") // pending, accepted, rejected, counter_proposal
@@ -731,20 +784,20 @@ model ChallengeConfig {
   tournamentId String     @unique
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
-  enabled                   Boolean @default(false)
-  rankingReference          String  @default("previous_month") // "previous_month" | "current"
-  maxPositionsAhead         Int     @default(0) // 0 = ilimitado
-  pointsPerPosition         Int     @default(50)
+  enabled           Boolean @default(false)
+  rankingReference  String  @default("previous_month") // "previous_month" | "current"
+  maxPositionsAhead Int     @default(0) // 0 = ilimitado
+  pointsPerPosition Int     @default(50)
 
-  challengerWinMultiplier   Float   @default(1.0)
-  challengerLossMultiplier  Float   @default(1.0)
-  challengedWinMultiplier   Float   @default(0.5)
-  challengedLossMultiplier  Float   @default(0)
+  challengerWinMultiplier  Float @default(1.0)
+  challengerLossMultiplier Float @default(1.0)
+  challengedWinMultiplier  Float @default(0.5)
+  challengedLossMultiplier Float @default(0)
 
-  countWins                 Boolean @default(false)
-  countSets                 Boolean @default(false)
-  countGames                Boolean @default(false)
-  showChallengeColumn       Boolean @default(true)
+  countWins           Boolean @default(false)
+  countSets           Boolean @default(false)
+  countGames          Boolean @default(false)
+  showChallengeColumn Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -776,18 +829,18 @@ model PlayerRanking {
   gamesBalance        Int?
 
   // Estatísticas de desafio
-  challengePoints   Int @default(0)
-  challengeMatches  Int @default(0)
-  challengeWins     Int @default(0)
-  challengeLosses   Int @default(0)
+  challengePoints  Int @default(0)
+  challengeMatches Int @default(0)
+  challengeWins    Int @default(0)
+  challengeLosses  Int @default(0)
 
   // Estatísticas de W.O.
-  woPointsWon   Int @default(0)
-  woPointsLost  Int @default(0)
-  woSetsWon     Int @default(0)
-  woSetsLost    Int @default(0)
-  woGamesWon    Int @default(0)
-  woGamesLost   Int @default(0)
+  woPointsWon  Int @default(0)
+  woPointsLost Int @default(0)
+  woSetsWon    Int @default(0)
+  woSetsLost   Int @default(0)
+  woGamesWon   Int @default(0)
+  woGamesLost  Int @default(0)
 
   lastResults Json? // Array dos últimos resultados
 
@@ -905,82 +958,82 @@ model LegalDocument {
 }
 
 model Consent {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  documentId   String
-  document     LegalDocument @relation(fields: [documentId], references: [id])
-  documentSlug String
-  documentTitle String
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId      String
+  document        LegalDocument @relation(fields: [documentId], references: [id])
+  documentSlug    String
+  documentTitle   String
   documentVersion String
-  accepted     Boolean  @default(true)
-  ipAddress    String?
-  userAgent    String?
-  os           String?
-  device       String?
-  language     String?
-  createdAt    DateTime @default(now())
+  accepted        Boolean       @default(true)
+  ipAddress       String?
+  userAgent       String?
+  os              String?
+  device          String?
+  language        String?
+  createdAt       DateTime      @default(now())
 
   @@unique([userId, documentSlug, documentVersion])
 }
 
 model LGPDRequest {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  name      String
-  email     String
-  cpf       String?
-  type      String   // access, correction, deletion, portability, revocation, information, other
-  message   String   @db.Text
-  status    String   @default("pending") // pending, in_progress, completed, rejected
-  response  String?  @db.Text
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name       String
+  email      String
+  cpf        String?
+  type       String // access, correction, deletion, portability, revocation, information, other
+  message    String    @db.Text
+  status     String    @default("pending") // pending, in_progress, completed, rejected
+  response   String?   @db.Text
   resolvedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model AccountDeletion {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reason    String?
-  status    String   @default("pending") // pending, completed, rejected
-  ipAddress String?
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason      String?
+  status      String    @default("pending") // pending, completed, rejected
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
   completedAt DateTime?
 }
 
 // ==================== PAGAMENTOS / ASAAS ====================
 
 model Subscription {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String         @id @default(cuid())
+  userId                String         @unique
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   planId                String?
   plan                  OrganizerPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
   asaasCustomerId       String?
   asaasSubscriptionId   String?
-  status                String   @default("INACTIVE") // INACTIVE, ACTIVE, SUSPENDED, PAST_DUE, CANCELLED
-  monthlyValue          Decimal  @default(9.90)
+  status                String         @default("INACTIVE") // INACTIVE, ACTIVE, SUSPENDED, PAST_DUE, CANCELLED
+  monthlyValue          Decimal        @default(9.90)
   nextBillingDate       DateTime?
-  tournamentCreditsUsed Int      @default(0) // quantos dos 2 inclusos foram usados
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  tournamentCreditsUsed Int            @default(0) // quantos dos 2 inclusos foram usados
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 }
 
 model OrganizerPlan {
-  id                    String   @id @default(cuid())
-  code                  String   @unique
-  name                  String
-  description           String?
-  monthlyValue          Int
-  tournamentLimit       Int?     // null = ilimitado
-  features              Json?
-  isActive              Boolean  @default(true)
-  subscriptions         Subscription[]
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id              String         @id @default(cuid())
+  code            String         @unique
+  name            String
+  description     String?
+  monthlyValue    Int
+  tournamentLimit Int? // null = ilimitado
+  features        Json?
+  isActive        Boolean        @default(true)
+  subscriptions   Subscription[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
 model OrganizerTournamentCredit {
@@ -1001,51 +1054,51 @@ model OrganizerTournamentCredit {
 }
 
 model ManualOrganizerAccess {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enabled   Boolean  @default(false)
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled   Boolean   @default(false)
   reason    String?
   grantedBy String?
   grantedAt DateTime?
   revokedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Payment {
-  id                String   @id @default(cuid())
+  id                String                     @id @default(cuid())
   userId            String
-  user              User     @relation(fields: [userId], references: [id])
+  user              User                       @relation(fields: [userId], references: [id])
   tournamentId      String?
-  tournament        Tournament? @relation(fields: [tournamentId], references: [id])
+  tournament        Tournament?                @relation(fields: [tournamentId], references: [id])
   categoryId        String?
-  category          TournamentCategory? @relation(fields: [categoryId], references: [id])
+  category          TournamentCategory?        @relation(fields: [categoryId], references: [id])
   teamId            String?
-  team              CategoryTeam? @relation(fields: [teamId], references: [id])
+  team              CategoryTeam?              @relation(fields: [teamId], references: [id])
   teamMemberId      String?
-  teamMember        CategoryTeamMember? @relation(fields: [teamMemberId], references: [id])
-  type              String   // SUBSCRIPTION, TOURNAMENT_EXTRA, REGISTRATION
-  asaasPaymentId    String?  @unique
+  teamMember        CategoryTeamMember?        @relation(fields: [teamMemberId], references: [id])
+  type              String // SUBSCRIPTION, TOURNAMENT_EXTRA, REGISTRATION
+  asaasPaymentId    String?                    @unique
   asaasCustomerId   String?
-  billingType       String   @default("PIX") // PIX, CREDIT_CARD
-  value             Int      // em centavos
-  status            String   @default("PENDING") // PENDING, AWAITING_PIX, PAID, OVERDUE, REFUNDED, CANCELLED
+  billingType       String                     @default("PIX") // PIX, CREDIT_CARD
+  value             Int // em centavos
+  status            String                     @default("PENDING") // PENDING, AWAITING_PIX, PAID, OVERDUE, REFUNDED, CANCELLED
   description       String?
   externalReference String?
   expiresAt         DateTime?
   paidAt            DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
   organizerCredit   OrganizerTournamentCredit?
 }
 
 model WebhookEvent {
-  id            String   @id @default(cuid())
-  asaasEventId  String   @unique
-  eventType     String
-  payload       Json
-  processed     Boolean  @default(false)
-  processedAt   DateTime?
-  createdAt     DateTime @default(now())
+  id           String    @id @default(cuid())
+  asaasEventId String    @unique
+  eventType    String
+  payload      Json
+  processed    Boolean   @default(false)
+  processedAt  DateTime?
+  createdAt    DateTime  @default(now())
 }

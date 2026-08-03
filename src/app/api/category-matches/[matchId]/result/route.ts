@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { recordCategoryMatchResult } from "@/lib/category-tournament"
+import { canManageTournament } from "@/lib/platform-admin"
 
 export async function POST(
   request: Request,
@@ -28,7 +29,7 @@ export async function POST(
       },
     })
     if (!match) return NextResponse.json({ error: "Jogo não encontrado" }, { status: 404 })
-    if (match.category.tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, match.category.tournament.ownerId))) {
       return NextResponse.json({ error: "Você não tem permissão para lançar este resultado" }, { status: 403 })
     }
 

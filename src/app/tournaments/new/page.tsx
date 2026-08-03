@@ -48,6 +48,7 @@ export default function NewTournamentPage() {
     hasSuperTiebreak: true,
     superTiebreakScore: 10,
     defaultMatchDuration: 120,
+    courtAssignmentMode: "manual",
     delayTolerance: 15,
     generalRules: "",
     woCriteria: "",
@@ -269,6 +270,7 @@ export default function NewTournamentPage() {
             tiebreakSetPoints: "15",
             minPointDifference: "2",
             paymentMode: "manual",
+            courtAssignmentMode: formData.courtAssignmentMode,
             registrationFee: null,
           }),
         })
@@ -769,6 +771,19 @@ export default function NewTournamentPage() {
                   min="60"
                   max="240"
                 />
+              </div>
+
+              <div>
+                <label className="label">Distribuição de quadras</label>
+                <select
+                  name="courtAssignmentMode"
+                  value={formData.courtAssignmentMode}
+                  onChange={handleChange}
+                  className="input"
+                >
+                  <option value="manual">Manual/agendamento</option>
+                  <option value="automatic">Automático assistido</option>
+                </select>
               </div>
             </div>
 

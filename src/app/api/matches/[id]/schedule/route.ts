@@ -49,6 +49,13 @@ export async function POST(
       )
     }
 
+    if (match.tournament.courtAssignmentMode === "automatic") {
+      return NextResponse.json(
+        { error: "Este torneio usa distribuição automática de quadras. O agendamento por convite fica desativado." },
+        { status: 400 }
+      )
+    }
+
     if (match.status !== "pending_scheduling" && match.status !== "awaiting_response") {
       return NextResponse.json(
         { error: "Esta partida não pode ser agendada" },

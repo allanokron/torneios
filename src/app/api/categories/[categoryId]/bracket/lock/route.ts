@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { canManageTournament } from "@/lib/platform-admin"
 import { lockCategoryBracket } from "@/lib/category-tournament"
 
 export async function POST(
@@ -24,7 +25,7 @@ export async function POST(
       select: { tournament: { select: { id: true, ownerId: true } } },
     })
     if (!category) return NextResponse.json({ error: "Categoria não encontrada" }, { status: 404 })
-    if (category.tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, category.tournament.ownerId))) {
       return NextResponse.json({ error: "Você não tem permissão para travar esta chave" }, { status: 403 })
     }
 

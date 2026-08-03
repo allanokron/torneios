@@ -40,6 +40,20 @@ export async function requirePlatformAdmin(request: Request) {
   return { admin, response: null }
 }
 
+export async function isPlatformAdminUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { platformRole: true, status: true },
+  })
+
+  return Boolean(user?.status === "ACTIVE" && (user.platformRole === "ADMIN" || user.platformRole === "OWNER"))
+}
+
+export async function canManageTournament(userId: string, ownerId: string) {
+  if (ownerId === userId) return true
+  return isPlatformAdminUser(userId)
+}
+
 export async function auditAdminAction(input: {
   adminId: string
   action: string

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { buildCategoryName, validateCategoryPayload } from "@/lib/category-config"
+import { canManageTournament } from "@/lib/platform-admin"
 
 async function getOwnedCategory(tournamentId: string, categoryId: string, userId: string) {
   const category = await prisma.tournamentCategory.findUnique({
@@ -13,7 +14,7 @@ async function getOwnedCategory(tournamentId: string, categoryId: string, userId
   })
 
   if (!category || category.tournamentId !== tournamentId) return null
-  if (category.tournament.ownerId !== userId) return "forbidden"
+  if (!(await canManageTournament(userId, category.tournament.ownerId))) return "forbidden"
 
   return category
 }
@@ -85,6 +86,7 @@ export async function PATCH(
         status: body.status !== undefined ? String(body.status) : undefined,
         enableSilverSeries,
         paymentMode: body.paymentMode !== undefined ? (body.paymentMode === "online" ? "online" : "manual") : undefined,
+        courtAssignmentMode: body.courtAssignmentMode !== undefined ? (body.courtAssignmentMode === "automatic" ? "automatic" : "manual") : undefined,
         registrationFee: body.registrationFee !== undefined
           ? body.registrationFee === "" || body.registrationFee === null
             ? null

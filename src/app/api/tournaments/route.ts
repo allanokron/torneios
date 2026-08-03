@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { normalizeTournamentFormat, RANKING_ELIMINATION_FORMAT } from "@/lib/knockout"
 import { consumeOrganizerCreditIfNeeded, getOrganizerAccess } from "@/lib/organizer-access"
+import { isPlatformAdminUser } from "@/lib/platform-admin"
 
 export async function GET(request: Request) {
   try {
@@ -27,14 +28,20 @@ export async function GET(request: Request) {
     // Check if user is authenticated to show private tournaments
     const authHeader = request.headers.get("authorization")
     let currentUserId: string | null = null
+    let isPlatformAdmin = false
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1]
       const decoded = verifyToken(token)
-      if (decoded) currentUserId = decoded.userId
+      if (decoded) {
+        currentUserId = decoded.userId
+        isPlatformAdmin = await isPlatformAdminUser(decoded.userId)
+      }
     }
 
     // Public tournaments visible to all, private only to members/owner
-    if (mine && currentUserId) {
+    if (isPlatformAdmin && !mine) {
+      // Admin e owner da plataforma enxergam todos os torneios ativos.
+    } else if (mine && currentUserId) {
       where.OR = [
         { ownerId: currentUserId },
         { members: { some: { userId: currentUserId, status: "accepted" } } }
@@ -138,6 +145,7 @@ export async function POST(request: Request) {
       hasSuperTiebreak,
       superTiebreakScore,
       defaultMatchDuration,
+      courtAssignmentMode,
       woCriteria,
       delayTolerance,
       generalRules,
@@ -204,6 +212,7 @@ export async function POST(request: Request) {
         hasSuperTiebreak: hasSuperTiebreak !== false,
         superTiebreakScore: superTiebreakScore || 10,
         defaultMatchDuration: defaultMatchDuration || 120,
+        courtAssignmentMode: courtAssignmentMode === "automatic" ? "automatic" : "manual",
         woCriteria: woCriteria || null,
         delayTolerance: delayTolerance || 15,
         generalRules: generalRules || null,

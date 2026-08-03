@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { buildCategoryName, validateCategoryPayload } from "@/lib/category-config"
+import { canManageTournament } from "@/lib/platform-admin"
 
 export async function GET(
   _request: Request,
@@ -57,7 +58,7 @@ export async function POST(
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
     }
 
-    if (tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
       return NextResponse.json({ error: "Você não tem permissão para criar categorias" }, { status: 403 })
     }
 
@@ -71,6 +72,7 @@ export async function POST(
     const hasGroupPhase = format === "group_ranking_knockout" || format === "group_knockout"
     const enableSilverSeries = Boolean(body.enableSilverSeries)
     const paymentMode = body.paymentMode === "online" ? "online" : "manual"
+    const courtAssignmentMode = body.courtAssignmentMode === "automatic" ? "automatic" : "manual"
     const registrationFee = body.registrationFee === "" || body.registrationFee === null || body.registrationFee === undefined
       ? null
       : Number(body.registrationFee)
@@ -92,6 +94,7 @@ export async function POST(
         format,
         enableSilverSeries,
         paymentMode,
+        courtAssignmentMode,
         registrationFee,
         groupSize: hasGroupPhase ? Number(body.groupSize) : null,
         goldQualifiersPerGroup: body.goldQualifiersPerGroup ? Number(body.goldQualifiersPerGroup) : null,

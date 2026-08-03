@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { canManageTournament } from "@/lib/platform-admin"
 import { lockKnockoutBracket } from "@/lib/knockout"
 
 export async function POST(
@@ -25,7 +26,7 @@ export async function POST(
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
     }
 
-    if (tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
       return NextResponse.json({ error: "Apenas o organizador pode travar o mata-mata" }, { status: 403 })
     }
 

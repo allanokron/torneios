@@ -23,6 +23,7 @@ interface Tournament {
   hasSuperTiebreak: boolean
   superTiebreakScore: number
   defaultMatchDuration: number
+  courtAssignmentMode?: string
   delayTolerance: number
   generalRules?: string
   woCriteria?: string
@@ -120,6 +121,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
   const [hasSuperTiebreak, setHasSuperTiebreak] = useState(tournament.hasSuperTiebreak)
   const [superTiebreakScore, setSuperTiebreakScore] = useState(tournament.superTiebreakScore)
   const [defaultMatchDuration, setDefaultMatchDuration] = useState(tournament.defaultMatchDuration)
+  const [courtAssignmentMode, setCourtAssignmentMode] = useState(tournament.courtAssignmentMode || "manual")
   const [delayTolerance, setDelayTolerance] = useState(tournament.delayTolerance)
   const [generalRules, setGeneralRules] = useState(tournament.generalRules || "")
   const [woCriteria, setWoCriteria] = useState(tournament.woCriteria || "")
@@ -283,6 +285,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
           hasSuperTiebreak,
           superTiebreakScore,
           defaultMatchDuration,
+          courtAssignmentMode,
           delayTolerance,
           generalRules,
           woCriteria
@@ -812,6 +815,13 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                   <label className="label">Tolerância atraso (min)</label>
                   <input type="number" value={delayTolerance} onChange={e => setDelayTolerance(Number(e.target.value))} className="input" />
                 </div>
+                <div>
+                  <label className="label">Distribuição de quadras</label>
+                  <select value={courtAssignmentMode} onChange={e => setCourtAssignmentMode(e.target.value)} className="input">
+                    <option value="manual">Manual/agendamento</option>
+                    <option value="automatic">Automático assistido</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -1084,7 +1094,7 @@ export default function SettingsTab({ tournament, onTournamentUpdated }: Setting
                         <option value="current">Mês atual</option>
                       </select>
                       <p style={{ color: 'var(--neutral-400)' }} className="text-xs mt-1">
-                        Posições usadas para validar o desafio. "Mês anterior" usa o ranking consolidado do mês anterior.
+                        Posições usadas para validar o desafio. Mês anterior usa o ranking consolidado do mês anterior.
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">

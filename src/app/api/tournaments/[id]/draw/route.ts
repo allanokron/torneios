@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { canManageTournament } from "@/lib/platform-admin"
 
 interface DrawMatch {
   homePlayerId: string
@@ -125,7 +126,7 @@ export async function POST(
     }
 
     // Check if user is owner
-    if (tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
       return NextResponse.json({ error: "Apenas o organizador pode sortear jogos" }, { status: 403 })
     }
 

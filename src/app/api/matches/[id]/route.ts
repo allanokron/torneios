@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
+import { canManageTournament } from "@/lib/platform-admin"
 import { recalculateTournamentRanking } from "@/lib/ranking"
 import { getChallengeConfig, getPlayerPosition, validateChallengePositions } from "@/lib/challengeCalc"
 
@@ -32,7 +33,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Partida não encontrada" }, { status: 404 })
     }
 
-    if (match.tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, match.tournament.ownerId))) {
       return NextResponse.json(
         { error: "Apenas o organizador pode editar partidas" },
         { status: 403 }
@@ -198,7 +199,7 @@ export async function DELETE(
     }
 
     // Only tournament owner can delete
-    if (match.tournament.ownerId !== decoded.userId) {
+    if (!(await canManageTournament(decoded.userId, match.tournament.ownerId))) {
       return NextResponse.json(
         { error: "Apenas o organizador pode apagar partidas" },
         { status: 403 }

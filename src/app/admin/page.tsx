@@ -32,6 +32,9 @@ type Payment = {
   createdAt: string
   user: { name: string; email: string }
   tournament?: { name: string } | null
+  category?: { name: string } | null
+  team?: { name: string } | null
+  teamMember?: { name?: string | null; email?: string | null; paymentStatus?: string | null } | null
 }
 type AuditLog = {
   id: string
@@ -154,7 +157,7 @@ export default function AdminPage() {
             {tab === "overview" && overview && <Overview stats={overview} />}
             {tab === "users" && <Users users={users} postAction={postAction} patchAction={patchAction} />}
             {tab === "tournaments" && <Tournaments tournaments={tournaments} postAction={postAction} patchAction={patchAction} />}
-            {tab === "payments" && <Payments payments={payments} />}
+            {tab === "payments" && <Payments payments={payments} tournaments={tournaments} headers={headers} />}
             {tab === "audit" && <Audit logs={audit} />}
           </>
         )}
@@ -188,8 +191,66 @@ function Tournaments({ tournaments, postAction, patchAction }: { tournaments: To
   return <div className="space-y-3">{tournaments.map(tournament => <Panel key={tournament.id}><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><p className="font-medium" style={{ color: "var(--text)" }}>{tournament.name}</p><p className="text-sm" style={{ color: "var(--neutral-500)" }}>{tournament.owner.name} · {tournament.status} · {tournament.visibilityStatus}</p><p className="text-xs" style={{ color: "var(--neutral-400)" }}>{tournament._count.members} participantes · {tournament._count.matches} jogos · {tournament._count.categories} categorias</p></div><div className="flex flex-wrap gap-2"><Link className="btn-secondary text-xs" href={`/tournaments/${tournament.id}`}>Gerenciar</Link><Link className="btn-secondary text-xs" href={`/public/tournaments/${tournament.id}`}>Público</Link><button className="btn-secondary text-xs" onClick={() => patchAction(`/api/admin/tournaments/${tournament.id}`, { status: tournament.status === "finished" ? "in_progress" : "finished" })}>Alternar status</button><button className="btn-secondary text-xs" onClick={() => postAction(`/api/admin/tournaments/${tournament.id}/${tournament.visibilityStatus === "DISABLED" ? "enable" : "disable"}`)}>{tournament.visibilityStatus === "DISABLED" ? "Reativar" : "Desativar"}</button></div></div></Panel>)}</div>
 }
 
-function Payments({ payments }: { payments: Payment[] }) {
-  return <div className="space-y-2">{payments.map(payment => <Panel key={payment.id}><div className="flex items-center justify-between gap-3"><div><p className="font-medium" style={{ color: "var(--text)" }}>{payment.user.name}</p><p className="text-sm" style={{ color: "var(--neutral-500)" }}>{payment.type} · {payment.status} · {payment.tournament?.name || "Sem torneio"}</p></div><p className="font-semibold" style={{ color: "var(--text)" }}>R$ {(payment.value / 100).toFixed(2)}</p></div></Panel>)}</div>
+function Payments({ payments, tournaments, headers }: { payments: Payment[]; tournaments: Tournament[]; headers?: { Authorization: string } }) {
+  const [mode, setMode] = useState<"organizers" | "athletes">("organizers")
+  const [selectedTournamentId, setSelectedTournamentId] = useState(tournaments[0]?.id || "")
+  const [detail, setDetail] = useState<null | {
+    name: string
+    members: { id: string; paymentStatus?: string | null; amountPaid?: number | null; user: { name: string; email: string } }[]
+    categories: { id: string; name: string; teams: { id: string; name: string; members: { id: string; name?: string | null; email?: string | null; paymentStatus?: string | null; amountPaid?: number | null; user?: { name: string; email: string } | null }[] }[] }[]
+  }>(null)
+
+  const organizerPayments = payments.filter(payment => payment.type === "SUBSCRIPTION" || payment.type === "TOURNAMENT_EXTRA")
+  const athletePayments = payments.filter(payment => payment.type === "REGISTRATION")
+
+  useEffect(() => {
+    if (mode !== "athletes" || !selectedTournamentId || !headers) return
+    fetch(`/api/admin/tournaments/${selectedTournamentId}/athlete-payments`, { headers })
+      .then(res => res.json())
+      .then(data => setDetail(data.tournament || null))
+      .catch(() => setDetail(null))
+  }, [headers, mode, selectedTournamentId])
+
+  return <div className="space-y-4">
+    <div className="flex flex-wrap gap-2">
+      <button className="rounded-lg px-3 py-2 text-sm font-medium" onClick={() => setMode("organizers")} style={mode === "organizers" ? { background: "var(--accent)", color: "var(--primary)" } : { background: "var(--surface)", border: "1px solid var(--border)", color: "var(--neutral-600)" }}>Organizadores</button>
+      <button className="rounded-lg px-3 py-2 text-sm font-medium" onClick={() => setMode("athletes")} style={mode === "athletes" ? { background: "var(--accent)", color: "var(--primary)" } : { background: "var(--surface)", border: "1px solid var(--border)", color: "var(--neutral-600)" }}>Atletas por torneio</button>
+    </div>
+    {mode === "organizers" && <div className="space-y-2">{organizerPayments.map(payment => <PaymentRow key={payment.id} payment={payment} />)}</div>}
+    {mode === "athletes" && <div className="space-y-4">
+      <Panel>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="font-medium" style={{ color: "var(--text)" }}>Pagamentos de atletas</p>
+            <p className="text-sm" style={{ color: "var(--neutral-500)" }}>{athletePayments.length} pagamentos de inscrição registrados na plataforma.</p>
+          </div>
+          <select value={selectedTournamentId} onChange={e => setSelectedTournamentId(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}>
+            {tournaments.map(tournament => <option key={tournament.id} value={tournament.id}>{tournament.name}</option>)}
+          </select>
+        </div>
+      </Panel>
+      {detail && <div className="space-y-3">
+        <Panel>
+          <p className="font-semibold" style={{ color: "var(--text)" }}>{detail.name}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {detail.members.map(member => <PaymentStatusCard key={member.id} name={member.user.name} email={member.user.email} status={member.paymentStatus || "NONE"} amount={member.amountPaid} />)}
+          </div>
+        </Panel>
+        {detail.categories.map(category => <Panel key={category.id}>
+          <p className="font-semibold" style={{ color: "var(--text)" }}>{category.name}</p>
+          <div className="mt-3 space-y-3">{category.teams.map(team => <div key={team.id} className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}><p className="text-sm font-medium" style={{ color: "var(--text)" }}>{team.name}</p><div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{team.members.map(member => <PaymentStatusCard key={member.id} name={member.user?.name || member.name || "Atleta"} email={member.user?.email || member.email || ""} status={member.paymentStatus || "NONE"} amount={member.amountPaid} />)}</div></div>)}</div>
+        </Panel>)}
+      </div>}
+    </div>}
+  </div>
+}
+
+function PaymentRow({ payment }: { payment: Payment }) {
+  return <Panel><div className="flex items-center justify-between gap-3"><div><p className="font-medium" style={{ color: "var(--text)" }}>{payment.user.name}</p><p className="text-sm" style={{ color: "var(--neutral-500)" }}>{payment.type} · {payment.status} · {payment.tournament?.name || payment.category?.name || "Sem torneio"}</p></div><p className="font-semibold" style={{ color: "var(--text)" }}>R$ {(payment.value / 100).toFixed(2)}</p></div></Panel>
+}
+
+function PaymentStatusCard({ name, email, status, amount }: { name: string; email: string; status: string; amount?: number | null }) {
+  return <div className="rounded-lg border p-3 text-sm" style={{ borderColor: "var(--border)", background: "var(--neutral-50)" }}><p className="font-medium" style={{ color: "var(--text)" }}>{name}</p><p className="text-xs" style={{ color: "var(--neutral-500)" }}>{email}</p><p className="mt-2 text-xs font-semibold" style={{ color: "var(--neutral-600)" }}>{status}{amount ? ` · R$ ${(amount / 100).toFixed(2)}` : ""}</p></div>
 }
 
 function Audit({ logs }: { logs: AuditLog[] }) {

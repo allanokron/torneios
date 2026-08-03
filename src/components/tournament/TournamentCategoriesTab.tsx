@@ -22,6 +22,7 @@ type Category = {
   status: string
   enableSilverSeries: boolean
   paymentMode: string
+  courtAssignmentMode?: string
   registrationFee: number | null
   groupSize: number | null
   goldQualifiersPerGroup: number | null
@@ -91,6 +92,7 @@ type FormState = {
   format: string
   enableSilverSeries: boolean
   paymentMode: string
+  courtAssignmentMode: string
   registrationFee: string
   groupSize: string
   goldQualifiersPerGroup: string
@@ -113,6 +115,7 @@ const defaultForm: FormState = {
   format: "group_ranking_knockout",
   enableSilverSeries: false,
   paymentMode: "manual",
+  courtAssignmentMode: "manual",
   registrationFee: "",
   groupSize: "4",
   goldQualifiersPerGroup: "2",
@@ -289,6 +292,15 @@ export default function TournamentCategoriesTab({
                 <label className="label">Valor por atleta</label>
                 <input className="input" value={form.registrationFee} onChange={e => updateForm("registrationFee", e.target.value)} placeholder="Ex: 80,00" />
               </div>
+              <SelectField
+                label="Quadras"
+                value={form.courtAssignmentMode}
+                options={[
+                  { value: "manual", label: "Manual/agendamento" },
+                  { value: "automatic", label: "Automático assistido" },
+                ]}
+                onChange={value => updateForm("courtAssignmentMode", value)}
+              />
               <NumberField label="Sets" value={form.setsPerMatch} onChange={value => updateForm("setsPerMatch", value)} />
               <NumberField label="Pontos set" value={form.normalSetPoints} onChange={value => updateForm("normalSetPoints", value)} />
               <NumberField label="Tie-break" value={form.tiebreakSetPoints} onChange={value => updateForm("tiebreakSetPoints", value)} />
@@ -432,6 +444,7 @@ function CategoryCard({ category, isOwner }: { category: Category; isOwner: bool
         <Info label="Equipes" value={String(category._count?.teams ?? 0)} />
         <Info label="Séries" value={category.enableSilverSeries ? "Ouro e Prata" : "Ouro"} />
         <Info label="Pagamento" value={category.paymentMode === "online" ? "PIX por atleta" : "Manual"} />
+        <Info label="Quadras" value={category.courtAssignmentMode === "automatic" ? "Automático assistido" : "Manual"} />
         <Info label="Placar" value={`${category.setsPerMatch} sets · ${category.normalSetPoints}/${category.tiebreakSetPoints}`} />
         <Info label="Valor" value={category.registrationFee ? `R$ ${(category.registrationFee / 100).toFixed(2)}` : "Gratuito/manual"} />
       </div>

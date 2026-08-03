@@ -13,8 +13,8 @@ type PublicCategory = {
   tournament: { id: string; name: string; startDate: string; location?: string | null; city?: string | null; state?: string | null }
   groups: { id: string; name: string; entries: { team: { id: string; name: string } }[] }[]
   standings: { id: string; position: number; series: string | null; points: number; wins: number; losses: number; setsWon: number; setsLost: number; team: { id: string; name: string } }[]
-  matches: { id: string; phase: string; status: string; round: string | null; position: number | null; homeScore: number | null; awayScore: number | null; winnerTeamId: string | null; homeTeam: { id: string; name: string }; awayTeam: { id: string; name: string } }[]
-  bracketMatches: { id: string; round: number; position: number; roundName: string; status: string; series: string | null; bracketSide: string | null; homeSeed: number | null; awaySeed: number | null; homeTeam?: { name: string } | null; awayTeam?: { name: string } | null; winnerTeam?: { name: string } | null; homeSourceLabel: string | null; awaySourceLabel: string | null }[]
+  matches: { id: string; phase: string; status: string; scheduledAt?: string | null; round: string | null; position: number | null; homeScore: number | null; awayScore: number | null; winnerTeamId: string | null; homeTeam: { id: string; name: string }; awayTeam: { id: string; name: string }; court?: { id: string; name: string; number: number | null } | null }[]
+  bracketMatches: { id: string; round: number; position: number; roundName: string; status: string; series: string | null; bracketSide: string | null; homeSeed: number | null; awaySeed: number | null; homeTeam?: { name: string } | null; awayTeam?: { name: string } | null; winnerTeam?: { name: string } | null; homeSourceLabel: string | null; awaySourceLabel: string | null; match?: { court?: { id: string; name: string; number: number | null } | null } | null }[]
 }
 
 const tabs = [
@@ -104,8 +104,54 @@ function Groups({ groups }: { groups: PublicCategory["groups"] }) {
 }
 
 function Matches({ matches }: { matches: PublicCategory["matches"] }) {
+  const [query, setQuery] = useState("")
+  const [courtId, setCourtId] = useState("all")
+  const [status, setStatus] = useState("all")
+  const courts = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }>()
+    matches.forEach(match => {
+      if (match.court) map.set(match.court.id, { id: match.court.id, name: match.court.name })
+    })
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+  }, [matches])
+  const statuses = useMemo(() => Array.from(new Set(matches.map(match => match.status))).sort(), [matches])
+  const filtered = useMemo(() => {
+    const term = query.trim().toLowerCase()
+    return matches.filter(match => {
+      const names = `${match.homeTeam.name} ${match.awayTeam.name}`.toLowerCase()
+      const matchesQuery = !term || names.includes(term)
+      const matchesCourt = courtId === "all" || match.court?.id === courtId
+      const matchesStatus = status === "all" || match.status === status
+      return matchesQuery && matchesCourt && matchesStatus
+    })
+  }, [courtId, matches, query, status])
+
   if (!matches.length) return <Empty text="Nenhum jogo gerado ainda." />
-  return <div className="space-y-2">{matches.map(match => <div key={match.id} className="flex items-center justify-between gap-3 rounded-xl border p-3 text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)" }}><span style={{ color: "var(--text)" }}>{match.homeTeam.name} x {match.awayTeam.name}</span><span style={{ color: "var(--neutral-500)" }}>{match.status}{match.homeScore !== null ? ` · ${match.homeScore}-${match.awayScore}` : ""}</span></div>)}</div>
+  return <div className="space-y-3">
+    <div className="grid gap-2 md:grid-cols-[1fr_180px_180px]">
+      <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por atleta ou equipe" className="rounded-lg border px-3 py-2 text-sm outline-none" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} />
+      <select value={courtId} onChange={e => setCourtId(e.target.value)} className="rounded-lg border px-3 py-2 text-sm outline-none" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}>
+        <option value="all">Todas as quadras</option>
+        {courts.map(court => <option key={court.id} value={court.id}>{court.name}</option>)}
+      </select>
+      <select value={status} onChange={e => setStatus(e.target.value)} className="rounded-lg border px-3 py-2 text-sm outline-none" style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}>
+        <option value="all">Todos os status</option>
+        {statuses.map(item => <option key={item} value={item}>{item}</option>)}
+      </select>
+    </div>
+    {filtered.length ? filtered.map(match => (
+      <div key={match.id} className="rounded-xl border p-3 text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="font-medium" style={{ color: "var(--text)" }}>{match.homeTeam.name} x {match.awayTeam.name}</span>
+          <span style={{ color: "var(--neutral-500)" }}>{match.status}{match.homeScore !== null ? ` · ${match.homeScore}-${match.awayScore}` : ""}</span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2 text-xs" style={{ color: "var(--neutral-500)" }}>
+          <span>{match.court?.name || "Quadra a definir"}</span>
+          {match.scheduledAt && <span>{new Date(match.scheduledAt).toLocaleString("pt-BR")}</span>}
+        </div>
+      </div>
+    )) : <Empty text="Nenhum jogo encontrado com esses filtros." />}
+  </div>
 }
 
 function Ranking({ standings }: { standings: PublicCategory["standings"] }) {
@@ -116,7 +162,7 @@ function Ranking({ standings }: { standings: PublicCategory["standings"] }) {
 function Bracket({ matches, format }: { matches: PublicCategory["bracketMatches"]; format: string }) {
   if (!matches.length) return <Empty text="Mata-mata ainda não gerado." />
   const groups = Array.from(new Set(matches.map(match => format === "double_elimination" ? match.bracketSide || "main" : match.series || "main")))
-  return <div className="space-y-5">{groups.map(group => <div key={group}><h3 className="mb-3 font-semibold" style={{ color: "var(--text)" }}>{getBracketGroupLabel(group, format)}</h3><div className="flex gap-3 overflow-x-auto pb-2">{Array.from(new Set(matches.filter(match => (format === "double_elimination" ? match.bracketSide || "main" : match.series || "main") === group).map(match => match.round))).map(round => { const roundMatches = matches.filter(match => (format === "double_elimination" ? match.bracketSide || "main" : match.series || "main") === group && match.round === round); return <div key={`${group}-${round}`} className="min-w-[230px]"><p className="mb-2 text-xs font-semibold uppercase" style={{ color: "var(--neutral-500)" }}>{roundMatches[0]?.roundName}</p><div className="space-y-3">{roundMatches.map(match => <div key={match.id} className="rounded-xl border p-3 text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)" }}><p style={{ color: "var(--text)" }}>{match.homeSeed ? `${match.homeSeed}. ` : ""}{match.homeTeam?.name || match.homeSourceLabel || "A definir"}</p><p className="my-1 text-xs" style={{ color: "var(--neutral-400)" }}>x</p><p style={{ color: "var(--text)" }}>{match.awaySeed ? `${match.awaySeed}. ` : ""}{match.awayTeam?.name || match.awaySourceLabel || "A definir"}</p><p className="mt-2 text-xs" style={{ color: "var(--neutral-500)" }}>{match.winnerTeam?.name ? `Vencedor: ${match.winnerTeam.name}` : match.status}</p></div>)}</div></div>})}</div></div>)}</div>
+  return <div className="space-y-5">{groups.map(group => <div key={group}><h3 className="mb-3 font-semibold" style={{ color: "var(--text)" }}>{getBracketGroupLabel(group, format)}</h3><div className="flex gap-3 overflow-x-auto pb-2">{Array.from(new Set(matches.filter(match => (format === "double_elimination" ? match.bracketSide || "main" : match.series || "main") === group).map(match => match.round))).map(round => { const roundMatches = matches.filter(match => (format === "double_elimination" ? match.bracketSide || "main" : match.series || "main") === group && match.round === round); return <div key={`${group}-${round}`} className="min-w-[230px]"><p className="mb-2 text-xs font-semibold uppercase" style={{ color: "var(--neutral-500)" }}>{roundMatches[0]?.roundName}</p><div className="space-y-3">{roundMatches.map(match => <div key={match.id} className="rounded-xl border p-3 text-sm" style={{ background: "var(--surface)", borderColor: "var(--border)" }}><p style={{ color: "var(--text)" }}>{match.homeSeed ? `${match.homeSeed}. ` : ""}{match.homeTeam?.name || match.homeSourceLabel || "A definir"}</p><p className="my-1 text-xs" style={{ color: "var(--neutral-400)" }}>x</p><p style={{ color: "var(--text)" }}>{match.awaySeed ? `${match.awaySeed}. ` : ""}{match.awayTeam?.name || match.awaySourceLabel || "A definir"}</p><p className="mt-2 text-xs" style={{ color: "var(--neutral-500)" }}>{match.winnerTeam?.name ? `Vencedor: ${match.winnerTeam.name}` : match.status}</p><p className="mt-1 text-xs" style={{ color: "var(--neutral-400)" }}>{match.match?.court?.name || "Quadra a definir"}</p></div>)}</div></div>})}</div></div>)}</div>
 }
 
 function getBracketGroupLabel(group: string, format: string) {
