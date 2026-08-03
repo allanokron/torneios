@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type ReactNode } from "react"
 import {
   CATEGORY_FORMATS,
   CATEGORY_GENDERS,
@@ -38,6 +38,48 @@ type Category = {
     matches: number
     bracketMatches: number
   }
+}
+
+type CategoryOverview = Category & {
+  teams: { id: string; name: string; status: string; members: { id: string; name: string | null; email: string | null; user?: { name: string } | null }[] }[]
+  groups: { id: string; name: string; entries: { team: { id: string; name: string } }[] }[]
+  standings: {
+    id: string
+    position: number
+    series: string | null
+    points: number
+    wins: number
+    losses: number
+    setsWon: number
+    setsLost: number
+    team: { id: string; name: string }
+  }[]
+  matches: {
+    id: string
+    phase: string
+    status: string
+    round: string | null
+    homeScore: number | null
+    awayScore: number | null
+    winnerTeamId: string | null
+    homeTeam: { id: string; name: string }
+    awayTeam: { id: string; name: string }
+  }[]
+  bracketMatches: {
+    id: string
+    round: number
+    position: number
+    roundName: string
+    status: string
+    series: string | null
+    homeSeed: number | null
+    awaySeed: number | null
+    homeTeam?: { name: string } | null
+    awayTeam?: { name: string } | null
+    winnerTeam?: { name: string } | null
+    homeSourceLabel: string | null
+    awaySourceLabel: string | null
+  }[]
 }
 
 type FormState = {
@@ -274,7 +316,7 @@ export default function TournamentCategoriesTab({
           </div>
         ) : (
           categories.map(category => (
-            <CategoryCard key={category.id} category={category} />
+            <CategoryCard key={category.id} category={category} isOwner={isOwner} />
           ))
         )}
       </div>
@@ -324,7 +366,53 @@ function NumberField({
   )
 }
 
-function CategoryCard({ category }: { category: Category }) {
+function CategoryCard({ category, isOwner }: { category: Category; isOwner: boolean }) {
+  const [open, setOpen] = useState(false)
+  const [overview, setOverview] = useState<CategoryOverview | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [actionError, setActionError] = useState("")
+
+  const loadOverview = useCallback(async () => {
+    setLoading(true)
+    setActionError("")
+    try {
+      const res = await fetch(`/api/categories/${category.id}/overview`)
+      const data = await res.json()
+      if (!res.ok) {
+        setActionError(data.error || "Erro ao carregar categoria")
+        return
+      }
+      setOverview(data.category)
+    } catch {
+      setActionError("Erro de conexão")
+    } finally {
+      setLoading(false)
+    }
+  }, [category.id])
+
+  const runAction = async (path: string) => {
+    setLoading(true)
+    setActionError("")
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(path, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setActionError(data.error || "Não foi possível executar a ação")
+        return
+      }
+      setOverview(data.category ? data : data)
+      await loadOverview()
+    } catch {
+      setActionError("Erro de conexão")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="rounded-2xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
       <div className="flex items-start justify-between gap-3">
@@ -349,8 +437,187 @@ function CategoryCard({ category }: { category: Category }) {
       </div>
 
       <div className="mt-4 rounded-lg border border-dashed p-3 text-xs" style={{ borderColor: "var(--border)", color: "var(--neutral-500)" }}>
-        Gestão de equipes, grupos, rankings e chaveamento por categoria será exibida aqui conforme as fases forem geradas.
+        {category._count?.teams ? "Abra para gerenciar sorteio, classificação e chaveamento." : "Cadastre equipes nesta categoria para iniciar a disputa."}
       </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          className="rounded-lg border px-3 py-2 text-sm font-medium"
+          style={{ borderColor: "var(--border)", color: "var(--text)" }}
+          onClick={() => {
+            const nextOpen = !open
+            setOpen(nextOpen)
+            if (nextOpen && !overview) void loadOverview()
+          }}
+        >
+          {open ? "Fechar gestão" : "Gerenciar"}
+        </button>
+        {isOwner && open && (
+          <>
+            <button
+              className="rounded-lg px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              style={{ background: "var(--primary)" }}
+              disabled={loading}
+              onClick={() => runAction(`/api/categories/${category.id}/draw`)}
+            >
+              Sortear fase
+            </button>
+            {category.format !== "double_elimination" && (
+              <button
+                className="rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"
+                style={{ borderColor: "var(--border)", color: "var(--text)" }}
+                disabled={loading}
+                onClick={() => runAction(`/api/categories/${category.id}/bracket/lock`)}
+              >
+                Travar mata-mata
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {open && (
+        <div className="mt-5 space-y-4">
+          {actionError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{actionError}</p>}
+          {loading && <p className="text-sm" style={{ color: "var(--neutral-500)" }}>Carregando gestão...</p>}
+          {overview && (
+            <>
+              <OverviewTeams teams={overview.teams} />
+              {overview.groups.length > 0 && <OverviewGroups groups={overview.groups} />}
+              <OverviewStandings standings={overview.standings} />
+              <OverviewMatches matches={overview.matches} />
+              {overview.bracketMatches.length > 0 && <OverviewBracket bracket={overview.bracketMatches} />}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function OverviewTeams({ teams }: { teams: CategoryOverview["teams"] }) {
+  return (
+    <Section title="Equipes">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {teams.map(team => (
+          <div key={team.id} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--border)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{team.name}</p>
+            <p className="text-xs" style={{ color: "var(--neutral-500)" }}>
+              {team.members.map(member => member.user?.name || member.name || member.email || "Atleta").join(" · ") || "Sem atletas"}
+            </p>
+          </div>
+        ))}
+      </div>
+    </Section>
+  )
+}
+
+function OverviewGroups({ groups }: { groups: CategoryOverview["groups"] }) {
+  return (
+    <Section title="Grupos">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {groups.map(group => (
+          <div key={group.id} className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
+            <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{group.name}</p>
+            <div className="mt-2 space-y-1">
+              {group.entries.map(entry => (
+                <p key={entry.team.id} className="text-sm" style={{ color: "var(--neutral-600)" }}>{entry.team.name}</p>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  )
+}
+
+function OverviewStandings({ standings }: { standings: CategoryOverview["standings"] }) {
+  return (
+    <Section title="Classificação">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[520px] text-sm">
+          <thead style={{ color: "var(--neutral-500)" }}>
+            <tr className="text-left">
+              <th className="py-2">#</th>
+              <th>Equipe</th>
+              <th>Série</th>
+              <th>Pts</th>
+              <th>V</th>
+              <th>D</th>
+              <th>Sets</th>
+            </tr>
+          </thead>
+          <tbody>
+            {standings.map(row => (
+              <tr key={row.id} className="border-t" style={{ borderColor: "var(--border)", color: "var(--text)" }}>
+                <td className="py-2">{row.position}</td>
+                <td>{row.team.name}</td>
+                <td>{row.series === "silver" ? "Prata" : row.series === "gold" ? "Ouro" : "Geral"}</td>
+                <td>{row.points}</td>
+                <td>{row.wins}</td>
+                <td>{row.losses}</td>
+                <td>{row.setsWon}-{row.setsLost}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Section>
+  )
+}
+
+function OverviewMatches({ matches }: { matches: CategoryOverview["matches"] }) {
+  return (
+    <Section title="Jogos">
+      <div className="space-y-2">
+        {matches.slice(0, 18).map(match => (
+          <div key={match.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm" style={{ borderColor: "var(--border)" }}>
+            <span style={{ color: "var(--text)" }}>{match.homeTeam.name} x {match.awayTeam.name}</span>
+            <span style={{ color: "var(--neutral-500)" }}>{match.status}{match.homeScore !== null ? ` · ${match.homeScore}-${match.awayScore}` : ""}</span>
+          </div>
+        ))}
+        {matches.length > 18 && <p className="text-xs" style={{ color: "var(--neutral-500)" }}>Mostrando os primeiros 18 de {matches.length} jogos.</p>}
+      </div>
+    </Section>
+  )
+}
+
+function OverviewBracket({ bracket }: { bracket: CategoryOverview["bracketMatches"] }) {
+  const rounds = Array.from(new Set(bracket.map(match => `${match.series || "main"}:${match.round}`)))
+  return (
+    <Section title="Mata-mata">
+      <div className="flex gap-3 overflow-x-auto pb-2">
+        {rounds.map(roundKey => {
+          const [series, round] = roundKey.split(":")
+          const matches = bracket.filter(match => (match.series || "main") === series && String(match.round) === round)
+          return (
+            <div key={roundKey} className="min-w-[220px]">
+              <p className="mb-2 text-xs font-semibold uppercase" style={{ color: "var(--neutral-500)" }}>
+                {series === "gold" ? "Ouro" : series === "silver" ? "Prata" : "Principal"} · {matches[0]?.roundName}
+              </p>
+              <div className="space-y-3">
+                {matches.map(match => (
+                  <div key={match.id} className="rounded-lg border p-3 text-sm" style={{ borderColor: "var(--border)", background: "var(--neutral-50)" }}>
+                    <p style={{ color: "var(--text)" }}>{match.homeSeed ? `${match.homeSeed}. ` : ""}{match.homeTeam?.name || match.homeSourceLabel || "A definir"}</p>
+                    <p className="my-1 text-xs" style={{ color: "var(--neutral-400)" }}>x</p>
+                    <p style={{ color: "var(--text)" }}>{match.awaySeed ? `${match.awaySeed}. ` : ""}{match.awayTeam?.name || match.awaySourceLabel || "A definir"}</p>
+                    <p className="mt-2 text-xs" style={{ color: "var(--neutral-500)" }}>{match.status}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </Section>
+  )
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <h5 className="mb-3 text-sm font-semibold" style={{ color: "var(--text)" }}>{title}</h5>
+      {children}
     </div>
   )
 }
