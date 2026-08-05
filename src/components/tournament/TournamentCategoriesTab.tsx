@@ -41,6 +41,21 @@ type Category = {
   }
 }
 
+type Court = {
+  id: string
+  name: string
+  number: number | null
+  surfaceType: string | null
+  isCovered: boolean
+}
+
+type CategoryCourt = {
+  id: string
+  categoryId: string
+  courtId: string
+  court: Court
+}
+
 type CategoryOverview = Category & {
   teams: { id: string; name: string; status: string; members: { id: string; name: string | null; email: string | null; user?: { name: string } | null }[] }[]
   groups: { id: string; name: string; entries: { team: { id: string; name: string } }[] }[]
@@ -137,9 +152,12 @@ export default function TournamentCategoriesTab({
   isOwner: boolean
 }) {
   const [categories, setCategories] = useState<Category[]>([])
+  const [courts, setCourts] = useState<Court[]>([])
+  const [categoryCourts, setCategoryCourts] = useState<CategoryCourt[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [showCourtAssignment, setShowCourtAssignment] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [form, setForm] = useState<FormState>(defaultForm)
@@ -151,11 +169,25 @@ export default function TournamentCategoriesTab({
     setLoading(true)
     try {
       const token = localStorage.getItem("token")
-      const res = await fetch(`/api/tournaments/${tournamentId}/categories`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      })
-      const data = await res.json()
-      setCategories(data.categories || [])
+      const [catRes, courtRes, catCourtRes] = await Promise.all([
+        fetch(`/api/tournaments/${tournamentId}/categories`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }),
+        fetch(`/api/tournaments/${tournamentId}/courts`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }),
+        fetch(`/api/tournaments/${tournamentId}/category-courts`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }),
+      ])
+      
+      const catData = await catRes.json()
+      const courtData = await courtRes.json()
+      const catCourtData = await catCourtRes.json()
+      
+      setCategories(catData.categories || [])
+      setCourts(courtData.courts || [])
+      setCategoryCourts(catCourtData.assignments || [])
     } catch {
       setError("Erro ao carregar categorias")
     } finally {
@@ -215,6 +247,54 @@ export default function TournamentCategoriesTab({
       setError("Erro de conexão")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const assignCourtToCategory = async (categoryId: string, courtId: string) => {
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/tournaments/${tournamentId}/category-courts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ categoryId, courtId }),
+      })
+      
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || "Erro ao atribuir quadra")
+        return
+      }
+      
+      void fetchCategories()
+    } catch {
+      setError("Erro de conexão")
+    }
+  }
+
+  const removeCourtFromCategory = async (categoryId: string, courtId: string) => {
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/tournaments/${tournamentId}/category-courts`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ categoryId, courtId }),
+      })
+      
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || "Erro ao remover quadra")
+        return
+      }
+      
+      void fetchCategories()
+    } catch {
+      setError("Erro de conexão")
     }
   }
 
@@ -314,6 +394,88 @@ export default function TournamentCategoriesTab({
           </div>
         )}
       </div>
+
+      {/* Court Assignment Section */}
+      {!loading && categories.length > 0 && courts.length > 0 && (
+        <div className="rounded-2xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold" style={{ color: "var(--text)" }}>Atribuição de Quadras</h3>
+              <p className="text-sm" style={{ color: "var(--neutral-500)" }}>
+                Atribua quadras específicas para cada categoria para jogos paralelos.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCourtAssignment(open => !open)}
+              className="btn-secondary text-sm"
+            >
+              {showCourtAssignment ? "Fechar" : "Gerenciar"}
+            </button>
+          </div>
+
+          {showCourtAssignment && (
+            <div className="space-y-4">
+              {categories.map(category => {
+                const assignedCourts = categoryCourts
+                  .filter(cc => cc.categoryId === category.id)
+                  .map(cc => cc.court)
+                
+                return (
+                  <div key={category.id} className="rounded-lg border p-4" style={{ borderColor: "var(--border)" }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium" style={{ color: "var(--text)" }}>{category.name}</h4>
+                      <span className="text-xs" style={{ color: "var(--neutral-500)" }}>
+                        {assignedCourts.length} {assignedCourts.length === 1 ? 'quadra' : 'quadras'} atribuída(s)
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {assignedCourts.map(court => (
+                        <span
+                          key={court.id}
+                          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm"
+                          style={{ background: "var(--accent)", color: "var(--primary)" }}
+                        >
+                          {court.name}
+                          {isOwner && (
+                            <button
+                              onClick={() => removeCourtFromCategory(category.id, court.id)}
+                              className="ml-1 hover:opacity-70"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                      
+                      {isOwner && (
+                        <select
+                          className="input text-sm py-1"
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              assignCourtToCategory(category.id, e.target.value)
+                            }
+                          }}
+                        >
+                          <option value="">+ Adicionar quadra</option>
+                          {courts
+                            .filter(c => !assignedCourts.some(ac => ac.id === c.id))
+                            .map(court => (
+                              <option key={court.id} value={court.id}>
+                                {court.name}
+                              </option>
+                            ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {loading ? (

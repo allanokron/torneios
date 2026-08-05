@@ -5,6 +5,13 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
+import {
+  CATEGORY_GENDERS,
+  CATEGORY_LEVELS,
+  BEACH_VOLLEY_TEAM_SIZES,
+  CATEGORY_FORMATS,
+  formatBeachVolleyCategoryName,
+} from "@/lib/category-config"
 
 type User = {
   id: string
@@ -200,13 +207,6 @@ const TENNIS_FORMATS = [
   { value: "ranking_elimination", label: "Ranking com Mata-Mata" },
 ]
 
-const BEACH_VOLLEY_FORMATS = [
-  { value: "group_ranking_knockout", label: "Grupo + Ranking + Mata-Mata" },
-  { value: "group_knockout", label: "Grupo + Mata-Mata" },
-  { value: "double_elimination", label: "Dupla Eliminatória" },
-  { value: "ranking_knockout", label: "Ranking + Mata-Mata" },
-]
-
 const STATES = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
   "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC",
@@ -219,13 +219,13 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
   const [error, setError] = useState("")
   const [step, setStep] = useState(1)
   const [courts, setCourts] = useState<{ name: string; surfaceType: string; isCovered: boolean }[]>([])
+  const [selectedCategories, setSelectedCategories] = useState<Array<{ gender: string; level: string; teamSize: string }>>([])
 
   const [form, setForm] = useState({
     name: "",
     description: "",
     sport: "tennis",
     format: "points_ranking",
-    categoryFormat: "group_ranking_knockout",
     location: "",
     address: "",
     city: "",
@@ -246,6 +246,7 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
     defaultMatchDuration: 120,
     courtAssignmentMode: "manual",
     delayTolerance: 15,
+    normalSetPoints: 21,
     generalRules: "",
     woCriteria: "",
     scoringConfig: {
@@ -262,6 +263,13 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
     },
   })
 
+  const isBeachVolley = form.sport === "beach_volley"
+  const totalSteps = isBeachVolley ? 5 : 4
+
+  const stepLabels = isBeachVolley
+    ? ["Informações", "Quadras", "Regras", "Categorias", "Pontuação"]
+    : ["Informações", "Quadras", "Regras", "Pontuação"]
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     setForm(prev => ({
@@ -277,7 +285,19 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
     }))
   }
 
-  const availableFormats = form.sport === "beach_volley" ? BEACH_VOLLEY_FORMATS : TENNIS_FORMATS
+  const availableFormats = isBeachVolley ? CATEGORY_FORMATS : TENNIS_FORMATS
+
+  const addCategory = () => {
+    setSelectedCategories(prev => [...prev, { gender: "female", level: "iniciante", teamSize: "double" }])
+  }
+
+  const updateCategory = (index: number, field: string, value: string) => {
+    setSelectedCategories(prev => prev.map((cat, i) => i === index ? { ...cat, [field]: value } : cat))
+  }
+
+  const removeCategory = (index: number) => {
+    setSelectedCategories(prev => prev.filter((_, i) => i !== index))
+  }
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -292,7 +312,7 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
           name: form.name,
           description: form.description || undefined,
           sport: form.sport,
-          format: form.sport === "beach_volley" ? form.categoryFormat : form.format,
+          format: isBeachVolley ? "group_ranking_knockout" : form.format,
           knockoutQualifiers: form.format === "ranking_elimination" && form.knockoutQualifiers ? parseInt(form.knockoutQualifiers) : undefined,
           location: form.location || undefined,
           address: form.address || undefined,
@@ -306,16 +326,27 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
           inviteCode: form.inviteCode || undefined,
           setsPerMatch: parseInt(String(form.setsPerMatch)),
           setsToWin: parseInt(String(form.setsToWin)),
-          hasTiebreak: form.hasTiebreak,
+          hasTiebreak: isBeachVolley ? true : form.hasTiebreak,
           tiebreakScore: parseInt(String(form.tiebreakScore)),
-          hasSuperTiebreak: form.hasSuperTiebreak,
-          superTiebreakScore: parseInt(String(form.superTiebreakScore)),
+          hasSuperTiebreak: isBeachVolley ? false : form.hasSuperTiebreak,
+          superTiebreakScore: isBeachVolley ? 0 : parseInt(String(form.superTiebreakScore)),
           defaultMatchDuration: parseInt(String(form.defaultMatchDuration)),
           courtAssignmentMode: form.courtAssignmentMode,
-          delayTolerance: parseInt(String(form.delayTolerance)),
+          delayTolerance: isBeachVolley ? 0 : parseInt(String(form.delayTolerance)),
           generalRules: form.generalRules || undefined,
-          woCriteria: form.woCriteria || undefined,
-          scoringConfig: {
+          woCriteria: isBeachVolley ? undefined : undefined,
+          scoringConfig: isBeachVolley ? {
+            winWithoutLosingSet: parseInt(String(form.scoringConfig.winWithoutLosingSet)),
+            winLosingOneSet: parseInt(String(form.scoringConfig.winLosingOneSet)),
+            lossWinningOneSet: parseInt(String(form.scoringConfig.lossWinningOneSet)),
+            lossWithoutWinningSet: parseInt(String(form.scoringConfig.lossWithoutWinningSet)),
+            winByWO: parseInt(String(form.scoringConfig.winByWO)),
+            lossByWO: parseInt(String(form.scoringConfig.lossByWO)),
+            winByForfeit: 0,
+            lossByForfeit: 0,
+            withdrawalPenalty: 0,
+            delayPenalty: 0,
+          } : {
             winWithoutLosingSet: parseInt(String(form.scoringConfig.winWithoutLosingSet)),
             winLosingOneSet: parseInt(String(form.scoringConfig.winLosingOneSet)),
             lossWinningOneSet: parseInt(String(form.scoringConfig.lossWinningOneSet)),
@@ -336,35 +367,30 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
         return
       }
 
-      for (const court of courts) {
-        await fetch(`/api/tournaments/${data.tournament.id}/courts`, {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify(court),
-        })
-      }
+      const tournamentId = data.tournament.id
 
-      if (form.sport === "beach_volley") {
-        await fetch(`/api/tournaments/${data.tournament.id}/categories`, {
+      for (const court of courts) {
+        await fetch(`/api/tournaments/${tournamentId}/courts`, {
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },
           body: JSON.stringify({
-            sport: "beach_volley",
-            gender: "male",
-            teamSize: "double",
-            level: "open",
-            format: form.categoryFormat,
-            enableSilverSeries: true,
-            groupSize: "4",
-            goldQualifiersPerGroup: "2",
-            silverQualifiersPerGroup: "2",
-            oddGroupPolicy: "ranking_byes",
-            setsPerMatch: "3",
-            normalSetPoints: "21",
-            tiebreakSetPoints: "15",
-            minPointDifference: "2",
-            paymentMode: "manual",
-            courtAssignmentMode: form.courtAssignmentMode,
+            ...court,
+            surfaceType: isBeachVolley ? "sand" : court.surfaceType,
+          }),
+        })
+      }
+
+      if (isBeachVolley && selectedCategories.length > 0) {
+        await fetch(`/api/tournaments/${tournamentId}/categories`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categories: selectedCategories.map(cat => ({
+              gender: cat.gender,
+              level: cat.level,
+              teamSize: cat.teamSize,
+              format: "group_ranking_knockout",
+            })),
           }),
         })
       }
@@ -386,18 +412,15 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
       </Panel>
 
       <div className="flex items-center gap-2 mb-4">
-        {[1, 2, 3, 4].map(s => (
+        {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
           <div key={s} className="flex items-center">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium" style={step >= s ? { background: "var(--accent)", color: "var(--primary)" } : { background: "var(--neutral-200)", color: "var(--neutral-600)" }}>{s}</div>
-            {s < 4 && <div className="h-1 w-12 sm:w-16" style={{ background: step > s ? "var(--accent)" : "var(--neutral-200)" }} />}
+            {s < totalSteps && <div className="h-1 w-12 sm:w-16" style={{ background: step > s ? "var(--accent)" : "var(--neutral-200)" }} />}
           </div>
         ))}
       </div>
       <div className="flex justify-between text-xs mb-6" style={{ color: "var(--neutral-400)" }}>
-        <span>Informações</span>
-        <span>Quadras</span>
-        <span>Regras</span>
-        <span>Pontuação</span>
+        {stepLabels.map(label => <span key={label}>{label}</span>)}
       </div>
 
       {error && <div className="rounded-lg px-4 py-3 text-sm" style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}>{error}</div>}
@@ -407,9 +430,8 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
           <div className="space-y-4">
             <div>
               <label className="label">Nome do Torneio *</label>
-              <input type="text" name="name" value={form.name} onChange={handleChange} className="input" placeholder="Ex: Liga de Tênis 2026" required />
+              <input type="text" name="name" value={form.name} onChange={handleChange} className="input" placeholder={isBeachVolley ? "Ex: Circuito de Vôlei 2026" : "Ex: Liga de Tênis 2026"} required />
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Esporte *</label>
@@ -417,37 +439,35 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
                   {SPORTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="label">Formato do Torneio *</label>
-                <select name={form.sport === "beach_volley" ? "categoryFormat" : "format"} value={form.sport === "beach_volley" ? form.categoryFormat : form.format} onChange={handleChange} className="input">
-                  {availableFormats.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </select>
-              </div>
+              {!isBeachVolley && (
+                <div>
+                  <label className="label">Formato do Torneio *</label>
+                  <select name="format" value={form.format} onChange={handleChange} className="input">
+                    {availableFormats.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
-
-            {form.format === "ranking_elimination" && form.sport === "tennis" && (
+            {!isBeachVolley && form.format === "ranking_elimination" && (
               <div>
                 <label className="label">Classificados para o mata-mata</label>
                 <input type="number" name="knockoutQualifiers" min={2} value={form.knockoutQualifiers} onChange={handleChange} className="input" placeholder="Ex: 8" />
               </div>
             )}
-
             <div>
               <label className="label">Descrição</label>
               <textarea name="description" value={form.description} onChange={handleChange} className="input" rows={2} placeholder="Descreva o torneio..." />
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Local</label>
-                <input type="text" name="location" value={form.location} onChange={handleChange} className="input" placeholder="Ex: Clube Tennis" />
+                <input type="text" name="location" value={form.location} onChange={handleChange} className="input" placeholder="Ex: Praia de Copacabana" />
               </div>
               <div>
                 <label className="label">Endereço</label>
                 <input type="text" name="address" value={form.address} onChange={handleChange} className="input" placeholder="Rua, número" />
               </div>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Cidade</label>
@@ -461,7 +481,6 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
                 </select>
               </div>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="label">Data de Início *</label>
@@ -476,7 +495,6 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
                 <input type="date" name="registrationDeadline" value={form.registrationDeadline} onChange={handleChange} className="input" />
               </div>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Máximo de Participantes</label>
@@ -497,8 +515,8 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
       {step === 2 && (
         <Panel>
           <div className="flex items-center justify-between mb-4">
-            <h4 className="font-medium" style={{ color: "var(--text)" }}>Quadras</h4>
-            <button onClick={() => setCourts(prev => [...prev, { name: `Quadra ${prev.length + 1}`, surfaceType: "", isCovered: false }])} className="btn-secondary text-sm">+ Adicionar Quadra</button>
+            <h4 className="font-medium" style={{ color: "var(--text)" }}>Quadras {isBeachVolley && <span className="text-xs font-normal" style={{ color: "var(--neutral-400)" }}>(Areia)</span>}</h4>
+            <button onClick={() => setCourts(prev => [...prev, { name: `Quadra ${prev.length + 1}`, surfaceType: isBeachVolley ? "sand" : "", isCovered: false }])} className="btn-secondary text-sm">+ Adicionar Quadra</button>
           </div>
           {courts.length === 0 ? (
             <p className="text-sm text-center py-6" style={{ color: "var(--neutral-400)" }}>Nenhuma quadra adicionada. Pular etapa ou adicionar quadras.</p>
@@ -507,13 +525,15 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
               {courts.map((court, i) => (
                 <div key={i} className="p-3 rounded-lg flex flex-col sm:flex-row gap-3 items-start" style={{ border: "1px solid var(--border)" }}>
                   <input type="text" value={court.name} onChange={e => setCourts(prev => prev.map((c, idx) => idx === i ? { ...c, name: e.target.value } : c))} className="input flex-1" placeholder="Nome da quadra" />
-                  <select value={court.surfaceType} onChange={e => setCourts(prev => prev.map((c, idx) => idx === i ? { ...c, surfaceType: e.target.value } : c))} className="input">
-                    <option value="">Tipo de piso</option>
-                    <option value="hard">Quadra Dura</option>
-                    <option value="clay">Saibro</option>
-                    <option value="grass">Grama</option>
-                    <option value="sand">Areia</option>
-                  </select>
+                  {!isBeachVolley && (
+                    <select value={court.surfaceType} onChange={e => setCourts(prev => prev.map((c, idx) => idx === i ? { ...c, surfaceType: e.target.value } : c))} className="input">
+                      <option value="">Tipo de piso</option>
+                      <option value="hard">Quadra Dura</option>
+                      <option value="clay">Saibro</option>
+                      <option value="grass">Grama</option>
+                      <option value="sand">Areia</option>
+                    </select>
+                  )}
                   <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={court.isCovered} onChange={e => setCourts(prev => prev.map((c, idx) => idx === i ? { ...c, isCovered: e.target.checked } : c))} className="w-4 h-4" style={{ accentColor: "var(--accent)" }} /> Coberta</label>
                   <button onClick={() => setCourts(prev => prev.filter((_, idx) => idx !== i))} className="text-red-500 text-sm hover:text-red-700">Remover</button>
                 </div>
@@ -531,15 +551,25 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
               <div>
                 <label className="label">Sets por Partida</label>
                 <select name="setsPerMatch" value={form.setsPerMatch} onChange={handleChange} className="input">
-                  <option value={3}>Melhor de 3</option>
-                  <option value={5}>Melhor de 5</option>
+                  {isBeachVolley ? (
+                    <>
+                      <option value={1}>Melhor de 1</option>
+                      <option value={3}>Melhor de 3</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value={3}>Melhor de 3</option>
+                      <option value={5}>Melhor de 5</option>
+                    </>
+                  )}
                 </select>
               </div>
               <div>
                 <label className="label">Sets para Vencer</label>
                 <select name="setsToWin" value={form.setsToWin} onChange={handleChange} className="input">
+                  <option value={1}>1 set</option>
                   <option value={2}>2 sets</option>
-                  <option value={3}>3 sets</option>
+                  {isBeachVolley && <option value={3}>3 sets</option>}
                 </select>
               </div>
               <div>
@@ -547,37 +577,54 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
                 <input type="number" name="defaultMatchDuration" value={form.defaultMatchDuration} onChange={handleChange} className="input" min="60" max="240" />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <input type="checkbox" name="hasTiebreak" checked={form.hasTiebreak} onChange={handleChange} className="w-4 h-4 rounded" style={{ accentColor: "var(--accent)" }} />
-                <span className="text-sm" style={{ color: "var(--neutral-600)" }}>Tiebreak</span>
+            {isBeachVolley ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Pontos por Set para Vencer *</label>
+                  <input type="number" name="normalSetPoints" value={form.normalSetPoints} onChange={handleChange} className="input" min="1" max="50" />
+                  <p className="text-xs mt-1" style={{ color: "var(--neutral-400)" }}>Ex: 21 pontos</p>
+                </div>
+                <div>
+                  <label className="label">Pontos do Tiebreak</label>
+                  <input type="number" name="tiebreakScore" value={form.tiebreakScore} onChange={handleChange} className="input" min="5" max="30" />
+                  <p className="text-xs mt-1" style={{ color: "var(--neutral-400)" }}>Ex: 15 pontos</p>
+                </div>
               </div>
-              {form.hasTiebreak && <div><label className="label">Placar do Tiebreak</label><input type="number" name="tiebreakScore" value={form.tiebreakScore} onChange={handleChange} className="input" min="5" max="10" /></div>}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <input type="checkbox" name="hasSuperTiebreak" checked={form.hasSuperTiebreak} onChange={handleChange} className="w-4 h-4 rounded" style={{ accentColor: "var(--accent)" }} />
-                <span className="text-sm" style={{ color: "var(--neutral-600)" }}>Super Tiebreak</span>
-              </div>
-              {form.hasSuperTiebreak && <div><label className="label">Pontos Super Tiebreak</label><input type="number" name="superTiebreakScore" value={form.superTiebreakScore} onChange={handleChange} className="input" min="7" max="15" /></div>}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Tolerância para Atraso (min)</label>
-                <input type="number" name="delayTolerance" value={form.delayTolerance} onChange={handleChange} className="input" min="5" max="60" />
-              </div>
-              <div>
-                <label className="label">Distribuição de quadras</label>
-                <select name="courtAssignmentMode" value={form.courtAssignmentMode} onChange={handleChange} className="input">
-                  <option value="manual">Manual/agendamento</option>
-                  <option value="automatic">Automático assistido</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="label">Critérios de W.O.</label>
-              <textarea name="woCriteria" value={form.woCriteria} onChange={handleChange} className="input" rows={2} placeholder="Descreva os critérios para W.O..." />
-            </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" name="hasTiebreak" checked={form.hasTiebreak} onChange={handleChange} className="w-4 h-4 rounded" style={{ accentColor: "var(--accent)" }} />
+                    <span className="text-sm" style={{ color: "var(--neutral-600)" }}>Tiebreak</span>
+                  </div>
+                  {form.hasTiebreak && <div><label className="label">Placar do Tiebreak</label><input type="number" name="tiebreakScore" value={form.tiebreakScore} onChange={handleChange} className="input" min="5" max="10" /></div>}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" name="hasSuperTiebreak" checked={form.hasSuperTiebreak} onChange={handleChange} className="w-4 h-4 rounded" style={{ accentColor: "var(--accent)" }} />
+                    <span className="text-sm" style={{ color: "var(--neutral-600)" }}>Super Tiebreak</span>
+                  </div>
+                  {form.hasSuperTiebreak && <div><label className="label">Pontos Super Tiebreak</label><input type="number" name="superTiebreakScore" value={form.superTiebreakScore} onChange={handleChange} className="input" min="7" max="15" /></div>}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Tolerância para Atraso (min)</label>
+                    <input type="number" name="delayTolerance" value={form.delayTolerance} onChange={handleChange} className="input" min="5" max="60" />
+                  </div>
+                  <div>
+                    <label className="label">Distribuição de quadras</label>
+                    <select name="courtAssignmentMode" value={form.courtAssignmentMode} onChange={handleChange} className="input">
+                      <option value="manual">Manual/agendamento</option>
+                      <option value="automatic">Automático assistido</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Critérios de W.O.</label>
+                  <textarea name="woCriteria" value={form.woCriteria || ""} onChange={handleChange} className="input" rows={2} placeholder="Descreva os critérios para W.O..." />
+                </div>
+              </>
+            )}
             <div>
               <label className="label">Regras Gerais</label>
               <textarea name="generalRules" value={form.generalRules} onChange={handleChange} className="input" rows={2} placeholder="Regras adicionais do torneio..." />
@@ -586,7 +633,50 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
         </Panel>
       )}
 
-      {step === 4 && (
+      {step === 4 && isBeachVolley && (
+        <Panel>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium" style={{ color: "var(--text)" }}>Categorias do Torneio</h4>
+              <button onClick={addCategory} className="btn-secondary text-sm">+ Adicionar Categoria</button>
+            </div>
+            <p className="text-xs" style={{ color: "var(--neutral-400)" }}>
+              Cada categoria é um sub-torneio independente com seus jogos, grupos e mata-mata.
+            </p>
+            {selectedCategories.length === 0 ? (
+              <p className="text-sm text-center py-6" style={{ color: "var(--neutral-400)" }}>Nenhuma categoria adicionada.</p>
+            ) : (
+              <div className="space-y-2">
+                {selectedCategories.map((cat, i) => (
+                  <div key={i} className="flex flex-col sm:flex-row gap-2 items-start p-3 rounded-lg" style={{ border: "1px solid var(--border)" }}>
+                    <select value={cat.gender} onChange={e => updateCategory(i, "gender", e.target.value)} className="input flex-1">
+                      {CATEGORY_GENDERS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                    </select>
+                    <select value={cat.level} onChange={e => updateCategory(i, "level", e.target.value)} className="input flex-1">
+                      {CATEGORY_LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                    </select>
+                    <select value={cat.teamSize} onChange={e => updateCategory(i, "teamSize", e.target.value)} className="input flex-1">
+                      {BEACH_VOLLEY_TEAM_SIZES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                    <span className="text-sm font-medium py-2 px-3 rounded" style={{ background: "var(--neutral-50)", color: "var(--text)", minWidth: "140px" }}>
+                      {formatBeachVolleyCategoryName(cat.gender, cat.level, cat.teamSize)}
+                    </span>
+                    <button onClick={() => removeCategory(i)} className="text-red-500 text-sm hover:text-red-700 py-2">Remover</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div>
+              <label className="label">Formato (aplica-se a todas categorias)</label>
+              <select name="format" value={form.format} onChange={handleChange} className="input">
+                {CATEGORY_FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+              </select>
+            </div>
+          </div>
+        </Panel>
+      )}
+
+      {step === (isBeachVolley ? 5 : 4) && (
         <Panel>
           <div className="space-y-4">
             <h4 className="font-medium" style={{ color: "var(--text)" }}>Pontuação</h4>
@@ -598,10 +688,12 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
                 ["lossWithoutWinningSet", "Derrota sem vencer sets"],
                 ["winByWO", "Vitória por W.O."],
                 ["lossByWO", "Derrota por W.O."],
-                ["winByForfeit", "Vitória por desistência"],
-                ["lossByForfeit", "Derrota por desistência"],
-                ["withdrawalPenalty", "Penalidade desistência"],
-                ["delayPenalty", "Penalidade atraso"],
+                ...(!isBeachVolley ? [
+                  ["winByForfeit", "Vitória por desistência"],
+                  ["lossByForfeit", "Derrota por desistência"],
+                  ["withdrawalPenalty", "Penalidade desistência"],
+                  ["delayPenalty", "Penalidade atraso"],
+                ] : []),
               ].map(([key, label]) => (
                 <div key={key}>
                   <label className="label">{label}</label>
@@ -615,7 +707,7 @@ function CreateTournament({ headers, setMessage, onCreated }: { headers?: { Auth
 
       <div className="flex justify-between">
         {step > 1 ? <button onClick={() => setStep(step - 1)} className="btn-secondary">Voltar</button> : <div />}
-        {step < 4 ? (
+        {step < totalSteps ? (
           <button onClick={() => setStep(step + 1)} disabled={step === 1 && !form.name} className="btn-primary disabled:opacity-50">Próximo</button>
         ) : (
           <button onClick={handleSubmit} disabled={loading} className="btn-primary disabled:opacity-50">{loading ? "Criando..." : "Criar Torneio"}</button>

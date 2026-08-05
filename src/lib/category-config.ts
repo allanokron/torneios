@@ -36,6 +36,51 @@ export const ODD_GROUP_POLICIES = [
   { value: "fill_with_best_next_position", label: "Completar com melhores próximos colocados" },
 ] as const
 
+export const BEACH_VOLLEY_TEAM_SIZES = [
+  { value: "double", label: "Dupla", size: 2 },
+  { value: "trio", label: "Trio", size: 3 },
+  { value: "quartet", label: "Quarteto", size: 4 },
+] as const
+
+type BeachVolleyCategory = {
+  gender: string
+  level: string
+  teamSize: string
+}
+
+function buildBeachVolleyCategories(): BeachVolleyCategory[] {
+  const genders = CATEGORY_GENDERS.map(g => g.value)
+  const levels = CATEGORY_LEVELS.map(l => l.value)
+  const teamSizes = BEACH_VOLLEY_TEAM_SIZES.map(t => t.value)
+
+  const categories: BeachVolleyCategory[] = []
+  for (const gender of genders) {
+    for (const level of levels) {
+      for (const teamSize of teamSizes) {
+        categories.push({ gender, level, teamSize })
+      }
+    }
+  }
+  return categories
+}
+
+export const BEACH_VOLLEY_CATEGORIES: BeachVolleyCategory[] = buildBeachVolleyCategories()
+
+export const BEACH_VOLLEY_CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  BEACH_VOLLEY_CATEGORIES.map(cat => {
+    const key = `${cat.gender}_${cat.level}_${cat.teamSize}`
+    const gender = CATEGORY_GENDERS.find(g => g.value === cat.gender)?.label ?? cat.gender
+    const level = CATEGORY_LEVELS.find(l => l.value === cat.level)?.label ?? cat.level
+    const teamSize = BEACH_VOLLEY_TEAM_SIZES.find(t => t.value === cat.teamSize)?.label ?? cat.teamSize
+    return [key, `${teamSize} ${gender} ${level}`]
+  })
+)
+
+export function formatBeachVolleyCategoryName(gender: string, level: string, teamSize: string): string {
+  const key = `${gender}_${level}_${teamSize}`
+  return BEACH_VOLLEY_CATEGORY_LABELS[key] ?? buildCategoryName({ gender, level, teamSize })
+}
+
 type Option = { value: string; label: string }
 
 function hasValue(options: readonly Option[], value: unknown) {
