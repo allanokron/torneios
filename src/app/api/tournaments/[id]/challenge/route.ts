@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { canManageTournament } from "@/lib/platform-admin"
+import { validateTournamentSport, SportAccessError } from "@/lib/sports/middleware"
 
 // GET — Fetch challenge config (any authenticated user)
 export async function GET(
@@ -20,6 +21,21 @@ export async function GET(
     const decoded = verifyToken(token)
     if (!decoded) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 })
+    }
+
+    const tournament = await prisma.tournament.findUnique({ where: { id } })
+    if (!tournament) {
+      return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is tennis-only
+    try {
+      await validateTournamentSport(id, "tennis")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
     }
 
     const challengeConfig = await prisma.challengeConfig.findUnique({
@@ -55,6 +71,16 @@ export async function PATCH(
     const tournament = await prisma.tournament.findUnique({ where: { id } })
     if (!tournament) {
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is tennis-only
+    try {
+      await validateTournamentSport(id, "tennis")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
     }
 
     if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {

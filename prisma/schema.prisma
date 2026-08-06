@@ -164,6 +164,87 @@ model Tournament {
   organizerCredit  OrganizerTournamentCredit? @relation("CreditTournament")
   refereeInvites   TournamentRefereeInvite[]
   referees         TournamentReferee[]
+
+  // Configurações específicas por modalidade
+  tennisSettings      TennisTournamentSettings?
+  beachVolleySettings BeachVolleyTournamentSettings?
+}
+
+// ==================== CONFIGURAÇÕES ESPECÍFicas POR MODALIDADE ====================
+
+model TennisTournamentSettings {
+  id           String     @id @default(cuid())
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  // Formato do torneio
+  format             String @default("points_ranking") // points_ranking, ranking_elimination
+  knockoutQualifiers Int?
+
+  // Regras de sets (estilo tênis: games)
+  setsPerMatch       Int     @default(3)
+  setsToWin          Int     @default(2)
+  setType            String  @default("standard") // standard, tiebreak_only
+  hasTiebreak        Boolean @default(true)
+  tiebreakScore      Int     @default(6)
+  hasSuperTiebreak   Boolean @default(true)
+  superTiebreakScore Int     @default(10)
+
+  // Duração e tolerância
+  defaultMatchDuration Int @default(120) // minutos
+  delayTolerance       Int @default(15) // minutos
+
+  // W.O. e regras
+  woCriteria        String?
+  isOrganizerPlayer Boolean @default(true)
+
+  // Fases do torneio
+  rankingPhaseStatus String    @default("open") // open, closed
+  knockoutLockedAt   DateTime?
+  rankingPhaseDays   Int?
+  knockoutPhaseDays  Int?
+
+  // Regras gerais
+  generalRules          String?
+  termsOfResponsibility String?
+  cancellationRules     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BeachVolleyTournamentSettings {
+  id           String     @id @default(cuid())
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  // Formato do torneio (definido nas categorias)
+  categoryFormat String @default("group_ranking_knockout")
+
+  // Regras de sets (estilo vôlei: pontos)
+  setsPerMatch       Int @default(3)
+  normalSetPoints    Int @default(21) // pontos para vencer set normal
+  tiebreakSetPoints  Int @default(15) // pontos para vencer tiebreak
+  minPointDifference Int @default(2) // diferença mínima para vencer
+
+  // Duração e tolerância
+  defaultMatchDuration Int @default(60) // minutos
+  delayTolerance       Int @default(0) // vôlei de praia não tem tolerância
+
+  // Auto-finalização
+  autoFinishOnFirstSubmission Boolean @default(false)
+
+  // Atribuição de quadras
+  courtAssignmentMode String @default("manual") // manual, automatic
+
+  // Limpeza de fotos
+  photosCleanupAt DateTime?
+
+  // Regras gerais
+  generalRules String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TournamentMember {
@@ -390,18 +471,18 @@ model CategoryMatch {
   round       String?
   position    Int?
 
-  scheduledAt  DateTime?
-  duration     Int       @default(60)
-  homeScore    Int?
-  awayScore    Int?
-  winnerTeamId String?
-  endReason    String?
-  startedAt    DateTime?
-  finishedAt   DateTime?
+  scheduledAt   DateTime?
+  duration      Int       @default(60)
+  homeScore     Int?
+  awayScore     Int?
+  winnerTeamId  String?
+  endReason     String?
+  startedAt     DateTime?
+  finishedAt    DateTime?
   startPhotoUrl String?
-  endPhotoUrl  String?
-  refereeId    String?
-  referee      User?     @relation("CategoryMatchReferee", fields: [refereeId], references: [id], onDelete: SetNull)
+  endPhotoUrl   String?
+  refereeId     String?
+  referee       User?     @relation("CategoryMatchReferee", fields: [refereeId], references: [id], onDelete: SetNull)
 
   sets         CategorySet[]
   bracketMatch CategoryBracketMatch?

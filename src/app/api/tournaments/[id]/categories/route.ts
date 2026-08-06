@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { buildCategoryName, formatBeachVolleyCategoryName, validateCategoryPayload } from "@/lib/category-config"
 import { canManageTournament } from "@/lib/platform-admin"
+import { validateTournamentSport, SportAccessError } from "@/lib/sports/middleware"
 
 export async function GET(
   _request: Request,
@@ -10,6 +11,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+
+    const tournament = await prisma.tournament.findUnique({ where: { id } })
+    if (!tournament) {
+      return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is beach_volley-only
+    try {
+      await validateTournamentSport(id, "beach_volley")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
+    }
+
     const categories = await prisma.tournamentCategory.findMany({
       where: { tournamentId: id },
       orderBy: [{ createdAt: "asc" }],
@@ -56,6 +73,16 @@ export async function POST(
 
     if (!tournament) {
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is beach_volley-only
+    try {
+      await validateTournamentSport(id, "beach_volley")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
     }
 
     if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {

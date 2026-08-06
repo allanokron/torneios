@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
+import prisma from "@/lib/prisma"
 import { getKnockoutState } from "@/lib/knockout"
+import { validateTournamentSport, SportAccessError } from "@/lib/sports/middleware"
 
 export async function GET(
   _request: Request,
@@ -7,6 +9,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+
+    const tournament = await prisma.tournament.findUnique({ where: { id } })
+    if (!tournament) {
+      return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is tennis-only
+    try {
+      await validateTournamentSport(id, "tennis")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
+    }
+
     const state = await getKnockoutState(id)
 
     if (!state) {

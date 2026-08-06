@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { canManageTournament } from "@/lib/platform-admin"
+import { validateTournamentSport, SportAccessError } from "@/lib/sports/middleware"
 
 export async function GET(
   _request: Request,
@@ -9,6 +10,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+
+    const tournament = await prisma.tournament.findUnique({ where: { id } })
+    if (!tournament) {
+      return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is beach_volley-only
+    try {
+      await validateTournamentSport(id, "beach_volley")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
+    }
+
     const assignments = await prisma.categoryCourt.findMany({
       where: { category: { tournamentId: id } },
       include: {
@@ -48,6 +65,16 @@ export async function POST(
 
     if (!tournament) {
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is beach_volley-only
+    try {
+      await validateTournamentSport(id, "beach_volley")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
     }
 
     if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
@@ -128,6 +155,16 @@ export async function DELETE(
 
     if (!tournament) {
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is beach_volley-only
+    try {
+      await validateTournamentSport(id, "beach_volley")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
     }
 
     if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {

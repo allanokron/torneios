@@ -25,6 +25,7 @@ interface Tournament {
   startDate: string
   endDate?: string
   status: string
+  sport: string
   format: string
   knockoutQualifiers?: number | null
   rankingPhaseStatus?: string
@@ -759,6 +760,7 @@ export default function TournamentPage() {
             activeTab={activeTab}
             isOwner={isOwner}
             showKnockout={formatSupportsKnockout(tournament.format)}
+            sport={tournament.sport}
           />
 
           {/* Main Content */}

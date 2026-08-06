@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { canManageTournament } from "@/lib/platform-admin"
+import { validateTournamentSport, SportAccessError } from "@/lib/sports/middleware"
 
 export async function POST(
   request: Request,
@@ -26,6 +27,16 @@ export async function POST(
 
     if (!tournament) {
       return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 })
+    }
+
+    // Validate sport - this endpoint is tennis-only
+    try {
+      await validateTournamentSport(id, "tennis")
+    } catch (error) {
+      if (error instanceof SportAccessError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+      throw error
     }
 
     if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {

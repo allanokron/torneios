@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import {
-  CATEGORY_GENDERS,
-  CATEGORY_LEVELS,
-  BEACH_VOLLEY_TEAM_SIZES,
-  CATEGORY_FORMATS,
-  formatBeachVolleyCategoryName,
-} from "@/lib/category-config"
+import { BV_GENDERS, BV_LEVELS, BV_TEAM_SIZES, formatBVCategoryName } from "@/lib/sports/beach-volleyball/config"
 
 interface CourtData {
   name: string
@@ -1023,7 +1017,7 @@ export default function NewTournamentPage() {
                       onChange={(e) => updateCategory(index, "gender", e.target.value)}
                       className="input"
                     >
-                      {CATEGORY_GENDERS.map(g => (
+                      {BV_GENDERS.map(g => (
                         <option key={g.value} value={g.value}>{g.label}</option>
                       ))}
                     </select>
@@ -1036,7 +1030,7 @@ export default function NewTournamentPage() {
                       onChange={(e) => updateCategory(index, "level", e.target.value)}
                       className="input"
                     >
-                      {CATEGORY_LEVELS.map(l => (
+                      {BV_LEVELS.map(l => (
                         <option key={l.value} value={l.value}>{l.label}</option>
                       ))}
                     </select>
@@ -1049,7 +1043,7 @@ export default function NewTournamentPage() {
                       onChange={(e) => updateCategory(index, "teamSize", e.target.value)}
                       className="input"
                     >
-                      {BEACH_VOLLEY_TEAM_SIZES.map(t => (
+                      {BV_TEAM_SIZES.map(t => (
                         <option key={t.value} value={t.value}>{t.label}</option>
                       ))}
                     </select>
@@ -1067,7 +1061,7 @@ export default function NewTournamentPage() {
                 </div>
 
                 <div className="mt-2 text-sm font-medium" style={{ color: 'var(--accent)' }}>
-                  {formatBeachVolleyCategoryName(cat.gender, cat.level, cat.teamSize)}
+                  {formatBVCategoryName(cat.gender, cat.level, cat.teamSize)}
                 </div>
               </div>
             ))}
