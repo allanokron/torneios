@@ -48,14 +48,6 @@ export default function TournamentCard({ tournament, showStatus = true, compact 
     return colors[status] || "status-draft"
   }
 
-  const getSportLabel = (sport: string) => {
-    const labels: Record<string, string> = {
-      tennis: "Tênis",
-      beach_volley: "Vôlei de Praia",
-    }
-    return labels[sport] || sport
-  }
-
   if (compact) {
     return (
       <Link
@@ -73,7 +65,7 @@ export default function TournamentCard({ tournament, showStatus = true, compact 
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{tournament.name}</h4>
           <p className="text-xs" style={{ color: 'var(--neutral-400)' }}>
-            {getSportLabel(tournament.sport)} · {tournament._count?.members || 0} participantes
+            {tournament._count?.members || 0} participantes
           </p>
         </div>
         {showStatus && (
@@ -129,7 +121,7 @@ export default function TournamentCard({ tournament, showStatus = true, compact 
       <div className="p-4">
         <h3 className="font-semibold mb-1 truncate" style={{ color: 'var(--text)' }}>{tournament.name}</h3>
         <p className="text-sm mb-3" style={{ color: 'var(--neutral-400)' }}>
-          {getSportLabel(tournament.sport)} · {tournament.format === "ranking_elimination" || tournament.format === "elimination"
+          {tournament.format === "ranking_elimination" || tournament.format === "elimination"
             ? "Ranking + Mata-mata"
             : "Ranking Pontos Diretos"}
         </p>

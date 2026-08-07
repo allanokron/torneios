@@ -12,7 +12,6 @@ import ProposalCard from "@/components/tournament/ProposalCard"
 import MatchResultForm from "@/components/tournament/MatchResultForm"
 import MatchEditForm from "@/components/tournament/MatchEditForm"
 import PixPaymentScreen from "@/components/tournament/PixPaymentScreen"
-import TournamentCategoriesTab from "@/components/tournament/TournamentCategoriesTab"
 
 interface Tournament {
   id: string
@@ -25,7 +24,6 @@ interface Tournament {
   startDate: string
   endDate?: string
   status: string
-  sport: string
   format: string
   knockoutQualifiers?: number | null
   rankingPhaseStatus?: string
@@ -760,7 +758,6 @@ export default function TournamentPage() {
             activeTab={activeTab}
             isOwner={isOwner}
             showKnockout={formatSupportsKnockout(tournament.format)}
-            sport={tournament.sport}
           />
 
           {/* Main Content */}
@@ -2340,11 +2337,6 @@ export default function TournamentPage() {
                   )}
                 </div>
               </div>
-            )}
-
-            {/* ===== CATEGORIES ===== */}
-            {activeTab === "categories" && (
-              <TournamentCategoriesTab tournamentId={tournament.id} isOwner={isOwner} />
             )}
 
             {/* ===== PARTICIPANTS ===== */}

@@ -21,10 +21,7 @@ export async function GET(request: Request) {
     include: {
       user: { select: { id: true, name: true, email: true } },
       tournament: { select: { id: true, name: true } },
-      category: { select: { id: true, name: true } },
-      team: { select: { id: true, name: true } },
-      teamMember: { select: { id: true, name: true, email: true, paymentStatus: true } },
-      organizerCredit: true,
+      organizerTournamentCredit: true,
     },
   })
 

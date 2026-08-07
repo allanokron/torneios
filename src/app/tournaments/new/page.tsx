@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { BV_GENDERS, BV_LEVELS, BV_TEAM_SIZES, formatBVCategoryName } from "@/lib/sports/beach-volleyball/config"
 
 interface CourtData {
   name: string
@@ -22,13 +21,10 @@ export default function NewTournamentPage() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [checkingAccess, setCheckingAccess] = useState(true)
-  const [canCreateTournament, setCanCreateTournament] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    sport: "tennis",
     location: "",
     address: "",
     city: "",
@@ -38,7 +34,6 @@ export default function NewTournamentPage() {
     registrationDeadline: "",
     maxParticipants: "",
     format: "points_ranking",
-    categoryFormat: "group_ranking_knockout",
     knockoutQualifiers: "",
     isPublic: true,
     inviteCode: "",
@@ -49,9 +44,7 @@ export default function NewTournamentPage() {
     hasSuperTiebreak: true,
     superTiebreakScore: 10,
     defaultMatchDuration: 120,
-    courtAssignmentMode: "manual",
     delayTolerance: 15,
-    normalSetPoints: 21,
     generalRules: "",
     woCriteria: "",
     termsOfResponsibility: "",
@@ -86,68 +79,11 @@ export default function NewTournamentPage() {
 
   const [courts, setCourts] = useState<CourtData[]>([])
   const [coverPreview, setCoverPreview] = useState("")
-  const [selectedCategories, setSelectedCategories] = useState<Array<{ gender: string; level: string; teamSize: string }>>([])
-
-  const isBeachVolley = formData.sport === "beach_volley"
-  const totalSteps = isBeachVolley ? 6 : 5
-
-  const getSportLabel = (sport: string) => {
-    const labels: Record<string, string> = {
-      tennis: "Tênis",
-      beach_volley: "Vôlei de Praia",
-    }
-    return labels[sport] || sport
-  }
-
-  const formatDescriptions: Record<string, { title: string; description: string; params: string }> = {
-    points_ranking: {
-      title: "Ranking Pontos Diretos",
-      description: "Todos jogam contra todos e o primeiro colocado do ranking é o campeão.",
-      params: "Configure pontuação, critérios de desempate e geração de jogos do ranking.",
-    },
-    ranking_elimination: {
-      title: "Ranking com Mata-Mata",
-      description: "A fase inicial gera ranking; depois os melhores classificados entram no mata-mata.",
-      params: "Informe quantos classificam para o mata-mata e as regras de pontuação.",
-    },
-    group_ranking_knockout: {
-      title: "Grupo + Ranking + Mata-Mata",
-      description: "Equipes são sorteadas em grupos, classificadas dentro deles e depois ranqueadas para montar a chave.",
-      params: "Informe equipes por grupo, classificados para ouro/prata e regras dos sets.",
-    },
-    group_knockout: {
-      title: "Grupo + Mata-Mata",
-      description: "Equipes jogam dentro dos grupos e os classificados cruzam com grupos sorteados.",
-      params: "Informe equipes por grupo e quantos classificam para série ouro e prata.",
-    },
-    double_elimination: {
-      title: "Dupla Eliminatória",
-      description: "A equipe só é eliminada após perder duas vezes, com chave de vencedores e perdedores.",
-      params: "Configure as equipes/categorias; o sistema separa vencedores e perdedores na chave.",
-    },
-    ranking_knockout: {
-      title: "Ranking + Mata-Mata",
-      description: "Todos formam um ranking inicial e os melhores avançam para o mata-mata.",
-      params: "Informe total de classificados e, se quiser, série ouro e prata.",
-    },
-  }
-
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
       router.push("/login")
-      return
     }
-
-    fetch("/api/organizer/status", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(res => res.json())
-      .then(data => {
-        setCanCreateTournament(Boolean(data.canCreateTournament))
-        if (!data.canCreateTournament) setError("Para criar torneios, libere sua área de organizador.")
-      })
-      .finally(() => setCheckingAccess(false))
   }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -168,23 +104,10 @@ export default function NewTournamentPage() {
     }))
   }
 
-  const addCategory = () => {
-    setSelectedCategories(prev => [...prev, { gender: "female", level: "iniciante", teamSize: "double" }])
-  }
-
-  const updateCategory = (index: number, field: string, value: string) => {
-    setSelectedCategories(prev => prev.map((cat, i) => i === index ? { ...cat, [field]: value } : cat))
-  }
-
-  const removeCategory = (index: number) => {
-    setSelectedCategories(prev => prev.filter((_, i) => i !== index))
-  }
-
   const addCourt = () => {
     setCourts(prev => [...prev, {
       name: `Quadra ${prev.length + 1}`,
       number: prev.length + 1,
-      surfaceType: isBeachVolley ? "sand" : undefined,
       isCovered: false,
       availabilities: [
         { dayOfWeek: 1, startTime: "07:00", endTime: "22:00" },
@@ -216,10 +139,6 @@ export default function NewTournamentPage() {
       const token = localStorage.getItem("token")
       if (!token) {
         router.push("/login")
-        return
-      }
-      if (!canCreateTournament) {
-        router.push("/organizer")
         return
       }
 
@@ -264,29 +183,6 @@ export default function NewTournamentPage() {
         return
       }
 
-      // Create batch categories for beach volleyball
-      if (formData.sport === "beach_volley" && selectedCategories.length > 0) {
-        const categories = selectedCategories.map(cat => ({
-          gender: cat.gender,
-          level: cat.level,
-          teamSize: cat.teamSize,
-          format: formData.categoryFormat,
-          normalSetPoints: parseInt(formData.normalSetPoints.toString()),
-          tiebreakSetPoints: 15,
-          minPointDifference: 2,
-          setsPerMatch: parseInt(formData.setsPerMatch.toString()),
-        }))
-
-        await fetch(`/api/tournaments/${data.tournament.id}/categories`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ sport: "beach_volley", categories }),
-        })
-      }
-
       // Create courts
       if (courts.length > 0) {
         for (const court of courts) {
@@ -301,7 +197,7 @@ export default function NewTournamentPage() {
         }
       }
 
-      router.push(`/tournaments/${data.tournament.id}${formData.sport === "beach_volley" ? "?tab=categories" : ""}`)
+      router.push(`/tournaments/${data.tournament.id}`)
     } catch {
       setError("Erro ao conectar com o servidor")
     } finally {
@@ -334,7 +230,7 @@ export default function NewTournamentPage() {
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-                  <span className="text-xl" style={{ color: 'var(--primary)' }}>🏆</span>
+                  <span className="text-xl" style={{ color: 'var(--primary)' }}>🎾</span>
                 </div>
                 <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Torneio+</h1>
               </Link>
@@ -349,7 +245,7 @@ export default function NewTournamentPage() {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <div key={s} className="flex items-center">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
@@ -360,7 +256,7 @@ export default function NewTournamentPage() {
                 >
                   {s}
                 </div>
-                {s < totalSteps && (
+                {s < 5 && (
                   <div
                     className="h-1 w-12 sm:w-20"
                     style={{ background: step > s ? 'var(--accent)' : 'var(--neutral-200)' }}
@@ -373,7 +269,6 @@ export default function NewTournamentPage() {
             <span>Informações</span>
             <span>Quadras</span>
             <span>Regras</span>
-            {isBeachVolley && <span>Categorias</span>}
             <span>Pontuação</span>
             <span>Revisão</span>
           </div>
@@ -382,18 +277,6 @@ export default function NewTournamentPage() {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6">
             {error}
-          </div>
-        )}
-
-        {!checkingAccess && !canCreateTournament && (
-          <div className="card mb-6">
-            <h3 className="font-semibold" style={{ color: 'var(--text)' }}>Área de organizador necessária</h3>
-            <p className="mt-2 text-sm" style={{ color: 'var(--neutral-500)' }}>
-              Jogadores podem se inscrever e acompanhar jogos. Para criar torneios, libere sua área de organizador com assinatura mensal ou abertura avulsa.
-            </p>
-            <Link href="/organizer" className="btn-primary mt-4 text-sm">
-              Ver opções de organizador
-            </Link>
           </div>
         )}
 
@@ -410,27 +293,9 @@ export default function NewTournamentPage() {
                 value={formData.name}
                 onChange={handleChange}
                 className="input"
-                placeholder={formData.sport === "beach_volley" ? "Ex: Circuito de Vôlei de Praia 2026" : "Ex: Liga de Tênis 2026"}
+                placeholder="Ex: Liga de Tênis 2026"
                 required
               />
-            </div>
-
-            <div>
-              <label className="label">Esporte *</label>
-              <select
-                name="sport"
-                value={formData.sport}
-                onChange={handleChange}
-                className="input"
-              >
-                <option value="tennis">Tênis</option>
-                <option value="beach_volley">Vôlei de Praia</option>
-              </select>
-              {formData.sport === "beach_volley" && (
-                <p className="mt-2 text-sm" style={{ color: 'var(--neutral-500)' }}>
-                  Depois de criar, configure as categorias do vôlei, como Masculino Open, Feminino Iniciante ou Misto Intermediário.
-                </p>
-              )}
             </div>
 
             <div>
@@ -449,24 +314,13 @@ export default function NewTournamentPage() {
               <div>
                 <label className="label">Tipo de Torneio</label>
                 <select
-                  name={formData.sport === "beach_volley" ? "categoryFormat" : "format"}
-                  value={formData.sport === "beach_volley" ? formData.categoryFormat : formData.format}
+                  name="format"
+                  value={formData.format}
                   onChange={handleChange}
                   className="input"
                 >
-                  {formData.sport === "beach_volley" ? (
-                    <>
-                      <option value="group_ranking_knockout">Grupo + Ranking + Mata-Mata</option>
-                      <option value="group_knockout">Grupo + Mata-Mata</option>
-                      <option value="double_elimination">Dupla Eliminatória</option>
-                      <option value="ranking_knockout">Ranking + Mata-Mata</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="points_ranking">Ranking Pontos Diretos</option>
-                      <option value="ranking_elimination">Ranking com Mata-Mata</option>
-                    </>
-                  )}
+                  <option value="points_ranking">Ranking Pontos Diretos</option>
+                  <option value="ranking_elimination">Ranking com Mata-Mata</option>
                 </select>
               </div>
               {formData.format === "ranking_elimination" && (
@@ -483,20 +337,6 @@ export default function NewTournamentPage() {
                   />
                 </div>
               )}
-            </div>
-
-            <div className="rounded-xl border p-4" style={{ borderColor: 'var(--border)', background: 'var(--neutral-50)' }}>
-              {(() => {
-                const selectedFormat = formData.sport === "beach_volley" ? formData.categoryFormat : formData.format
-                const info = formatDescriptions[selectedFormat]
-                return (
-                  <>
-                    <h4 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{info.title}</h4>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--neutral-600)' }}>{info.description}</p>
-                    <p className="mt-2 text-xs" style={{ color: 'var(--neutral-500)' }}>{info.params}</p>
-                  </>
-                )
-              })()}
             </div>
 
             <div>
@@ -718,7 +558,6 @@ export default function NewTournamentPage() {
                           <option value="hard">Quadra Dura</option>
                           <option value="clay">Quadra de Saibro</option>
                           <option value="grass">Quadra de Grama</option>
-                          <option value="sand">Areia</option>
                         </select>
                       </div>
 
@@ -743,352 +582,148 @@ export default function NewTournamentPage() {
         {/* Step 3: Rules */}
         {step === 3 && (
           <div className="card space-y-6">
-            <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
-              {isBeachVolley ? "Regras do Vôlei de Praia" : "Regras da Competição"}
-            </h3>
+            <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Regras da Competição</h3>
             
-            {isBeachVolley ? (
-              <>
-                <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
-                  Regras simplificadas para vôlei de praia. As mesmas regras são herdadas por todas as categorias criadas.
-                </p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="label">Sets por Partida</label>
-                    <select
-                      name="setsPerMatch"
-                      value={formData.setsPerMatch}
-                      onChange={handleChange}
-                      className="input"
-                    >
-                      <option value={1}>Melhor de 1</option>
-                      <option value={3}>Melhor de 3</option>
-                    </select>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="label">Sets por Partida</label>
+                <select
+                  name="setsPerMatch"
+                  value={formData.setsPerMatch}
+                  onChange={handleChange}
+                  className="input"
+                >
+                  <option value={3}>Melhor de 3</option>
+                  <option value={5}>Melhor de 5</option>
+                </select>
+              </div>
 
-                  <div>
-                    <label className="label">Pontos para Vencer o Set</label>
-                    <input
-                      type="number"
-                      name="normalSetPoints"
-                      value={formData.normalSetPoints}
-                      onChange={handleChange}
-                      className="input"
-                      min="15"
-                      max="30"
-                    />
-                  </div>
+              <div>
+                <label className="label">Sets para Vencer</label>
+                <select
+                  name="setsToWin"
+                  value={formData.setsToWin}
+                  onChange={handleChange}
+                  className="input"
+                >
+                  <option value={2}>2 sets</option>
+                  <option value={3}>3 sets</option>
+                </select>
+              </div>
 
-                  <div>
-                    <label className="label">Pontos do Tiebreak</label>
-                    <input
-                      type="number"
-                      value="15"
-                      className="input"
-                      disabled
-                      style={{ background: 'var(--neutral-100)' }}
-                    />
-                    <p className="text-xs mt-1" style={{ color: 'var(--neutral-400)' }}>Fixo em 15</p>
-                  </div>
+              <div>
+                <label className="label">Duração Padrão (min)</label>
+                <input
+                  type="number"
+                  name="defaultMatchDuration"
+                  value={formData.defaultMatchDuration}
+                  onChange={handleChange}
+                  className="input"
+                  min="60"
+                  max="240"
+                />
+              </div>
+            </div>
 
-                  <div>
-                    <label className="label">Tolerância para Atraso (min)</label>
-                    <input
-                      type="number"
-                      name="delayTolerance"
-                      value={formData.delayTolerance}
-                      onChange={handleChange}
-                      className="input"
-                      min="5"
-                      max="60"
-                    />
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="hasTiebreak"
+                  checked={formData.hasTiebreak}
+                  onChange={handleChange}
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent)' }}
+                />
+                <span className="text-sm" style={{ color: 'var(--neutral-600)' }}>Tiebreak</span>
+              </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-800 mb-2">Simplificações para Vôlei de Praia</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Sem Super Tiebreak (3º set vai até 15 pontos)</li>
-                    <li>• Sem critérios de W.O.</li>
-                    <li>• Sem penalidades configuráveis (atraso, desistência)</li>
-                    <li>• Sem critérios de desempate</li>
-                    <li>• Apenas foto final da partida (sem foto de início)</li>
-                  </ul>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="label">Sets por Partida</label>
-                    <select
-                      name="setsPerMatch"
-                      value={formData.setsPerMatch}
-                      onChange={handleChange}
-                      className="input"
-                    >
-                      <option value={3}>Melhor de 3</option>
-                      <option value={5}>Melhor de 5</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="label">Sets para Vencer</label>
-                    <select
-                      name="setsToWin"
-                      value={formData.setsToWin}
-                      onChange={handleChange}
-                      className="input"
-                    >
-                      <option value={2}>2 sets</option>
-                      <option value={3}>3 sets</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="label">Duração Padrão (min)</label>
-                    <input
-                      type="number"
-                      name="defaultMatchDuration"
-                      value={formData.defaultMatchDuration}
-                      onChange={handleChange}
-                      className="input"
-                      min="60"
-                      max="240"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="label">Distribuição de quadras</label>
-                    <select
-                      name="courtAssignmentMode"
-                      value={formData.courtAssignmentMode}
-                      onChange={handleChange}
-                      className="input"
-                    >
-                      <option value="manual">Manual/agendamento</option>
-                      <option value="automatic">Automático assistido</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="hasTiebreak"
-                      checked={formData.hasTiebreak}
-                      onChange={handleChange}
-                      className="w-4 h-4 rounded"
-                      style={{ accentColor: 'var(--accent)' }}
-                    />
-                    <span className="text-sm" style={{ color: 'var(--neutral-600)' }}>Tiebreak</span>
-                  </div>
-
-                  {formData.hasTiebreak && (
-                    <div>
-                      <label className="label">Placar do Tiebreak</label>
-                      <input
-                        type="number"
-                        name="tiebreakScore"
-                        value={formData.tiebreakScore}
-                        onChange={handleChange}
-                        className="input"
-                        min="5"
-                        max="10"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="hasSuperTiebreak"
-                      checked={formData.hasSuperTiebreak}
-                      onChange={handleChange}
-                      className="w-4 h-4 rounded"
-                      style={{ accentColor: 'var(--accent)' }}
-                    />
-                    <span className="text-sm" style={{ color: 'var(--neutral-600)' }}>Super Tiebreak</span>
-                  </div>
-
-                  {formData.hasSuperTiebreak && (
-                    <div>
-                      <label className="label">Pontos do Super Tiebreak</label>
-                      <input
-                        type="number"
-                        name="superTiebreakScore"
-                        value={formData.superTiebreakScore}
-                        onChange={handleChange}
-                        className="input"
-                        min="7"
-                        max="15"
-                      />
-                    </div>
-                  )}
-                </div>
-
+              {formData.hasTiebreak && (
                 <div>
-                  <label className="label">Tolerância para Atraso (minutos)</label>
+                  <label className="label">Placar do Tiebreak</label>
                   <input
                     type="number"
-                    name="delayTolerance"
-                    value={formData.delayTolerance}
+                    name="tiebreakScore"
+                    value={formData.tiebreakScore}
                     onChange={handleChange}
                     className="input"
                     min="5"
-                    max="60"
+                    max="10"
                   />
                 </div>
+              )}
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="hasSuperTiebreak"
+                  checked={formData.hasSuperTiebreak}
+                  onChange={handleChange}
+                  className="w-4 h-4 rounded"
+                  style={{ accentColor: 'var(--accent)' }}
+                />
+                <span className="text-sm" style={{ color: 'var(--neutral-600)' }}>Super Tiebreak</span>
+              </div>
+
+              {formData.hasSuperTiebreak && (
                 <div>
-                  <label className="label">Critérios de W.O.</label>
-                  <textarea
-                    name="woCriteria"
-                    value={formData.woCriteria}
+                  <label className="label">Pontos do Super Tiebreak</label>
+                  <input
+                    type="number"
+                    name="superTiebreakScore"
+                    value={formData.superTiebreakScore}
                     onChange={handleChange}
                     className="input"
-                    rows={2}
-                    placeholder="Descreva os critérios para W.O..."
+                    min="7"
+                    max="15"
                   />
                 </div>
+              )}
+            </div>
 
-                <div>
-                  <label className="label">Regras Gerais</label>
-                  <textarea
-                    name="generalRules"
-                    value={formData.generalRules}
-                    onChange={handleChange}
-                    className="input"
-                    rows={3}
-                    placeholder="Regras adicionais do torneio..."
-                  />
-                </div>
-              </>
-            )}
+            <div>
+              <label className="label">Tolerância para Atraso (minutos)</label>
+              <input
+                type="number"
+                name="delayTolerance"
+                value={formData.delayTolerance}
+                onChange={handleChange}
+                className="input"
+                min="5"
+                max="60"
+              />
+            </div>
 
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setStep(isBeachVolley ? 4 : 4)}
-                className="btn-primary"
-                disabled={
-                  (isBeachVolley && (!formData.setsPerMatch || !formData.normalSetPoints))
-                }
-              >
-                Próximo
-              </button>
+            <div>
+              <label className="label">Critérios de W.O.</label>
+              <textarea
+                name="woCriteria"
+                value={formData.woCriteria}
+                onChange={handleChange}
+                className="input"
+                rows={2}
+                placeholder="Descreva os critérios para W.O..."
+              />
+            </div>
+
+            <div>
+              <label className="label">Regras Gerais</label>
+              <textarea
+                name="generalRules"
+                value={formData.generalRules}
+                onChange={handleChange}
+                className="input"
+                rows={3}
+                placeholder="Regras adicionais do torneio..."
+              />
             </div>
           </div>
         )}
 
-        {/* Step 4: Categories (beach volley only) or Scoring (tennis) */}
-        {step === 4 && isBeachVolley && (
-          <div className="card space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Categorias</h3>
-                <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
-                  Selecione as categorias que serão disputadas neste torneio.
-                </p>
-              </div>
-              <button type="button" onClick={addCategory} className="btn-secondary text-sm">
-                + Adicionar
-              </button>
-            </div>
-
-            {selectedCategories.length === 0 && (
-              <div className="text-center py-8" style={{ color: 'var(--neutral-400)' }}>
-                <p>Nenhuma categoria selecionada.</p>
-                <p className="text-sm mt-1">Clique em "+ Adicionar" para começar.</p>
-              </div>
-            )}
-
-            {selectedCategories.map((cat, index) => (
-              <div key={index} className="p-4 rounded-lg border" style={{ borderColor: 'var(--neutral-200)' }}>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className="label">Gênero</label>
-                    <select
-                      value={cat.gender}
-                      onChange={(e) => updateCategory(index, "gender", e.target.value)}
-                      className="input"
-                    >
-                      {BV_GENDERS.map(g => (
-                        <option key={g.value} value={g.value}>{g.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="label">Nível</label>
-                    <select
-                      value={cat.level}
-                      onChange={(e) => updateCategory(index, "level", e.target.value)}
-                      className="input"
-                    >
-                      {BV_LEVELS.map(l => (
-                        <option key={l.value} value={l.value}>{l.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="label">Tamanho do Time</label>
-                    <select
-                      value={cat.teamSize}
-                      onChange={(e) => updateCategory(index, "teamSize", e.target.value)}
-                      className="input"
-                    >
-                      {BV_TEAM_SIZES.map(t => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      onClick={() => removeCategory(index)}
-                      className="text-red-500 hover:text-red-700 text-sm font-medium"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-2 text-sm font-medium" style={{ color: 'var(--accent)' }}>
-                  {formatBVCategoryName(cat.gender, cat.level, cat.teamSize)}
-                </div>
-              </div>
-            ))}
-
-            {selectedCategories.length > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-800">
-                  <strong>{selectedCategories.length}</strong> {selectedCategories.length === 1 ? 'categoria selecionada' : 'categorias selecionadas'}.
-                  As regras do torneio serão herdadas por todas as categorias.
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setStep(5)}
-                className="btn-primary"
-                disabled={selectedCategories.length === 0}
-              >
-                Próximo
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && !isBeachVolley && (
+        {/* Step 4: Scoring */}
+        {step === 4 && (
           <div className="card space-y-6">
             <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Pontuação</h3>
             
@@ -1212,9 +847,6 @@ export default function NewTournamentPage() {
             <div className="space-y-4">
               <div className="p-4 rounded-lg" style={{ background: 'var(--neutral-50)' }}>
                 <h4 className="font-medium mb-2" style={{ color: 'var(--text)' }}>{formData.name || "Nome do Torneio"}</h4>
-                <p className="text-sm font-medium" style={{ color: 'var(--neutral-600)' }}>
-                  {getSportLabel(formData.sport)}
-                </p>
                 <p className="text-sm" style={{ color: 'var(--neutral-500)' }}>
                   {formData.location || "Local não informado"} • {formData.city || "Cidade"}, {formData.state || "UF"}
                 </p>
@@ -1277,18 +909,18 @@ export default function NewTournamentPage() {
             </Link>
           )}
 
-          {step < totalSteps ? (
+          {step < 5 ? (
             <button
               onClick={() => setStep(step + 1)}
               className="btn-primary"
-              disabled={(step === 1 && !formData.name) || !canCreateTournament}
+              disabled={step === 1 && !formData.name}
             >
               Próximo
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={loading || !canCreateTournament}
+              disabled={loading}
               className="btn-primary disabled:opacity-50"
             >
               {loading ? "Criando..." : "Criar Torneio"}

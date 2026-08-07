@@ -26,23 +26,9 @@ export async function POST(
     const body = await request.json()
     const courtId = String(body.courtId || "")
     const matchId = String(body.matchId || "")
-    const kind = body.kind === "tournament" ? "tournament" : "category"
 
     const court = await prisma.court.findFirst({ where: { id: courtId, tournamentId: id } })
     if (!court) return NextResponse.json({ error: "Quadra não encontrada" }, { status: 404 })
-
-    if (kind === "category") {
-      const match = await prisma.categoryMatch.findFirst({ where: { id: matchId, category: { tournamentId: id } } })
-      if (!match) return NextResponse.json({ error: "Jogo não encontrado" }, { status: 404 })
-      if (match.status === "in_progress") return NextResponse.json({ error: "Não é possível mover jogo em andamento" }, { status: 400 })
-
-      const updated = await prisma.categoryMatch.update({
-        where: { id: matchId },
-        data: { courtId, status: match.status === "pending_scheduling" ? "scheduled" : match.status },
-        include: { court: true, homeTeam: true, awayTeam: true },
-      })
-      return NextResponse.json({ match: updated })
-    }
 
     const match = await prisma.match.findFirst({ where: { id: matchId, tournamentId: id } })
     if (!match) return NextResponse.json({ error: "Jogo não encontrado" }, { status: 404 })

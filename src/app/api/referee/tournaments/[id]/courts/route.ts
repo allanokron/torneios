@@ -35,33 +35,8 @@ export async function GET(
         },
         orderBy: [{ status: "desc" }, { scheduledAt: "asc" }],
       },
-      categoryMatches: {
-        where: { status: { in: ["scheduled", "awaiting_start", "in_progress"] } },
-        include: {
-          homeTeam: { select: { id: true, name: true } },
-          awayTeam: { select: { id: true, name: true } },
-          referee: { select: { id: true, name: true } },
-          category: { select: { id: true, name: true } },
-        },
-        orderBy: [{ status: "desc" }, { scheduledAt: "asc" }],
-      },
     },
   })
 
-  const queuedCategoryMatches = await prisma.categoryMatch.findMany({
-    where: {
-      category: { tournamentId: id },
-      courtId: null,
-      status: { in: ["pending_scheduling", "scheduled", "awaiting_start"] },
-    },
-    include: {
-      homeTeam: { select: { id: true, name: true } },
-      awayTeam: { select: { id: true, name: true } },
-      category: { select: { id: true, name: true } },
-    },
-    orderBy: [{ phase: "asc" }, { position: "asc" }, { createdAt: "asc" }],
-    take: 25,
-  })
-
-  return NextResponse.json({ courts, queuedCategoryMatches })
+  return NextResponse.json({ courts })
 }

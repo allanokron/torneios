@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     take: 100,
     include: {
       owner: { select: { id: true, name: true, email: true } },
-      _count: { select: { members: true, matches: true, categories: true, payments: true } },
+      _count: { select: { members: true, matches: true, payments: true } },
     },
   })
 

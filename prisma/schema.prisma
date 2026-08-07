@@ -59,14 +59,11 @@ model User {
   subscription               Subscription?
   organizerCredits           OrganizerTournamentCredit[]
   manualOrganizerAccess      ManualOrganizerAccess?
-  payments                   Payment[]
-  categoryTeamMemberships    CategoryTeamMember[]
-  categoryTeamInvitesSent    CategoryTeamInvite[]        @relation("CategoryTeamInviteSender")
   refereeInvitesSent         TournamentRefereeInvite[]   @relation("RefereeInviteSender")
   refereeInvitesReceived     TournamentRefereeInvite[]   @relation("RefereeInviteReceiver")
   refereeAssignments         TournamentReferee[]
   matchesRefereed            Match[]                     @relation("MatchReferee")
-  categoryMatchesRefereed    CategoryMatch[]             @relation("CategoryMatchReferee")
+  payments                   Payment[]
 }
 
 model Profile {
@@ -128,9 +125,6 @@ model Tournament {
   // Finalização
   autoFinishOnFirstSubmission Boolean @default(false)
 
-  // Limpeza de fotos
-  photosCleanupAt DateTime? // data da limpeza automática de fotos
-
   // Pagamento
   registrationFee      Int? // valor da inscrição em centavos (null = gratuita)
   paymentMethod        String? @default("PIX") // fixo PIX
@@ -138,8 +132,10 @@ model Tournament {
   subscriptionRequired Boolean @default(true)
 
   // Fases do torneio
-  rankingPhaseDays    Int? // dias para a fase de ranking (round-robin)
-  knockoutPhaseDays   Int? // dias para a fase de mata-mata
+  rankingPhaseDays  Int? // dias para a fase de ranking (round-robin)
+  knockoutPhaseDays Int? // dias para a fase de mata-mata
+
+  // Atribuição de quadras
   courtAssignmentMode String @default("manual") // manual, automatic
 
   // Organizador
@@ -160,91 +156,9 @@ model Tournament {
   announcements    Announcement[]
   auditLogs        AuditLog[]
   payments         Payment[]
-  categories       TournamentCategory[]
   organizerCredit  OrganizerTournamentCredit? @relation("CreditTournament")
   refereeInvites   TournamentRefereeInvite[]
   referees         TournamentReferee[]
-
-  // Configurações específicas por modalidade
-  tennisSettings      TennisTournamentSettings?
-  beachVolleySettings BeachVolleyTournamentSettings?
-}
-
-// ==================== CONFIGURAÇÕES ESPECÍFicas POR MODALIDADE ====================
-
-model TennisTournamentSettings {
-  id           String     @id @default(cuid())
-  tournamentId String     @unique
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-
-  // Formato do torneio
-  format             String @default("points_ranking") // points_ranking, ranking_elimination
-  knockoutQualifiers Int?
-
-  // Regras de sets (estilo tênis: games)
-  setsPerMatch       Int     @default(3)
-  setsToWin          Int     @default(2)
-  setType            String  @default("standard") // standard, tiebreak_only
-  hasTiebreak        Boolean @default(true)
-  tiebreakScore      Int     @default(6)
-  hasSuperTiebreak   Boolean @default(true)
-  superTiebreakScore Int     @default(10)
-
-  // Duração e tolerância
-  defaultMatchDuration Int @default(120) // minutos
-  delayTolerance       Int @default(15) // minutos
-
-  // W.O. e regras
-  woCriteria        String?
-  isOrganizerPlayer Boolean @default(true)
-
-  // Fases do torneio
-  rankingPhaseStatus String    @default("open") // open, closed
-  knockoutLockedAt   DateTime?
-  rankingPhaseDays   Int?
-  knockoutPhaseDays  Int?
-
-  // Regras gerais
-  generalRules          String?
-  termsOfResponsibility String?
-  cancellationRules     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model BeachVolleyTournamentSettings {
-  id           String     @id @default(cuid())
-  tournamentId String     @unique
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-
-  // Formato do torneio (definido nas categorias)
-  categoryFormat String @default("group_ranking_knockout")
-
-  // Regras de sets (estilo vôlei: pontos)
-  setsPerMatch       Int @default(3)
-  normalSetPoints    Int @default(21) // pontos para vencer set normal
-  tiebreakSetPoints  Int @default(15) // pontos para vencer tiebreak
-  minPointDifference Int @default(2) // diferença mínima para vencer
-
-  // Duração e tolerância
-  defaultMatchDuration Int @default(60) // minutos
-  delayTolerance       Int @default(0) // vôlei de praia não tem tolerância
-
-  // Auto-finalização
-  autoFinishOnFirstSubmission Boolean @default(false)
-
-  // Atribuição de quadras
-  courtAssignmentMode String @default("manual") // manual, automatic
-
-  // Limpeza de fotos
-  photosCleanupAt DateTime?
-
-  // Regras gerais
-  generalRules String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model TournamentMember {
@@ -263,285 +177,6 @@ model TournamentMember {
   amountPaid    Int? // em centavos
 
   @@unique([tournamentId, userId])
-}
-
-// ==================== CATEGORIAS / MODALIDADES ====================
-
-model TournamentCategory {
-  id           String     @id @default(cuid())
-  tournamentId String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-
-  name     String
-  sport    String @default("beach_volley") // tennis, beach_volley
-  gender   String // male, female, mixed
-  teamSize String // individual, double, trio, quartet
-  level    String // estreante, iniciante, intermediario, avancado, open
-  format   String // group_ranking_knockout, group_knockout, double_elimination, ranking_knockout
-  status   String @default("draft") // draft, registration_open, registration_closed, in_progress, finished
-
-  enableSilverSeries  Boolean @default(false)
-  paymentMode         String  @default("manual") // manual, online
-  registrationFee     Int? // valor por atleta em centavos
-  courtAssignmentMode String  @default("manual") // manual, automatic
-
-  groupSize                Int?
-  goldQualifiersPerGroup   Int?
-  silverQualifiersPerGroup Int?
-  goldQualifiersTotal      Int?
-  silverQualifiersTotal    Int?
-  oddGroupPolicy           String? // ranking_byes, fill_with_best_next_position
-
-  setsPerMatch       Int @default(3)
-  normalSetPoints    Int @default(21)
-  tiebreakSetPoints  Int @default(15)
-  minPointDifference Int @default(2)
-
-  teams          CategoryTeam[]
-  groups         CategoryGroup[]
-  standings      CategoryStanding[]
-  matches        CategoryMatch[]
-  bracketMatches CategoryBracketMatch[]
-  payments       Payment[]
-  categoryCourts CategoryCourt[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([tournamentId])
-}
-
-model CategoryCourt {
-  id         String             @id @default(cuid())
-  categoryId String
-  courtId    String
-  category   TournamentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  court      Court              @relation(fields: [courtId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([categoryId, courtId])
-  @@index([categoryId])
-  @@index([courtId])
-}
-
-model CategoryTeam {
-  id         String             @id @default(cuid())
-  categoryId String
-  category   TournamentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  name      String
-  seed      Int?
-  status    String  @default("pending") // pending, complete, confirmed, rejected
-  createdBy String?
-
-  members        CategoryTeamMember[]
-  invites        CategoryTeamInvite[]
-  groupEntries   CategoryGroupEntry[]
-  standings      CategoryStanding[]
-  homeMatches    CategoryMatch[]        @relation("CategoryHomeTeam")
-  awayMatches    CategoryMatch[]        @relation("CategoryAwayTeam")
-  bracketHome    CategoryBracketMatch[] @relation("CategoryBracketHomeTeam")
-  bracketAway    CategoryBracketMatch[] @relation("CategoryBracketAwayTeam")
-  bracketWinners CategoryBracketMatch[] @relation("CategoryBracketWinnerTeam")
-  payments       Payment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([categoryId])
-}
-
-model CategoryTeamMember {
-  id     String       @id @default(cuid())
-  teamId String
-  team   CategoryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId String?
-  user   User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  name          String?
-  email         String?
-  role          String  @default("player") // player, organizer_added
-  status        String  @default("pending") // pending, accepted, declined
-  paymentStatus String? // NONE, AWAITING_PIX, PIX_EXPIRED, CONFIRMED, MANUAL_CONFIRMED
-  amountPaid    Int?
-
-  payments Payment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([teamId, userId])
-  @@index([teamId])
-}
-
-model CategoryTeamInvite {
-  id       String       @id @default(cuid())
-  teamId   String
-  team     CategoryTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  senderId String
-  sender   User         @relation("CategoryTeamInviteSender", fields: [senderId], references: [id])
-
-  email   String
-  name    String?
-  status  String  @default("pending") // pending, accepted, declined, cancelled
-  message String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([teamId, email])
-}
-
-model CategoryGroup {
-  id         String             @id @default(cuid())
-  categoryId String
-  category   TournamentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  name     String
-  position Int
-  status   String @default("draft") // draft, drawn, completed
-
-  entries CategoryGroupEntry[]
-  matches CategoryMatch[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([categoryId, position])
-}
-
-model CategoryGroupEntry {
-  id      String        @id @default(cuid())
-  groupId String
-  group   CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  teamId  String
-  team    CategoryTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  position Int?
-
-  @@unique([groupId, teamId])
-}
-
-model CategoryStanding {
-  id         String             @id @default(cuid())
-  categoryId String
-  category   TournamentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  teamId     String
-  team       CategoryTeam       @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  groupId    String?
-
-  position      Int
-  series        String? // gold, silver
-  points        Int     @default(0)
-  matchesPlayed Int     @default(0)
-  wins          Int     @default(0)
-  losses        Int     @default(0)
-  setsWon       Int     @default(0)
-  setsLost      Int     @default(0)
-  pointsWon     Int     @default(0)
-  pointsLost    Int     @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([categoryId, teamId, series])
-}
-
-model CategoryMatch {
-  id         String             @id @default(cuid())
-  categoryId String
-  category   TournamentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  homeTeamId String
-  homeTeam   CategoryTeam @relation("CategoryHomeTeam", fields: [homeTeamId], references: [id])
-  awayTeamId String
-  awayTeam   CategoryTeam @relation("CategoryAwayTeam", fields: [awayTeamId], references: [id])
-
-  groupId String?
-  group   CategoryGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
-
-  courtId String?
-  court   Court?  @relation(fields: [courtId], references: [id], onDelete: SetNull)
-
-  status      String  @default("pending_scheduling")
-  phase       String  @default("group") // group, ranking, knockout, double_elimination
-  series      String? // gold, silver, main
-  bracketSide String? // winners, losers, grand_final
-  round       String?
-  position    Int?
-
-  scheduledAt   DateTime?
-  duration      Int       @default(60)
-  homeScore     Int?
-  awayScore     Int?
-  winnerTeamId  String?
-  endReason     String?
-  startedAt     DateTime?
-  finishedAt    DateTime?
-  startPhotoUrl String?
-  endPhotoUrl   String?
-  refereeId     String?
-  referee       User?     @relation("CategoryMatchReferee", fields: [refereeId], references: [id], onDelete: SetNull)
-
-  sets         CategorySet[]
-  bracketMatch CategoryBracketMatch?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([categoryId])
-}
-
-model CategorySet {
-  id         String        @id @default(cuid())
-  matchId    String
-  match      CategoryMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  setNumber  Int
-  homePoints Int
-  awayPoints Int
-  isTiebreak Boolean       @default(false)
-
-  @@unique([matchId, setNumber])
-}
-
-model CategoryBracketMatch {
-  id         String             @id @default(cuid())
-  categoryId String
-  category   TournamentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  round       Int
-  position    Int
-  roundName   String
-  status      String  @default("waiting")
-  series      String? // gold, silver, main
-  bracketSide String? // winners, losers, grand_final
-
-  homeSeed     Int?
-  awaySeed     Int?
-  homeTeamId   String?
-  homeTeam     CategoryTeam? @relation("CategoryBracketHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
-  awayTeamId   String?
-  awayTeam     CategoryTeam? @relation("CategoryBracketAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
-  winnerTeamId String?
-  winnerTeam   CategoryTeam? @relation("CategoryBracketWinnerTeam", fields: [winnerTeamId], references: [id], onDelete: SetNull)
-
-  homeSourceLabel    String?
-  awaySourceLabel    String?
-  winnerNextRound    Int?
-  winnerNextPosition Int?
-  winnerNextSlot     String?
-  loserNextRound     Int?
-  loserNextPosition  Int?
-  loserNextSlot      String?
-
-  matchId String?        @unique
-  match   CategoryMatch? @relation(fields: [matchId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([categoryId, series, bracketSide, round, position])
 }
 
 // ==================== CONVITES ====================
@@ -614,8 +249,6 @@ model Court {
   blockedSlots      CourtBlock[]
   reservations      Reservation[]
   matches           Match[]
-  categoryMatches   CategoryMatch[]
-  categoryCourts    CategoryCourt[]
   scheduleProposals ScheduleProposal[]
 }
 
@@ -1137,22 +770,38 @@ model OrganizerPlan {
   updatedAt       DateTime       @updatedAt
 }
 
-model OrganizerTournamentCredit {
-  id           String      @id @default(cuid())
-  userId       String
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  paymentId    String?     @unique
-  payment      Payment?    @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  tournamentId String?     @unique
-  tournament   Tournament? @relation("CreditTournament", fields: [tournamentId], references: [id], onDelete: SetNull)
-  status       String      @default("AVAILABLE") // PENDING_PAYMENT, AVAILABLE, USED, CANCELLED
-  value        Int         @default(4990)
-  usedAt       DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  @@index([userId, status])
+model Payment {
+  id                        String                     @id @default(cuid())
+  userId                    String
+  user                      User                       @relation(fields: [userId], references: [id])
+  tournamentId              String?
+  tournament                Tournament?                @relation(fields: [tournamentId], references: [id])
+  type                      String // SUBSCRIPTION, TOURNAMENT_EXTRA, REGISTRATION
+  asaasPaymentId            String?                    @unique
+  asaasCustomerId           String?
+  billingType               String                     @default("PIX") // PIX, CREDIT_CARD
+  value                     Int // em centavos
+  status                    String                     @default("PENDING") // PENDING, AWAITING_PIX, PAID, OVERDUE, REFUNDED, CANCELLED
+  description               String?
+  externalReference         String?
+  expiresAt                 DateTime?
+  paidAt                    DateTime?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  organizerTournamentCredit OrganizerTournamentCredit?
 }
+
+model WebhookEvent {
+  id           String    @id @default(cuid())
+  asaasEventId String    @unique
+  eventType    String
+  payload      Json
+  processed    Boolean   @default(false)
+  processedAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+// ==================== ACESSO DE ORGANIZADOR ====================
 
 model ManualOrganizerAccess {
   id        String    @id @default(cuid())
@@ -1167,39 +816,19 @@ model ManualOrganizerAccess {
   updatedAt DateTime  @updatedAt
 }
 
-model Payment {
-  id                String                     @id @default(cuid())
-  userId            String
-  user              User                       @relation(fields: [userId], references: [id])
-  tournamentId      String?
-  tournament        Tournament?                @relation(fields: [tournamentId], references: [id])
-  categoryId        String?
-  category          TournamentCategory?        @relation(fields: [categoryId], references: [id])
-  teamId            String?
-  team              CategoryTeam?              @relation(fields: [teamId], references: [id])
-  teamMemberId      String?
-  teamMember        CategoryTeamMember?        @relation(fields: [teamMemberId], references: [id])
-  type              String // SUBSCRIPTION, TOURNAMENT_EXTRA, REGISTRATION
-  asaasPaymentId    String?                    @unique
-  asaasCustomerId   String?
-  billingType       String                     @default("PIX") // PIX, CREDIT_CARD
-  value             Int // em centavos
-  status            String                     @default("PENDING") // PENDING, AWAITING_PIX, PAID, OVERDUE, REFUNDED, CANCELLED
-  description       String?
-  externalReference String?
-  expiresAt         DateTime?
-  paidAt            DateTime?
-  createdAt         DateTime                   @default(now())
-  updatedAt         DateTime                   @updatedAt
-  organizerCredit   OrganizerTournamentCredit?
-}
+model OrganizerTournamentCredit {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paymentId    String?     @unique
+  payment      Payment?    @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  tournamentId String?     @unique
+  tournament   Tournament? @relation("CreditTournament", fields: [tournamentId], references: [id], onDelete: SetNull)
+  status       String      @default("AVAILABLE") // AVAILABLE, USED, EXPIRED
+  value        Int         @default(4990)
+  usedAt       DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-model WebhookEvent {
-  id           String    @id @default(cuid())
-  asaasEventId String    @unique
-  eventType    String
-  payload      Json
-  processed    Boolean   @default(false)
-  processedAt  DateTime?
-  createdAt    DateTime  @default(now())
+  @@index([userId, status])
 }

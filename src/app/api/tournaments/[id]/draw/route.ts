@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { canManageTournament } from "@/lib/platform-admin"
-import { validateTournamentSport, SportAccessError } from "@/lib/sports/middleware"
 
 interface DrawMatch {
   homePlayerId: string
@@ -129,16 +128,6 @@ export async function POST(
     // Check if user is owner
     if (!(await canManageTournament(decoded.userId, tournament.ownerId))) {
       return NextResponse.json({ error: "Apenas o organizador pode sortear jogos" }, { status: 403 })
-    }
-
-    // Validate sport - this endpoint is tennis-only
-    try {
-      await validateTournamentSport(tournamentId, "tennis")
-    } catch (error) {
-      if (error instanceof SportAccessError) {
-        return NextResponse.json({ error: error.message }, { status: 400 })
-      }
-      throw error
     }
 
     // Check if tournament is ready for drawing

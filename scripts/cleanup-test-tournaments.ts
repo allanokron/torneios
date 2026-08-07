@@ -23,7 +23,6 @@ async function main() {
         select: {
           members: true,
           matches: true,
-          categories: true,
           payments: true,
         },
       },
@@ -39,7 +38,6 @@ async function main() {
       status: tournament.status,
       members: tournament._count.members,
       matches: tournament._count.matches,
-      categories: tournament._count.categories,
       payments: tournament._count.payments,
       createdAt: tournament.createdAt.toISOString(),
     }))

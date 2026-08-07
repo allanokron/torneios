@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
-import { recordCategoryMatchResult } from "@/lib/category-tournament"
 import { recalculateTournamentRanking } from "@/lib/ranking"
 import { advanceKnockoutMatch } from "@/lib/knockout"
 
-type CategoryRefereeSet = { homePoints: number; awayPoints: number; isTiebreak: boolean }
 type TournamentRefereeSet = {
   matchId: string
   setNumber: number
@@ -41,7 +39,6 @@ export async function POST(
     if (!decoded) return NextResponse.json({ error: "Token inválido" }, { status: 401 })
 
     const body = await request.json()
-    const kind = body.kind === "tournament" ? "tournament" : "category"
     const endPhotoUrl = typeof body.endPhotoUrl === "string" ? body.endPhotoUrl.trim() : ""
     const rawSets = Array.isArray(body.sets) ? body.sets : []
 
@@ -50,39 +47,6 @@ export async function POST(
     }
     if (!rawSets.length) {
       return NextResponse.json({ error: "Informe o placar antes de finalizar a partida" }, { status: 400 })
-    }
-
-    if (kind === "category") {
-      const match = await prisma.categoryMatch.findUnique({
-        where: { id: matchId },
-        select: {
-          id: true,
-          status: true,
-          refereeId: true,
-          homeTeamId: true,
-          awayTeamId: true,
-          category: { select: { tournamentId: true } },
-        },
-      })
-      if (!match) return NextResponse.json({ error: "Jogo não encontrado" }, { status: 404 })
-      if (match.status !== "in_progress") return NextResponse.json({ error: "A partida precisa estar em andamento" }, { status: 400 })
-      if (match.refereeId !== decoded.userId) return NextResponse.json({ error: "Apenas o árbitro vinculado pode finalizar este jogo" }, { status: 403 })
-
-      const referee = await prisma.tournamentReferee.findUnique({
-        where: { tournamentId_userId: { tournamentId: match.category.tournamentId, userId: decoded.userId } },
-      })
-      if (!referee || referee.status !== "active") return NextResponse.json({ error: "Você não é árbitro deste torneio" }, { status: 403 })
-
-      const sets: CategoryRefereeSet[] = rawSets.map((set: { homePoints?: number; awayPoints?: number; isTiebreak?: boolean }) => ({
-        homePoints: Number(set.homePoints),
-        awayPoints: Number(set.awayPoints),
-        isTiebreak: Boolean(set.isTiebreak),
-      }))
-      const summary = summarizeSets(sets.map(set => ({ home: set.homePoints, away: set.awayPoints })))
-      const winnerTeamId = summary.home > summary.away ? match.homeTeamId : match.awayTeamId
-      const result = await recordCategoryMatchResult(matchId, { winnerTeamId, sets, endPhotoUrl, refereeId: decoded.userId })
-      if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status })
-      return NextResponse.json({ match: result.match })
     }
 
     const match = await prisma.match.findUnique({

@@ -16,33 +16,7 @@ export async function POST(
     const decoded = verifyToken(authHeader.split(" ")[1])
     if (!decoded) return NextResponse.json({ error: "Token inválido" }, { status: 401 })
 
-    const body = await request.json().catch(() => ({}))
-    const kind = body.kind === "tournament" ? "tournament" : "category"
-    const now = new Date()
-
-    if (kind === "tournament") {
-      const match = await prisma.match.findUnique({ where: { id: matchId }, select: { tournamentId: true, status: true, refereeId: true } })
-      if (!match) return NextResponse.json({ error: "Jogo não encontrado" }, { status: 404 })
-      if (!["scheduled", "awaiting_start"].includes(match.status)) {
-        return NextResponse.json({ error: "Este jogo não está aguardando início" }, { status: 400 })
-      }
-      if (match.refereeId && match.refereeId !== decoded.userId) {
-        return NextResponse.json({ error: "Este jogo já está vinculado a outro árbitro" }, { status: 409 })
-      }
-      const referee = await prisma.tournamentReferee.findUnique({ where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: decoded.userId } } })
-      if (!referee || referee.status !== "active") return NextResponse.json({ error: "Você não é árbitro deste torneio" }, { status: 403 })
-
-      const updated = await prisma.match.update({
-        where: { id: matchId },
-        data: { status: "in_progress", startedAt: now, refereeId: decoded.userId },
-      })
-      return NextResponse.json({ match: updated })
-    }
-
-    const match = await prisma.categoryMatch.findUnique({
-      where: { id: matchId },
-      select: { category: { select: { tournamentId: true } }, status: true, refereeId: true },
-    })
+    const match = await prisma.match.findUnique({ where: { id: matchId }, select: { tournamentId: true, status: true, refereeId: true } })
     if (!match) return NextResponse.json({ error: "Jogo não encontrado" }, { status: 404 })
     if (!["scheduled", "awaiting_start"].includes(match.status)) {
       return NextResponse.json({ error: "Este jogo não está aguardando início" }, { status: 400 })
@@ -50,12 +24,12 @@ export async function POST(
     if (match.refereeId && match.refereeId !== decoded.userId) {
       return NextResponse.json({ error: "Este jogo já está vinculado a outro árbitro" }, { status: 409 })
     }
-    const referee = await prisma.tournamentReferee.findUnique({ where: { tournamentId_userId: { tournamentId: match.category.tournamentId, userId: decoded.userId } } })
+    const referee = await prisma.tournamentReferee.findUnique({ where: { tournamentId_userId: { tournamentId: match.tournamentId, userId: decoded.userId } } })
     if (!referee || referee.status !== "active") return NextResponse.json({ error: "Você não é árbitro deste torneio" }, { status: 403 })
 
-    const updated = await prisma.categoryMatch.update({
+    const updated = await prisma.match.update({
       where: { id: matchId },
-      data: { status: "in_progress", startedAt: now, refereeId: decoded.userId },
+      data: { status: "in_progress", startedAt: new Date(), refereeId: decoded.userId },
     })
     return NextResponse.json({ match: updated })
   } catch (error) {

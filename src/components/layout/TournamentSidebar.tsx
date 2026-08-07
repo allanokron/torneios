@@ -7,29 +7,21 @@ interface TournamentSidebarProps {
   activeTab: string
   isOwner?: boolean
   showKnockout?: boolean
-  sport?: string
 }
 
-export default function TournamentSidebar({ tournamentId, activeTab, isOwner = false, showKnockout = false, sport = "tennis" }: TournamentSidebarProps) {
-  const allTabs = [
-    { id: "overview", label: "Visão Geral", icon: "M4 6h16M4 10h16M4 14h16M4 18h16", tennisOnly: false },
-    { id: "drawn", label: "Jogos Sorteados", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01", tennisOnly: true },
-    { id: "matches", label: "Confrontos", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2", tennisOnly: false },
-    { id: "categories", label: "Categorias", icon: "M4 7h7v7H4V7zm9 0h7v7h-7V7zM4 16h7v4H4v-4zm9 0h7v4h-7v-4z", tennisOnly: false, beachVolleyOnly: true },
-    { id: "my-matches", label: "Meus Jogos", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", tennisOnly: false },
-    { id: "ranking", label: "Ranking", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z", tennisOnly: true },
-    ...(showKnockout ? [{ id: "knockout", label: "Mata-Mata", icon: "M7 7h10M7 12h6m-6 5h10M4 7h.01M4 12h.01M4 17h.01M20 7h.01M16 12h4m0 5h.01", tennisOnly: true }] : []),
-    { id: "participants", label: "Participantes", icon: "M12 4.354a4 4 0 110 7.292 4 4 0 010-7.292zM15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z", tennisOnly: false },
-    { id: "courts", label: "Quadras", icon: "M4 4h16v16H4V4zm0 8h16M9 4v16M15 4v16", tennisOnly: false },
-    { id: "rules", label: "Regras", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", tennisOnly: false },
-    ...(isOwner ? [{ id: "settings", label: "Configurações", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z", tennisOnly: false }] : []),
+export default function TournamentSidebar({ tournamentId, activeTab, isOwner = false, showKnockout = false }: TournamentSidebarProps) {
+  const tabs = [
+    { id: "overview", label: "Visão Geral", icon: "M4 6h16M4 10h16M4 14h16M4 18h16" },
+    { id: "drawn", label: "Jogos Sorteados", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" },
+    { id: "matches", label: "Confrontos", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
+    { id: "my-matches", label: "Meus Jogos", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
+    { id: "ranking", label: "Ranking", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
+    ...(showKnockout ? [{ id: "knockout", label: "Mata-Mata", icon: "M7 7h10M7 12h6m-6 5h10M4 7h.01M4 12h.01M4 17h.01M20 7h.01M16 12h4m0 5h.01" }] : []),
+    { id: "participants", label: "Participantes", icon: "M12 4.354a4 4 0 110 7.292 4 4 0 010-7.292zM15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
+    { id: "courts", label: "Quadras", icon: "M4 4h16v16H4V4zm0 8h16M9 4v16M15 4v16" },
+    { id: "rules", label: "Regras", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+    ...(isOwner ? [{ id: "settings", label: "Configurações", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" }] : []),
   ]
-
-  const tabs = allTabs.filter(tab => {
-    if (tab.tennisOnly && sport !== "tennis") return false
-    if (tab.beachVolleyOnly && sport !== "beach_volley") return false
-    return true
-  })
 
   return (
     <aside className="w-full lg:w-56 flex-shrink-0">

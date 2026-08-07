@@ -21,30 +21,10 @@ export async function GET(
         },
         orderBy: [{ user: { name: "asc" } }],
       },
-      categories: {
-        orderBy: [{ name: "asc" }],
-        include: {
-          teams: {
-            orderBy: [{ name: "asc" }],
-            include: {
-              members: {
-                include: {
-                  user: { select: { id: true, name: true, email: true } },
-                  payments: { orderBy: { createdAt: "desc" }, take: 1 },
-                },
-              },
-              payments: { orderBy: { createdAt: "desc" }, take: 1 },
-            },
-          },
-        },
-      },
       payments: {
         where: { type: "REGISTRATION" },
         include: {
           user: { select: { id: true, name: true, email: true } },
-          category: { select: { id: true, name: true } },
-          team: { select: { id: true, name: true } },
-          teamMember: { select: { id: true, name: true, email: true, paymentStatus: true } },
         },
         orderBy: { createdAt: "desc" },
       },
